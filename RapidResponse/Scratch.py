@@ -1,13 +1,13 @@
-from RapidResponse.RapidResponse.Environment import Environment
 from RapidResponse.RapidResponse.DataTable import DataTable
+from RapidResponse.RapidResponse.Environment import Environment
 from RapidResponse.RapidResponse.Environment import sample_configuration
-from RapidResponse.RapidResponse.Table import Column
 
 if __name__ == '__main__':
     env = Environment(sample_configuration)
     cols = ['Name', 'Site', 'BuyerCode', 'PlannerCode']
     part = DataTable(env, 'Mfg::Part', columns=cols)
     part.RefreshData()
+    print(len(part))
     print(part)
 
     for i in part:

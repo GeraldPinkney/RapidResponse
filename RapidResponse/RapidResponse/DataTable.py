@@ -93,7 +93,8 @@ class DataTable(Table):
             return False
 
     def __repr__(self):
-        return f'DataTable(environment={self.environment!r},name={self._table_namespace + "::" + self._table_name!r}, columns={self.columns!r}, filter={self._filter!r}, sync={self._sync!r})'
+        return f'DataTable(environment={self.environment!r},name={self._table_namespace + "::" + self._table_name!r},' \
+               f'columns={self.columns!r}, filter={self._filter!r}, sync={self._sync!r}) '
 
     def __str__(self):
         # return self and first 5 rows
@@ -234,7 +235,6 @@ class DataTable(Table):
 
         for i in range(0, self.total_row_count, data_range):  #
             self._get_export_results(i, data_range)
-        self.total_row_count = None
         self.exportID = None
 
     def add_row(self, rec):
