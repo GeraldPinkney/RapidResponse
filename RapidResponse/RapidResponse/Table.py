@@ -1,10 +1,8 @@
 import collections
-from typing import NamedTuple
 from typing import Literal
 
 from RapidResponse.RapidResponse.Err import DataError
 
-# todo at some point revisit & change this to subclass NamedTuple
 Column = collections.namedtuple('Column', ['name', 'datatype', 'key'])
 
 
