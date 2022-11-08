@@ -1,12 +1,10 @@
 import json
 import logging
-
 import requests
-
+from copy import deepcopy
 from RapidResponse.RapidResponse.Environment import Environment
 from RapidResponse.RapidResponse.Err import RequestsError, TableError, DataError
 from RapidResponse.RapidResponse.Table import Table
-from copy import deepcopy
 
 
 class DataTable(Table):
@@ -16,13 +14,16 @@ class DataTable(Table):
     :param environment: RapidResponse environment for which the table is scoped.
     :param tablename: Table that contains the data. Format 'Mfg::Part'
     :param columns: list of column names ['Name', 'Site', ...]
-    :param table_filter: string of
-    :param sync: boolean value
+    :param table_filter: string representation of any filter condition applied to the table
+    :param sync: boolean control whether any updates are pushed back to RR
+    :param refresh: boolean refresh row data on initialisation
     :raises ValueError: environment or tablename is not provided, or tablename is not in data model
     :raises TypeError: environment, tablename is not correctly typed
     :raises DataError: key column not in column list. will log failure but not fail.
     """
-    def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None, sync: bool = True):
+    def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None, sync: bool = True, refresh: bool = True):
+        # todo add into readme.md usage of bool, etc
+        
         # validations
         if not isinstance(environment, Environment):
             raise TypeError("The parameter environment type must be Environment.")
@@ -72,6 +73,9 @@ class DataTable(Table):
             # allow this to silently error and write it to log
             pass
         self.set_filter(table_filter)
+
+        if refresh:
+            self.RefreshData()
 
     def __bool__(self):
         if len(self.table_data) > 0:

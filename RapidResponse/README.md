@@ -122,11 +122,12 @@ review fields that a table has available
 subclass of Table that contains row data & can be used to push updates to RR. When initialised it takes a deep copy of the Table from the data model and then enriches with data.
 
 **Parameters**
-- _environment_: RapidResponse environment for which the table is scoped. 
+- _environment_: Environment RapidResponse environment for which the table is scoped. 
 - _tablename_: Table that contains the data. Format 'Mfg::Part' 
 - _columns_: list of column names ['Name', 'Site', ...] that the table will return.
-- _table_filter_: string 
+- _table_filter_: string representation of any filter condition applied to the table
 - _sync_: boolean value. controls whether updates performed within python are pushed back to RR. 
+- _refresh_: boolean value. refresh row data on initialisation. 
 
 ## Data Table - Usage Instructions
 
@@ -186,5 +187,7 @@ use slicing to only view a subset of records
 ```
 print(IndependentDemand[0:11])
 ```
+
+
 ## Aaaand now the caveats
 offline data model currently

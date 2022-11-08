@@ -49,7 +49,7 @@ class DataModelTestCase(unittest.TestCase):
         col2 = RapidResponse.RapidResponse.Table.Column('Column2', 'string', 'N')
         for i in data_model._tables:
             #        i.add_fields(col1,col2)
-            print(i)
+            self.assertEqual(type(i), type(Table.Table('Part', 'Mfg')))
 
     def test_get_table_from_data_model(self):
         data_model = DM.DataModel(
@@ -61,6 +61,24 @@ class DataModelTestCase(unittest.TestCase):
 
 class DataTableTestCase(unittest.TestCase):
     pass
+    # test various initialisations
+
+    # test len
+
+    # test append
+
+    # test extend
+
+    # test del
+
+    # test del_row
+
+    # test update of attribute of individual record
+
+    # test slicing
+
+    # test bool
+
 
 
 class EnvironmentTestCase(unittest.TestCase):
