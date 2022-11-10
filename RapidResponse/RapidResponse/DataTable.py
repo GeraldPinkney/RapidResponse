@@ -5,7 +5,7 @@ from copy import deepcopy
 from RapidResponse.RapidResponse.Environment import Environment
 from RapidResponse.RapidResponse.Err import RequestsError, TableError, DataError
 from RapidResponse.RapidResponse.Table import Table
-
+# todo fix logging
 
 class DataTable(Table):
     """
@@ -22,7 +22,6 @@ class DataTable(Table):
     :raises DataError: key column not in column list. will log failure but not fail.
     """
     def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None, sync: bool = True, refresh: bool = True):
-        # todo add into readme.md usage of bool, etc
         
         # validations
         if not isinstance(environment, Environment):
@@ -38,6 +37,7 @@ class DataTable(Table):
         if not isinstance(sync, bool):
             raise TypeError("The parameter sync type must be bool.")
 
+        logging.basicConfig(filename=environment.log_location + '\\logging.log', filemode='a',level=logging.INFO)
         tabarray = tablename.split('::')
 
         try:
@@ -137,6 +137,7 @@ class DataTable(Table):
             del self.table_data[key]
 
     def append(self, values):
+        # todo fix append
         self.table_data.append(values)
 
     def extend(self, *args):
@@ -146,7 +147,8 @@ class DataTable(Table):
         # if columns = None, then set columns to all fields on table
         if columns is None:
             for c in self._table_fields:
-                self.columns.append(c)
+                if c.datatype != 'CompoundVector':
+                    self.columns.append(c)
             # self.columns = deepcopy(self._table_fields)
         else:
             # check whether columns provided includes all key fields
@@ -154,10 +156,13 @@ class DataTable(Table):
                 if k not in columns:
                     raise DataError(k, 'key column not in column list')
 
-                    # check fields are valid for table
+            # add all valid fields to DataTable Cols
             for c in columns:
                 col = self.get_field(c)
-                self.columns.append(col)
+                if col.datatype != 'CompoundVector':
+                    self.columns.append(col)
+                else:
+                    logging.info(col.name + ' skipped due to type CompoundVector')
             # add fields to columns
 
     def set_filter(self, value: str):
@@ -203,7 +208,10 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, "failure during bulk//export create, status not 200")
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text, "failure during bulk//export create, status not 200")
         # print(response)
 
         self.exportID = response_dict["ExportId"]
@@ -331,12 +339,12 @@ class DataTable(Table):
             raise RequestsError(response.text, "failure during bulk//upload complete, status not 200" + '\nurl:' + url)
 
         results = response_dict['Results']
-        response = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
+        response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
             results['InsertedRowCount']) + '\nModifiedRowCount: ' + str(
             results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-        logging.info(response)
+        logging.info(response_readable)
 
     def _create_deletion(self, *args):
         operation = 'delete'
