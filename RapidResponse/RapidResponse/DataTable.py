@@ -48,7 +48,7 @@ class DataTable(Table):
         self.uploadId = None
         self.exportID = None
         self.environment = environment
-        self.table_data = []
+        self._table_data = []
         self.columns = []
         self._filter = None
 
@@ -78,20 +78,20 @@ class DataTable(Table):
             self.RefreshData()
 
     def __bool__(self):
-        if len(self.table_data) > 0:
+        if len(self._table_data) > 0:
             return True
         else:
             return False
 
     def __len__(self):
-        return len(self.table_data)
+        return len(self._table_data)
 
     def __getitem__(self, position):
-        return self.table_data[position]
+        return self._table_data[position]
 
     def __contains__(self, item):
         # get key fields for table. then check if that value is present
-        if item in self.table_data:
+        if item in self._table_data:
             return True
         else:
             return False
@@ -105,40 +105,37 @@ class DataTable(Table):
         response = self.__repr__() + '\n'
         if self.total_row_count > 5:
             for i in range(0, 5):
-                response = response + 'rownum: ' + str(i) + ' ' + str(self.table_data[i]) + '\n'
+                response = response + 'rownum: ' + str(i) + ' ' + str(self._table_data[i]) + '\n'
             response = response + '...'
         return response
 
     def __setitem__(self, key, value):
-        if key in self.table_data:
-            if self._sync:
 
-                self.environment.refresh_auth()
-                self._create_upload(self.table_data[key])
-                self._complete_upload()
-                self.uploadId = None
-                self.table_data[key] = value
-            else:
-                self.table_data[key] = value
+        if self._sync:
+            self.environment.refresh_auth()
+            self._create_upload(self._table_data[key])
+            self._complete_upload()
+            self.uploadId = None
+            self._table_data[key] = value
         else:
-            raise ValueError('value not in table')
+            self._table_data[key] = value
 
     def __delitem__(self, key):
 
         if self._sync:
             # delete from RR
-            self.environment.refresh_auth()
-            self._create_deletion(self.table_data[key])
+            # self.environment.refresh_auth()
+            self._create_deletion(self._table_data[key])
             self._complete_deletion()
             self.uploadId = None
 
-            del self.table_data[key]
+            del self._table_data[key]
         else:
-            del self.table_data[key]
+            del self._table_data[key]
+        self.total_row_count -= 1
 
     def append(self, values):
-        # todo fix append
-        self.table_data.append(values)
+        self.add_row(values)
 
     def extend(self, *args):
         self.add_rows(*args)
@@ -170,7 +167,7 @@ class DataTable(Table):
         self._filter = value
 
     def indexof(self, rec):
-        return self.table_data.index(rec)
+        return self._table_data.index(rec)
 
     def del_row(self, rec):
         index = self.indexof(rec)
@@ -236,11 +233,11 @@ class DataTable(Table):
 
         for rec in response_dict["Rows"]:
             returned = rec.split('\t')
-            self.table_data.append(returned)
+            self._table_data.append(returned)
 
     def RefreshData(self, data_range: int = 5000):
         # check tablename is set, check fields are set
-        self.table_data.clear()
+        self._table_data.clear()
         self.environment.refresh_auth()
         # initialise query
         self._create_export()
@@ -254,7 +251,7 @@ class DataTable(Table):
         self._create_upload(rec)
         self._complete_upload()
         self.uploadId = None
-        self.table_data.extend(rec)
+        self._table_data.append(rec)
 
     def add_rows(self, rows: list):
         self.environment.refresh_auth()
@@ -262,7 +259,7 @@ class DataTable(Table):
             self._create_upload(*rows)
             self._complete_upload()
             self.uploadId = None
-            self.table_data.extend(rows)
+            self._table_data.extend(rows)
 
     def _create_upload(self, *args):
         operation = 'upsert'

@@ -83,8 +83,8 @@ class DataTableTestCase(unittest.TestCase):
         # test
         self.assertEquals(len(part), 0)
 
-    # test append
-    def test_data_table_append(self):
+    # test extend
+    def test_data_table_extend(self):
         # setup
         env = Environment(sample_configuration)
         cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
@@ -97,11 +97,51 @@ class DataTableTestCase(unittest.TestCase):
         self.assertIn(['GP', '1', '7000vE', '2017-08-31', '1500'], IndependentDemand)
         IndependentDemand.del_row(['GP', '0', '7000vE', '2017-08-31', '1500'])
         IndependentDemand.del_row(['GP', '1', '7000vE', '2017-08-31', '1500'])
-    # test extend
+
+    # test append
+    def test_data_table_append(self):
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+
+        # execute
+        rows = ['GP', '1', '7000vE', '2017-08-31', '1500']
+        IndependentDemand.append(rows)
+
+        self.assertIn(['GP', '1', '7000vE', '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(['GP', '1', '7000vE', '2017-08-31', '1500'])
 
     # test del
+    def test_data_table_delete(self):
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+        rows = [['GP', '0', '7000vE', '2017-08-31', '1500'], ['GP', '1', '7000vE', '2017-08-31', '1500']]
+        IndependentDemand.extend(rows)
+
+        # execute
+        self.assertIn(['GP', '1', '7000vE', '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(['GP', '0', '7000vE', '2017-08-31', '1500'])
+
+        index = IndependentDemand.indexof(['GP', '1', '7000vE', '2017-08-31', '1500'])
+        del IndependentDemand[index]
+        index = IndependentDemand.indexof(['GP', '0', '7000vE', '2017-08-31', '1500'])
+        del IndependentDemand[index]
 
     # test del_row
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+        rows = [['GP', '0', '7000vE', '2017-08-31', '1500'], ['GP', '1', '7000vE', '2017-08-31', '1500']]
+        IndependentDemand.extend(rows)
+
+        # execute
+        self.assertIn(['GP', '1', '7000vE', '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(['GP', '0', '7000vE', '2017-08-31', '1500'])
+        IndependentDemand.del_row(['GP', '1', '7000vE', '2017-08-31', '1500'])
 
     # test update of attribute of individual record
 
