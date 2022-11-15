@@ -81,7 +81,7 @@ class DataTableTestCase(unittest.TestCase):
         part = DataTable(env,'Mfg::Part', refresh=False)
 
         # test
-        self.assertEquals(len(part), 0)
+        self.assertEqual(len(part), 0)
 
     # test extend
     def test_data_table_extend(self):
@@ -122,13 +122,12 @@ class DataTableTestCase(unittest.TestCase):
         IndependentDemand.extend(rows)
 
         # execute
-        self.assertIn(['GP', '1', '7000vE', '2017-08-31', '1500'], IndependentDemand)
-        IndependentDemand.del_row(['GP', '0', '7000vE', '2017-08-31', '1500'])
-
         index = IndependentDemand.indexof(['GP', '1', '7000vE', '2017-08-31', '1500'])
         del IndependentDemand[index]
+        self.assertNotIn(['GP', '1', '7000vE', '2017-08-31', '1500'], IndependentDemand)
         index = IndependentDemand.indexof(['GP', '0', '7000vE', '2017-08-31', '1500'])
         del IndependentDemand[index]
+        self.assertNotIn(['GP', '0', '7000vE', '2017-08-31', '1500'], IndependentDemand)
 
     # test del_row
         # setup

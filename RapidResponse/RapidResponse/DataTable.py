@@ -7,6 +7,10 @@ from RapidResponse.RapidResponse.Err import RequestsError, TableError, DataError
 from RapidResponse.RapidResponse.Table import Table
 # todo fix logging
 
+class DataRow(list):
+    # todo implement this
+    pass
+
 class DataTable(Table):
     """
     subclass of Table that contains row data & can be used to push updates to RR\n
@@ -48,6 +52,7 @@ class DataTable(Table):
         self.uploadId = None
         self.exportID = None
         self.environment = environment
+        # todo need to subclass list to overwrite behaviour for the __setitem__ as its not going back to RR
         self._table_data = []
         self.columns = []
         self._filter = None
