@@ -3,9 +3,11 @@ import unittest
 import RapidResponse.RapidResponse.Table
 import RapidResponse.RapidResponse.Table as Table
 import RapidResponse.RapidResponse.DataModel as DM
-from RapidResponse.RapidResponse.DataTable import DataTable
+from RapidResponse.RapidResponse.DataTable import DataTable, DataRow
 from RapidResponse.RapidResponse.Environment import Environment
 from RapidResponse.RapidResponse.Environment import sample_configuration
+from RapidResponse.RapidResponse.Err import DataError
+
 
 class TableTestCase(unittest.TestCase):
 
@@ -49,7 +51,7 @@ class DataModelTestCase(unittest.TestCase):
             'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel\\Tables.tab')
         col1 = RapidResponse.RapidResponse.Table.Column('Column1', 'string', 'N')
         col2 = RapidResponse.RapidResponse.Table.Column('Column2', 'string', 'N')
-        for i in data_model._tables:
+        for i in data_model.tables:
             #        i.add_fields(col1,col2)
             self.assertEqual(type(i), type(Table.Table('Part', 'Mfg')))
 
@@ -152,6 +154,29 @@ class DataTableTestCase(unittest.TestCase):
 
     # test contains
 
+class DataRowTestCase(unittest.TestCase):
+    def test_row_init(self):
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
+        rows = [['GP', '0', '7000vE', '2017-08-31', '1500'], ['GP', '1', '7000vE', '2017-08-31', '1500']]
+
+
+        # execute
+        rec = DataRow(['GP', '0', '7000vE', '2017-08-31', '1500'], IndependentDemand)
+        print(rec)
+
+    def test_row_length_mismatch(self):
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
+        rows = [['GP', '0', '7000vE', '2017-08-31', '1500'], ['GP', '1', '7000vE', '2017-08-31', '1500']]
+
+        # execute
+        with self.assertRaises(DataError):
+            dr = DataRow(['GP', '0', '7000vE', '2017-08-31'], IndependentDemand)
 
 
 class EnvironmentTestCase(unittest.TestCase):

@@ -32,7 +32,7 @@ class DataModel:
         else:
             raise DirectoryError('directory not valid', data_model_directory)
 
-        self._tables = []
+        self.tables = []
         self._fields = []
 
         try:
@@ -54,7 +54,7 @@ class DataModel:
             self.add_fields_to_tables()
 
     def __str__(self):
-        return self.__repr__() + '\nTables: ' + str(len(self._tables))
+        return self.__repr__() + '\nTables: ' + str(len(self.tables))
 
     def __repr__(self):
         return f'DataModel(data_model_directory={self._data_model_dir!r})'
@@ -69,10 +69,10 @@ class DataModel:
             rowcount = 0
             reader = csv.DictReader(csvfile, delimiter='\t')  # update delimiter if its comma not tab
             for row in reader:
-                self._tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
+                self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
                 rowcount += 1
             logging.info(f'info: filename {file_path} rowcount {rowcount}')
-        return self._tables
+        return self.tables
 
     def load_field_data_from_file(self, file_path: str):
         """
@@ -97,10 +97,10 @@ class DataModel:
         for f in self._fields:
             col = Column(f['Field'], f['Type'], f['Key'])
             tab = Table(f['Table'], f['Namespace'])
-            if tab in self._tables:
-                i = self._tables.index(tab)
-                self._tables[i].add_fields(col)
-        return self._tables
+            if tab in self.tables:
+                i = self.tables.index(tab)
+                self.tables[i].add_fields(col)
+        return self.tables
 
     def get_table(self, table: str, namespace: str):
         """
@@ -111,8 +111,11 @@ class DataModel:
         """
 
         tab = Table(table, namespace)
-        if tab in self._tables:
-            i = self._tables.index(tab)
-            return self._tables[i]
+        if tab in self.tables:
+            i = self.tables.index(tab)
+            return self.tables[i]
         else:
             raise ValueError('the table provided is not valid')
+
+    def tables(self):
+        return self.tables
