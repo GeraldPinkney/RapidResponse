@@ -34,7 +34,8 @@ class DataModel:
 
         self.tables = []
         self._fields = []
-
+        logging.basicConfig(filename='dm_logging.log', filemode='w',
+                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
         try:
             # check tables file is present, then load
             if os.path.isfile(self._data_model_dir + '\\Tables.tab'):

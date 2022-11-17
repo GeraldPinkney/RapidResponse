@@ -43,7 +43,6 @@ class DataTable(Table):
         if not isinstance(sync, bool):
             raise TypeError("The parameter sync type must be bool.")
 
-        logging.basicConfig(filename=environment.log_location + '\\logging.log', filemode='a',level=logging.INFO)
         tabarray = tablename.split('::')
 
         try:
@@ -54,7 +53,6 @@ class DataTable(Table):
         self.uploadId = None
         self.exportID = None
         self.environment = environment
-        # todo need to subclass list to overwrite behaviour for the __setitem__ as its not going back to RR
         self._table_data = []
         self.columns = []
         self._filter = None
@@ -117,15 +115,15 @@ class DataTable(Table):
         return response
 
     def __setitem__(self, key, value):
-
+        if not isinstance(value, DataRow):
+            self._table_data[key] = DataRow(value, self)
+        else:
+            self._table_data[key] = value
         if self._sync:
             self.environment.refresh_auth()
             self._create_upload(self._table_data[key])
             self._complete_upload()
             self.uploadId = None
-            self._table_data[key] = value
-        else:
-            self._table_data[key] = value
 
     def __delitem__(self, key):
 
@@ -141,11 +139,42 @@ class DataTable(Table):
             del self._table_data[key]
         self.total_row_count -= 1
 
+    def map(self, action):
+        # yields new items that result from applying an action() callable to each item in the underlying list
+        return type(self)(action(item) for item in self._table_data)
+
+    def filter(self, predicate):
+        # yields all the items that return True when calling predicate() on them
+        return type(self)(item for item in self._table_data if predicate(item))
+
+    def for_each(self, func):
+        # calls func() on every item in the underlying list to generate some side effect.
+        for item in self._table_data:
+            func(item)
+
     def append(self, values):
-        self.add_row(values)
+        # adds a single new item at the end of the underlying list
+        if self._sync:
+            self.add_row(values)
+
+        if not isinstance(values, DataRow):
+            self._table_data.append(DataRow(values, self))
+        else:
+            self._table_data.append(values)
+
 
     def extend(self, *args):
-        self.add_rows(*args)
+        # todo fix when doing insert messy refereence fields
+        if self._sync:
+            self.add_rows(*args)
+        # self._table_data.extend(*args)
+
+        if isinstance(*args, type(DataRow)):
+            self._table_data.extend(*args)
+        else:
+            to_add = [DataRow(item, self) for item in args[0]]
+
+            self._table_data.extend([DataRow(item, self) for item in args[0]])
 
     def set_columns(self, columns: list = None):
         # if columns = None, then set columns to all fields on table
@@ -240,7 +269,7 @@ class DataTable(Table):
 
         for rec in response_dict["Rows"]:
             returned = rec.split('\t')
-            self._table_data.append(returned)
+            self._table_data.append(DataRow(returned, self))
 
     def RefreshData(self, data_range: int = 5000):
         # check tablename is set, check fields are set
@@ -258,7 +287,6 @@ class DataTable(Table):
         self._create_upload(rec)
         self._complete_upload()
         self.uploadId = None
-        self._table_data.append(rec)
 
     def add_rows(self, rows: list):
         self.environment.refresh_auth()
@@ -266,7 +294,6 @@ class DataTable(Table):
             self._create_upload(*rows)
             self._complete_upload()
             self.uploadId = None
-            self._table_data.extend(rows)
 
     def _create_upload(self, *args):
         operation = 'upsert'
@@ -349,6 +376,7 @@ class DataTable(Table):
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
         logging.info(response_readable)
+        # todo if Status is failure, do something.
 
     def _create_deletion(self, *args):
         operation = 'delete'
@@ -434,64 +462,72 @@ class DataTable(Table):
 
 
 class DataRow(list):
-    # todo implement this
-    # should a record care about what table it belongs to? (yes, because we need to know if table is sync)
+
     def __init__(self, iterable, data_table: DataTable):
         # initialises a new instance DataRow(['GP', '0', '7000vE', '2017-08-31'], IndependentDemand)
 
         # grab the necessary info from owning table
-        self._table_namespace = data_table._table_namespace
-        self._table_name = data_table._table_name
-        self._sync = data_table._sync
-        self.columns = data_table.columns
+        self._data_table = data_table
 
-        if len(iterable) == len(self.columns):
+        # perform validations
+        if not isinstance(data_table, DataTable):
+            raise TypeError("The parameter data_table type must be DataTable.")
+        if len(iterable) == len(self._data_table.columns):
             super().__init__(str(item) for item in iterable)
         else:
-            raise DataError(str(iterable), 'mismatch in length of columns and row')
+            raise DataError(str(iterable), 'mismatch in length of data table columns '+ str(len(self._data_table.columns)) +  ' and row: ' + str(len(iterable)))
 
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
 
         # when something is updated it should be pushed back to RR, if datatable is sync
-        # however should not fire when data is being initialised from RR
         super().__setitem__(index, str(item))
+        if self._data_table._sync:
+            self._data_table.add_row(self)
+        else:
+            pass
 
     def insert(self, index, item):
         # allows you to insert a new item at a given position in the underlying list using the index.
-
+        raise NotImplementedError
         # when something is updated it should be pushed back to RR, if datatable is sync
         # however should not fire when data is being initialised from RR
         super().insert(index, str(item))
 
     def append(self, item):
         # adds a single new item at the end of the underlying list
-
+        raise NotImplementedError
+        if len(self)+1 == len(self._data_table.columns):
+            super().append(str(item))
+        else:
+            raise DataError(item, "cannot append as num of cols does not match length of new rec")
         # validate on append
         # write this back to RR?
-        super().append(str(item))
 
     def extend(self, other):
         # adds a series of items to the end of the list.
-
+        raise NotImplementedError
+        if len(self)+len(other) == len(self._data_table.columns):
+            if isinstance(other, type(self)):
+                super().extend(other)
+            else:
+                super().extend(str(item) for item in other)
+        else:
+            raise DataError(other, "cannot append as num of cols does not match length of new rec")
         # validate on append
         # write this back to RR?
-        if isinstance(other, type(self)):
-            super().extend(other)
-        else:
-            super().extend(str(item) for item in other)
 
     def __add__(self, other):
-        # todo implement this for concat operations with +
-        pass
+
+        raise NotImplementedError
 
     def __radd__(self, other):
-        # todo implement this for concat operations with +
-        pass
+
+        raise NotImplementedError
 
     def __iadd__(self, other):
-        # todo implement this for concat operations with +
-        pass
+
+        raise NotImplementedError
 
     def join(self, separator=" "):
         # concatenates all the list’s items in a single string
@@ -509,14 +545,3 @@ class DataRow(list):
         # calls func() on every item in the underlying list to generate some side effect.
         for item in self:
             func(item)
-
-    def _validate_field(self, value):
-        if True:
-            # add validations here and if they pass then return string of value
-            return str(value)
-        else:
-            pass
-            # use
-
-    def set_columns(self):
-        pass

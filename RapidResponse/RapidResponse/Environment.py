@@ -12,7 +12,7 @@ sample_configuration = {'url': 'http://localhost/rapidresponse',
                         'auth_type': 'basic',
                         'username': 'gpiknney_ws',
                         'password': '1L0veR@pidResponse',
-                        'log_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse'
+                        'log_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\'
                         }
 
 
@@ -73,8 +73,6 @@ class Environment:
             else:
                 self.log_location = None
                 raise SetupError("log directory not valid: " + configuration['log_directory'])
-
-        logging.basicConfig(filename=self.log_location + '\\logging.log', filemode='w', level=logging.INFO)
 
         self.scenarios = self.set_scenarios({"Name": "Integration", "Scope": "Public"})
 

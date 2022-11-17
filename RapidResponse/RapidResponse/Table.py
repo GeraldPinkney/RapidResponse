@@ -1,6 +1,7 @@
 # Table.py
 import collections
 from typing import Literal
+import logging
 
 from RapidResponse.RapidResponse.Err import DataError
 

@@ -160,9 +160,6 @@ class DataRowTestCase(unittest.TestCase):
         env = Environment(sample_configuration)
         cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
-        rows = [['GP', '0', '7000vE', '2017-08-31', '1500'], ['GP', '1', '7000vE', '2017-08-31', '1500']]
-
-
         # execute
         rec = DataRow(['GP', '0', '7000vE', '2017-08-31', '1500'], IndependentDemand)
         print(rec)

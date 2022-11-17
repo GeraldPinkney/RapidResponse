@@ -1,4 +1,4 @@
-from RapidResponse.RapidResponse.DataTable import DataTable
+from RapidResponse.RapidResponse.DataTable import DataTable, DataRow
 from RapidResponse.RapidResponse.Environment import Environment
 from RapidResponse.RapidResponse.Environment import sample_configuration
 
