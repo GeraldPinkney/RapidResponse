@@ -1,12 +1,11 @@
 # Table.py
 import collections
 from typing import Literal
-import logging
 
 from RapidResponse.RapidResponse.Err import DataError
 
+# Column = collections.namedtuple('Column', ['name', 'datatype', 'key', 'referencedTable', 'referencedNamespace', 'identification_fields'])
 Column = collections.namedtuple('Column', ['name', 'datatype', 'key'])
-
 
 class Table:
     TABLE_TYPE = Literal['Input', 'Calculated']

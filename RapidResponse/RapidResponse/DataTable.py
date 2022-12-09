@@ -9,10 +9,6 @@ from RapidResponse.RapidResponse.Err import RequestsError, TableError, DataError
 from RapidResponse.RapidResponse.Table import Table
 
 
-# todo fix logging
-
-
-
 class DataTable(Table):
     """
     subclass of Table that contains row data & can be used to push updates to RR\n
@@ -178,6 +174,7 @@ class DataTable(Table):
 
     def set_columns(self, columns: list = None):
         # if columns = None, then set columns to all fields on table
+        # todo handle situation where its a reference
         if columns is None:
             for c in self._table_fields:
                 if c.datatype != 'CompoundVector':
@@ -490,6 +487,7 @@ class DataRow(list):
     def insert(self, index, item):
         # allows you to insert a new item at a given position in the underlying list using the index.
         raise NotImplementedError
+        # todo implement insert
         # when something is updated it should be pushed back to RR, if datatable is sync
         # however should not fire when data is being initialised from RR
         super().insert(index, str(item))
@@ -545,3 +543,10 @@ class DataRow(list):
         # calls func() on every item in the underlying list to generate some side effect.
         for item in self:
             func(item)
+
+    def pre_process(self, input):
+        # todo implement this
+        # key purpose of this method is to handle the date messiness.
+        # if datatype is date or datetime then convert past to 01/01/1900 and future to 31/12/2100 and current to
+        output = str(input)
+        return output
