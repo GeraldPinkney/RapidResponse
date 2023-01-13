@@ -8,6 +8,7 @@ from RapidResponse.RapidResponse.Environment import Environment
 from RapidResponse.RapidResponse.Err import RequestsError, TableError, DataError
 from RapidResponse.RapidResponse.Table import Table
 
+# todo add controls to not allow update of calculated fields or delete of rows from calculated table
 
 class DataTable(Table):
     """

@@ -1,11 +1,25 @@
 # Table.py
 import collections
-from typing import Literal
+from typing import Literal, NamedTuple
 
 from RapidResponse.RapidResponse.Err import DataError
 
 # Column = collections.namedtuple('Column', ['name', 'datatype', 'key', 'referencedTable', 'referencedNamespace', 'identification_fields'])
-Column = collections.namedtuple('Column', ['name', 'datatype', 'key'])
+
+
+class Column(NamedTuple):
+    # prior implementation below
+    # Column = collections.namedtuple('Column', ['name', 'datatype', 'key'])
+    name: str
+    datatype: str
+    key: str
+    # if datatype is Reference, then
+    referencedTable: str = None
+    referencedTableNamespace: str = None
+    # identification_fields: str = None
+    correspondingField: str = None
+    correspondingFieldNamespace: str = None
+
 
 class Table:
     TABLE_TYPE = Literal['Input', 'Calculated']
