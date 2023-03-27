@@ -8,9 +8,10 @@ from RapidResponse.RapidResponse.DataModel import DataModel
 from RapidResponse.RapidResponse.Err import SetupError, RequestsError
 
 sample_configuration = {'url': 'http://localhost/rapidresponse',
+                        'data_model_workbook': 'KXSHelperREST',
                         'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel',
                         'auth_type': 'basic',
-                        'username': 'gpiknney_ws',
+                        'username': 'gpinkney_ws',
                         'password': '1L0veR@pidResponse',
                         'log_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\'
                         }
@@ -40,6 +41,7 @@ class Environment:
             raise SetupError("Data Model directory not valid: " + configuration['data_model_directory'])
 
         # pull in data model
+        # todo add conditional logic to either get DM from local file, or from wbb
         self._data_model = DataModel(self._data_model_dir)
 
         # authentication

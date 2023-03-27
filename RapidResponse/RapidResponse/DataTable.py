@@ -273,7 +273,7 @@ class DataTable(Table):
         # check tablename is set, check fields are set
         self._table_data.clear()
         self.environment.refresh_auth()
-        # initialise query
+        # initialise_for_extract query
         self._create_export()
 
         for i in range(0, self.total_row_count, data_range):  #
