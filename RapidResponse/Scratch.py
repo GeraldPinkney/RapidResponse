@@ -70,18 +70,16 @@ if __name__ == '__main__':
         "FilterType": "All"
     }
 
-    wb = Workbook(Environment=Environment(sample_configuration),
+    wb = Workbook(environment=Environment(sample_configuration),
                   Scenario={"Name": 'Enterprise Data', "Scope": "Public"},
-                  Workbook={"Name": 'KXSHelperREST', "Scope": 'Public'},
+                  workbook={"Name": 'KXSHelperREST', "Scope": 'Public'},
                   SiteGroup="All Sites",
                   Filter={"Name": "All Parts", "Scope": "Public"},
                   VariableValues=variable_values,
                   WorksheetNames=["DataModel_Summary"]
                   )
-    wb.initialise_for_extract()
-    for x in wb._worksheets:
+    #wb._initialise_for_extract()
+    for x in wb.worksheets:
         print(x)
-        print(x['Name'])
-        print(x['QueryID'])
-        print(x['total_row_count'])
-        wb.retrieve_worksheet_data(x['Name'], x['QueryID'], x['total_row_count'], 500)
+        x.fetch_data()
+        print(x)

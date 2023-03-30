@@ -4,14 +4,21 @@ import json
 import requests
 import logging
 
+from RapidResponse.RapidResponse.Err import RequestsError, DataError
+from RapidResponse.RapidResponse.Environment import Environment
 
-from RapidResponse.RapidResponse.Err import RequestsError
+class Cell:
+    pass
+    # value, datatype, columnId
 
 
 class Worksheet:
-    def __init__(self, environment, worksheet: str, workbook: dict, SiteGroup: str, Filter: dict, VariableValues: dict):
+    def __init__(self, environment, scenario, worksheet: str, workbook: dict, SiteGroup: str, Filter: dict = None,
+                 VariableValues: dict = None):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
+
+        :param scenario:
         :param environment: Required. contains the env details for worksheet.
         :param worksheet: Required, the worksheets you want to retrieve data from. Example, DataModel_Summary
         :param workbook: Required, The workbook the required data is in. Example, {'Name': 'KXSHelperREST', "Scope": 'Public'}
@@ -19,12 +26,61 @@ class Worksheet:
         :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
         """
+
+        # validations
+        #environment
+        if not isinstance(environment, Environment):
+            raise TypeError("The parameter environment type must be Environment.")
+        if not environment:
+            raise ValueError("The parameter environment must not be empty.")
         self.environment = environment
-        self.parent_workbook = workbook
-        self._site_group = SiteGroup
-        self._filter = Filter # todo handle these properly. only optional
-        self._variable_values = VariableValues # todo handle these properly. only optional
+
+        #worksheet
+        if not isinstance(worksheet, str):
+            raise TypeError("The parameter worksheet type must be str.")
+        if not worksheet:
+            raise ValueError("The parameter worksheet must not be empty.")
         self.name = worksheet
+
+        #workbook
+        if not isinstance(workbook, dict):
+            raise TypeError("The parameter workbook type must be dict.")
+        if not workbook:
+            raise ValueError("The parameter workbook must not be empty.")
+        wb_keys = workbook.keys()
+        if len(wb_keys) != 2:
+            raise ValueError("The parameter workbook must contain only Name and Scope.")
+        if 'Name' not in wb_keys:
+            raise ValueError("The parameter workbook must contain Name.")
+        if 'Scope' not in wb_keys:
+            raise ValueError("The parameter workbook must contain Scope.")
+        self.parent_workbook = workbook
+
+        #sitegroup
+        if not isinstance(SiteGroup, str):
+            raise TypeError("The parameter SiteGroup type must be str.")
+        if not SiteGroup:
+            raise ValueError("The parameter SiteGroup must not be empty.")
+        self._site_group = SiteGroup
+
+        #scenario
+        if scenario:
+            if not isinstance(scenario, dict):
+                raise TypeError("The parameter scenario type must be dict.")
+            scenario_keys = scenario.keys()
+            if len(scenario_keys) != 2:
+                raise ValueError("The parameter scenario must contain only Name and Scope.")
+            if 'Name' not in scenario_keys:
+                raise ValueError("The parameter scenario must contain Name.")
+            if 'Scope' not in scenario_keys:
+                raise ValueError("The parameter scenario must contain Scope.")
+            self._scenario = scenario
+        else:
+            self._scenario = self.environment.scenarios[0]
+
+        self._filter = Filter
+        self._variable_values = VariableValues
+
         # todo add support for filter expression
         # todo add support for hierarchies
 
@@ -34,22 +90,65 @@ class Worksheet:
         self._queryID = None
         self.total_row_count = None
 
-    def _initialise_for_extract(self):
+        # initialise for extract to get colum lists and total row count
+        self._initialise_for_extract()
 
+    def __len__(self):
+        return len(self.rows)
+
+    def __bool__(self):
+        if len(self) > 0:
+            return True
+        else:
+            return False
+
+    def __getitem__(self, position):
+        return self.rows[position]
+
+    def __contains__(self, item):
+        # get key fields for table. then check if that value is present
+        if item in self.rows:
+            return True
+        else:
+            return False
+
+    def __repr__(self):
+        return f'Worksheet(environment={self.environment!r},worksheet={self.name!r},workbook={self.parent_workbook!r},SiteGroup={self._site_group!r},Filter={self._filter!r},VariableValues={self._variable_values!r}) '
+
+    def __str__(self):
+        # return self and first 5 rows
+        response = self.__repr__() + '\n'
+        if self.total_row_count:
+            if self.total_row_count > 5:
+                for i in range(0, 5):
+                    response = response + 'rownum: ' + str(i) + ' ' + str(self.rows[i]) + '\n'
+                response = response + '...'
+        return response
+
+    def _initialise_for_extract(self):
+        """
+
+        :return: response_dict
+        """
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
         url = self.environment._base_url + "/integration/V1/data/workbook"
 
         workbook_parameters = {
-            "Workbook": self.parent_workbook, # {'Name': 'KXSHelperREST', "Scope": 'Public'}
-            "SiteGroup": self._site_group, # "All Sites"
-            "Filter": self._filter, # {"Name": "All Parts", "Scope": "Public"}
-            "VariableValues": self._variable_values,
+            "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
+            "SiteGroup": self._site_group,  # "All Sites"
+            # "Filter": self._filter, # {"Name": "All Parts", "Scope": "Public"}
+            # "VariableValues": self._variable_values,
             "WorksheetNames": [self.name]
         }
+        # add optional parameters if they were provided
+        if self._filter:
+            workbook_parameters['Filter'] = self._filter
+        if self._variable_values:
+            workbook_parameters['VariableValues'] = self._variable_values
 
         payload = json.dumps({
-            'Scenario': self.environment.scenarios[0],
+            'Scenario': self._scenario,
             'WorkbookParameters': workbook_parameters
         })
 
@@ -61,7 +160,7 @@ class Worksheet:
 
         else:
             raise RequestsError(response.text,
-                                " failure during workbook initialise_for_extract, status not 200" )
+                                " failure during workbook initialise_for_extract, status not 200")
 
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
@@ -69,7 +168,8 @@ class Worksheet:
                 self._queryID = ws['QueryHandle']['QueryID']
                 self.total_row_count = ws.get('TotalRowCount')
                 self.columns = ws.get('Columns')
-                self.rows = ws.get('Rows') # should be []
+                self.rows = ws.get('Rows')  # should be []
+        return response_dict
 
     def _retrieve_worksheet_data(self, pagesize=500):
         # add some checking for not null, blah. check pagesize is not insane
@@ -81,32 +181,37 @@ class Worksheet:
         rows = []
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        burl = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'] + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name
+        burl = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[
+                                                                                             1:] + "&workbookName=" + \
+               self.parent_workbook['Name'] + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name
 
-        pages = self.total_row_count//pagesize
+        pages = self.total_row_count // pagesize
         if self.total_row_count % pagesize != 0:
             pages = pages + 1
 
         for i in range(pages):
-            url = burl + "&startRow=" + str(0+(pagesize*i)) + "&pageSize=" + str(pagesize)
-            response = requests.request("GET", url, headers=headers) # using GET means you can embed stuff in url, rather than the POST endpoint which needs you to have stuff in payload
+            url = burl + "&startRow=" + str(0 + (pagesize * i)) + "&pageSize=" + str(pagesize)
+            response = requests.request("GET", url,
+                                        headers=headers)  # using GET means you can embed stuff in url, rather than the POST endpoint which needs you to have stuff in payload
             # check valid response
             if response.status_code == 200:
                 response_dict = json.loads(response.text)
 
             else:
 
-                raise RequestsError(response.text,"failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
+                raise RequestsError(response.text,
+                                    "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
 
-            response_rows = response_dict['Rows']
+            #response_rows = response_dict['Rows']
+            #for r in response_rows:
+            #    # print(r['Values'])
+            #    rows.append()
+            #self.rows = rows
+            for r in response_dict["Rows"]:
+                #returned = rec.split('\t')
+                self.rows.append(WorksheetRow(r['Values'], self))
 
-            for r in response_rows:
-                #print(r['Values'])
-                rows.append(r['Values'])
-
-            self.rows = rows
-
-        #print(len(rows))
+        # print(len(rows))
         return rows
 
     def fetch_data(self):
@@ -115,25 +220,32 @@ class Worksheet:
         except:
             print("bail, its a scam!")
         else:
-            self._retrieve_worksheet_data()
+            return self._retrieve_worksheet_data()
 
     def upload(self, *args):
         """
         Sending the request imports the data specified in the Rows field using the worksheet's import rules
-        :param args: list [] of records you watn to send. don't just send a single record!! i.e. [0,0]
-        :return:
+
+        :param args: list [] of records you want to send. don't just send a single record!! i.e. [0,0]
+        :return: results from request
         """
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
         url = self.environment._base_url + "/integration/V1/data/workbook/import"
 
         workbook_parameters = {
-            "Workbook": self.parent_workbook, # {'Name': 'KXSHelperREST', "Scope": 'Public'}
-            "SiteGroup": self._site_group, # "All Sites"
-            "Filter": self._filter, # {"Name": "All Parts", "Scope": "Public"}
+            "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
+            "SiteGroup": self._site_group,  # "All Sites"
+            "Filter": self._filter,  # {"Name": "All Parts", "Scope": "Public"}
             "VariableValues": self._variable_values,
             "WorksheetNames": [self.name]
         }
+        # add optional parameters if they were provided
+        if self._filter:
+            workbook_parameters['Filter'] = self._filter
+        if self._variable_values:
+            workbook_parameters['VariableValues'] = self._variable_values
+
         rows = []
         for i in args:
             # create inner array (list)
@@ -145,7 +257,7 @@ class Worksheet:
             rows.append(values)
 
         payload = json.dumps({
-            'Scenario': self.environment.scenarios[0],
+            'Scenario': self._scenario,
             'WorkbookParameters': workbook_parameters,
             'Rows': rows
         })
@@ -154,47 +266,206 @@ class Worksheet:
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
+            print(response_dict)
+            results = response_dict['Worksheets'][0] # this only supports single worksheet, so no idea why its an array.
+            response_readable = 'status: ' + response_dict['Success'] + \
+                '\nWorksheetName: ' + str(results['WorksheetName']) + \
+                '\nImportedRowCount: ' + str(results['ImportedRowCount']) + \
+                '\nInsertedRowCount: ' + str(results['InsertedRowCount']) + \
+                '\nModifiedRowCount: ' + str(results['ModifiedRowCount']) + \
+                '\nDeleteRowCount: ' + str(results['DeleteRowCount']) + \
+                '\nErrorRowCount: ' + str(results['ErrorRowCount']) + \
+                '\nErrors: ' + str(results['Errors'])
+            logging.info(response_readable)
         else:
             raise RequestsError(response.text,
-                                "failure during workbook-worksheet upload, status not 200" + '\nurl:' + url + '\npayload: ' + payload + '\nheaders' + headers)
+                                "failure during workbook-worksheet upload, status not 200" + '\nurl:' + url)
         # print(response)
-        results = response_dict['Results']
-        response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
-            results['InsertedRowCount']) + '\nModifiedRowCount: ' + str(
-            results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
-            results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
-            results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-        logging.info(response_readable)
-        if results['Status'] != 'true':
-            print('status not true')
-            print(response_readable)
-            Exception("eek")
-        # todo if Status is failure, do something.
+        return results
+
 
 class Workbook:
-    def __init__(self, Environment, Scenario: dict, workbook: dict, SiteGroup: str, Filter: dict, VariableValues: dict, WorksheetNames: list):
+    def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
+                 Filter: dict = None, VariableValues: dict = None):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
-        :param Environment:
+        :param environment: Required. contains the env details for worksheet.
         :param Scenario:
-        :param workbook: {"Name": 'workbookname', "Scope": 'Public'}
-        :param SiteGroup: "All Sites"
-        :param Filter: {"Name": "All Parts","Scope": "Public"}
-        :param VariableValues:
-        :param WorksheetNames: ["worksheet name1", "worksheet name2"]
+        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+
+
         """
-        self._scenario = Scenario
+        if not isinstance(environment, Environment):
+            raise TypeError("The parameter environment type must be Environment.")
+        if not environment:
+            raise ValueError("The parameter environment must not be empty.")
+        self.environment = environment
+
+        if Scenario:
+            if not isinstance(Scenario, dict):
+                raise TypeError("The parameter scenario type must be dict.")
+            scenario_keys = Scenario.keys()
+            if len(scenario_keys) != 2:
+                raise ValueError("The parameter scenario must contain only Name and Scope.")
+            if 'Name' not in scenario_keys:
+                raise ValueError("The parameter scenario must contain Name.")
+            if 'Scope' not in scenario_keys:
+                raise ValueError("The parameter scenario must contain Scope.")
+            self._scenario = Scenario
+        else:
+            self._scenario = self.environment.scenarios[0]
+
+        if not isinstance(workbook, dict):
+            raise TypeError("The parameter workbook type must be dict.")
+        if not workbook:
+            raise ValueError("The parameter workbook must not be empty.")
+
+        wb_keys = workbook.keys()
+        if len(wb_keys) != 2:
+            raise ValueError("The parameter workbook must contain only Name and Scope.")
+        if 'Name' not in wb_keys:
+            raise ValueError("The parameter workbook must contain Name.")
+        if 'Scope' not in wb_keys:
+            raise ValueError("The parameter workbook must contain Scope.")
         self._workbook = workbook
+
+        if not isinstance(SiteGroup, str):
+            raise TypeError("The parameter SiteGroup type must be str.")
+        if not SiteGroup:
+            raise ValueError("The parameter SiteGroup must not be empty.")
         self._site_group = SiteGroup
+
         self._filter = Filter
         self._variable_values = VariableValues
-        self.environment = Environment
 
-        self._worksheets = []
+        self.worksheets = []
         for name in WorksheetNames:
+            self.worksheets.append(
+                Worksheet(self.environment, self._scenario, name, self._workbook, self._site_group, self._filter,
+                          self._variable_values))
 
-            self._worksheets.append(Worksheet(self.environment, name, self._workbook, self._site_group, self._filter, self._variable_values))
+        #todo add __methods__
+
+    def __str__(self):
+        return f'Name: {self.name!r}, Scope: {self.workbook_scope!r} '
+
+    def refresh(self):
+        # populate all child worksheets with data
+        for ws in self.worksheets:
+            try:
+                ws.fetch_data()
+            except:
+                print('something went wrong with ' + ws.name)
+
+    @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, new_filter):
+        if not isinstance(new_filter, dict):
+            raise TypeError("filter must be dict.")
+        if not new_filter:
+            raise ValueError("filter must not be empty.")
+
+        filt_keys = new_filter.keys()
+        if len(filt_keys) != 2:
+            raise ValueError("filter must contain only Name and Scope.")
+        if 'Name' not in filt_keys:
+            raise ValueError("filter must contain Name.")
+        if 'Scope' not in filt_keys:
+            raise ValueError("filter must contain Scope.")
+        self._filter = new_filter
+
+    @property
+    def name(self):
+        return self._workbook['Name']
+
+    @property
+    def workbook_scope(self):
+        return self._workbook['Scope']
+
+    @property
+    def scenario(self):
+        return self._scenario
+
+    @scenario.setter
+    def scenario(self, new_scenario):
+        if not isinstance(new_scenario, dict):
+            raise TypeError("The parameter scenario type must be dict.")
+        scenario_keys = new_scenario.keys()
+        if len(scenario_keys) != 2:
+            raise ValueError("The parameter scenario must contain only Name and Scope.")
+        if 'Name' not in scenario_keys:
+            raise ValueError("The parameter scenario must contain Name.")
+        if 'Scope' not in scenario_keys:
+            raise ValueError("The parameter scenario must contain Scope.")
+        self._scenario = new_scenario
+
+    @property
+    def site_group(self):
+        return self._site_group
+
+    @site_group.setter
+    def site_group(self, new_site_group):
+        self._site_group = new_site_group
 
 
+class WorksheetRow(list):
+    def __init__(self, iterable, worksheet: Worksheet):
+        # initialises a new instance WorksheetRow(['GP', '0', '7000vE', '2017-08-31'], WorksheetName)
 
+        # grab the necessary info from owning table
+        self._worksheet = worksheet
+
+        # perform validations
+        if not isinstance(worksheet, Worksheet):
+            raise TypeError("The parameter worksheet type must be Worksheet.")
+        if len(iterable) == len(self._worksheet.columns):
+            super().__init__(str(item) for item in iterable)
+        else:
+            raise DataError(str(iterable), 'mismatch in length of worksheet columns ' + str(
+                len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
+
+    @property
+    def columns(self):
+        return self._worksheet.columns
+
+    def __setitem__(self, index, item):
+        # assign a new value using the item’s index, like a_list[index] = item
+        #super().__setitem__(index, str(item))
+        raise NotImplementedError
+
+    def insert(self, index, item):
+        # allows you to insert a new item at a given position in the underlying list using the index.
+        raise NotImplementedError
+    def append(self, item):
+        # adds a single new item at the end of the underlying list
+        raise NotImplementedError
+    def extend(self, other):
+        # adds a series of items to the end of the list.
+        raise NotImplementedError
+    def __add__(self, other):
+        raise NotImplementedError
+    def __radd__(self, other):
+        raise NotImplementedError
+    def __iadd__(self, other):
+        raise NotImplementedError
+    def join(self, separator=" "):
+        # concatenates all the list’s items in a single string
+        return separator.join(str(item) for item in self)
+    def map(self, action):
+        # yields new items that result from applying an action() callable to each item in the underlying list
+        return type(self)(action(item) for item in self)
+    def filter(self, predicate):
+        # yields all the items that return True when calling predicate() on them
+        return type(self)(item for item in self if predicate(item))
+    def for_each(self, func):
+        # calls func() on every item in the underlying list to generate some side effect.
+        for item in self:
+            func(item)

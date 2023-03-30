@@ -159,7 +159,6 @@ class DataTable(Table):
         else:
             self._table_data.append(values)
 
-
     def extend(self, *args):
         # todo fix when doing insert messy refereence fields
         if self._sync:
@@ -484,6 +483,10 @@ class DataRow(list):
             self._data_table.add_row(self)
         else:
             pass
+
+    @property
+    def columns(self):
+        return self._data_table.columns
 
     def insert(self, index, item):
         # allows you to insert a new item at a given position in the underlying list using the index.

@@ -13,16 +13,7 @@ from RapidResponse.RapidResponse.Worksheet import Workbook, Worksheet
 
 
 class WorksheetTestCase(unittest.TestCase):
-    """
 
-        :param Environment:
-        :param Scenario:
-        :param Workbook: {"Name": 'workbookname', "Scope": 'Public'}
-        :param SiteGroup: "All Sites"
-        :param Filter: {"Name": "All Parts","Scope": "Public"}
-        :param VariableValues:
-        :param WorksheetNames: ["worksheet name1", "worksheet name2"]
-    """
 
     # env = Environment(sample_configuration)
     def test_worksheet_init(self):
@@ -33,15 +24,11 @@ class WorksheetTestCase(unittest.TestCase):
             "FilterType": "All"
         }
 
-        ws = Worksheet(environment=Environment(sample_configuration),
-                       workbook={'Name': 'KXSHelperREST', "Scope": 'Public'},
-                       SiteGroup="All Sites",
-                       Filter={"Name": "All Parts", "Scope": "Public"},
-                       VariableValues=variable_values,
-                       worksheet="DataModel_Summary"
-                       )
+        ws = Worksheet(environment=Environment(sample_configuration), scenario=None, worksheet="DataModel_Summary",
+                       workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
 
-        ws.initialise_for_extract()
+        ws._initialise_for_extract()
         self.assertEqual(ws.name, 'DataModel_Summary')
         self.assertIsNotNone(ws._queryID,"QueryID not set correctly")
         self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
@@ -55,18 +42,20 @@ class WorksheetTestCase(unittest.TestCase):
             "FilterType": "All"
         }
 
-        ws = Worksheet(environment=Environment(sample_configuration),
-                       workbook={'Name': 'KXSHelperREST', "Scope": 'Public'},
-                       SiteGroup="All Sites",
-                       Filter={"Name": "All Parts", "Scope": "Public"},
-                       VariableValues=variable_values,
-                       worksheet="DataModel_Summary"
-                       )
+        ws = Worksheet(environment=Environment(sample_configuration), scenario=None, worksheet="DataModel_Summary",
+                       workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
 
-        ws.initialise_for_extract()
-        ws.retrieve_worksheet_data()
+        ws._initialise_for_extract()
+        ws._retrieve_worksheet_data()
         print(ws.rows)
 
+    def ws_with_simple(self):
+        #ws = Worksheet(environment=Environment(sample_configuration),
+        #               workbook={'Part Properties': 'Public')
+        pass
+
+# todo test private resource, test diff parameters provided, test multiple worksheets
 
 if __name__ == '__main__':
     unittest.main()
