@@ -13,6 +13,17 @@ class Cell:
 
 
 class Worksheet:
+    """
+    https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
+
+    :param scenario:
+    :param environment: Required. contains the env details for worksheet.
+    :param worksheet: Required, the worksheets you want to retrieve data from. Example, DataModel_Summary
+    :param workbook: Required, The workbook the required data is in. Example, {'Name': 'KXSHelperREST', "Scope": 'Public'}
+    :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+    :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+    :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+    """
     def __init__(self, environment, scenario, worksheet: str, workbook: dict, SiteGroup: str, Filter: dict = None,
                  VariableValues: dict = None):
         """
@@ -40,7 +51,7 @@ class Worksheet:
             raise TypeError("The parameter worksheet type must be str.")
         if not worksheet:
             raise ValueError("The parameter worksheet must not be empty.")
-        self.name = worksheet
+        self._name = worksheet
 
         #workbook
         if not isinstance(workbook, dict):
@@ -54,7 +65,7 @@ class Worksheet:
             raise ValueError("The parameter workbook must contain Name.")
         if 'Scope' not in wb_keys:
             raise ValueError("The parameter workbook must contain Scope.")
-        self.parent_workbook = workbook
+        self._parent_workbook = workbook
 
         #sitegroup
         if not isinstance(SiteGroup, str):
@@ -93,6 +104,22 @@ class Worksheet:
         # initialise for extract to get colum lists and total row count
         self._initialise_for_extract()
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def parent_workbook(self):
+        return self._parent_workbook
+
+    @property
+    def parent_workbook_name(self):
+        return self._parent_workbook['Name']
+
+    @property
+    def parent_workbook_scope(self):
+        return self._parent_workbook['Scope']
+
     def __len__(self):
         return len(self.rows)
 
@@ -117,12 +144,11 @@ class Worksheet:
 
     def __str__(self):
         # return self and first 5 rows
-        response = self.__repr__() + '\n'
-        if self.total_row_count:
-            if self.total_row_count > 5:
-                for i in range(0, 5):
-                    response = response + 'rownum: ' + str(i) + ' ' + str(self.rows[i]) + '\n'
-                response = response + '...'
+        response = f'Worksheet: {self.name!r}, Scope: {self.parent_workbook_scope!r} '
+        if len(self.rows) > 5:
+            for i in range(0, 5):
+                response = response + 'rownum: ' + str(i) + ' ' + str(self.rows[i]) + '\n'
+            response = response + '...'
         return response
 
     def _initialise_for_extract(self):
@@ -159,8 +185,11 @@ class Worksheet:
             response_dict = json.loads(response.text)
 
         else:
+            print(payload)
+            print(url)
             raise RequestsError(response.text,
                                 " failure during workbook initialise_for_extract, status not 200")
+
 
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
@@ -178,7 +207,6 @@ class Worksheet:
         :param pagesize:
         :return: rows[]
         """
-        rows = []
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
         burl = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[
@@ -212,7 +240,7 @@ class Worksheet:
                 self.rows.append(WorksheetRow(r['Values'], self))
 
         # print(len(rows))
-        return rows
+        return self.rows
 
     def fetch_data(self):
         try:
@@ -285,6 +313,18 @@ class Worksheet:
 
 
 class Workbook:
+    """
+    https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
+    :param environment: Required. contains the env details for worksheet.\n
+    :param Scenario: Optional \n
+    :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+    :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+    :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+    :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+    :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+
+
+    """
     def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
                  Filter: dict = None, VariableValues: dict = None):
         """
@@ -414,6 +454,24 @@ class Workbook:
     @site_group.setter
     def site_group(self, new_site_group):
         self._site_group = new_site_group
+
+    def __len__(self):
+        return len(self.worksheets)
+
+    def __getitem__(self, position):
+        return self.worksheets[position]
+    #todo make sure these actually work
+
+    def indexof(self, rec):
+        return self.worksheets.index(rec)
+
+
+    def __contains__(self, item):
+        # get key fields for table. then check if that value is present
+        if item in self.worksheets:
+            return True
+        else:
+            return False
 
 
 class WorksheetRow(list):

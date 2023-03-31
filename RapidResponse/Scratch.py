@@ -1,4 +1,4 @@
-from RapidResponse.RapidResponse.DataTable import DataTable, DataRow
+from RapidResponse.RapidResponse.DataTable import DataTable
 from RapidResponse.RapidResponse.Environment import Environment, sample_configuration
 from RapidResponse.RapidResponse.Table import Table, Column
 from RapidResponse.RapidResponse.Worksheet import Workbook
@@ -63,12 +63,8 @@ if __name__ == '__main__':
     part.add_fields(col1, col2)
     print(part.__str__())
 
-    variable_values = {
-        "DataModel_IsHidden": "No",
-        "DataModel_IsReadOnly": "All",
-        "DataModel_IsIncludeDataTypeSet": "N",
-        "FilterType": "All"
-    }
+    variable_values = {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All", "DataModel_IsIncludeDataTypeSet": "N",
+                       "FilterType": "All"}
 
     wb = Workbook(environment=Environment(sample_configuration),
                   Scenario={"Name": 'Enterprise Data', "Scope": "Public"},
@@ -78,8 +74,33 @@ if __name__ == '__main__':
                   VariableValues=variable_values,
                   WorksheetNames=["DataModel_Summary"]
                   )
-    #wb._initialise_for_extract()
+    # wb._initialise_for_extract()
     for x in wb.worksheets:
         print(x)
-        x.fetch_data()
-        print(x)
+        xRows = x.fetch_data()
+        print(xRows)
+
+    wb_ords = Workbook(environment=Environment(sample_configuration),
+                       Scenario={"Name": "Integration", "Scope": "Public"},
+                       workbook={"Name": 'Orders by Customer', "Scope": 'Public'},
+                       SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"},
+                       VariableValues={"customer": "PCW"},
+                       WorksheetNames=["Actual Orders"]
+                       )
+    ws = wb_ords.worksheets[0]
+    ws.upload(["ordnum0", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"],
+              ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
+
+
+MEA_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
+                        'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel',
+                        'auth_type': 'basic',
+                        'username': 'RestAPI',
+                        'password': '1LoveR@pidResponse!',
+                        'log_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\'
+                        }
+mea_env = Environment(MEA_configuration)
+int_wb = {"Name": "[EU] Integration", "Scope": 'Public'}
+integration_workbook = Workbook(environment=mea_env, Scenario={'Name': 'Enterprise Data', 'Scope': 'Public'}, workbook=int_wb, SiteGroup="All Sites", WorksheetNames=['RRSite'],Filter={"Name": "All Parts", "Scope": "Public"})
+RRSite = integration_workbook.worksheets[0]
