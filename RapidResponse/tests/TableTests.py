@@ -77,6 +77,22 @@ class DataTableTestCase(unittest.TestCase):
         self.assertEqual(part._key_fields, ['Name', 'Site'])
         self.assertNotEqual(len(part), 0)
 
+    def test_data_table_with_scenario(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env,'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"})
+
+        # test
+        self.assertEqual(part.scenario, {"Name": "Integration", "Scope": "Public"})
+
+    def test_data_table_without_scenario(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env,'Mfg::Part')
+
+        # test
+        self.assertEqual(part.scenario, {"Name": "Enterprise Data", "Scope": "Public"})
+
     def test_data_table_no_refresh(self):
         # setup
         env = Environment(sample_configuration)
@@ -90,7 +106,7 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
         rows = [['GP', '0', '7000vE', '2017-08-31', '1500'],['GP', '1', '7000vE', '2017-08-31', '1500']]
@@ -105,7 +121,7 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
         rows = ['GP', '1', '7000vE', '2017-08-31', '1500']
@@ -119,7 +135,7 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
         rows = [['GP', '0', '7000vE', '2017-08-31', '1500'], ['GP', '1', '7000vE', '2017-08-31', '1500']]
         IndependentDemand.extend(rows)
 
@@ -135,7 +151,7 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         cols = ['Order', 'Line', 'Part', 'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
         rows = [['GP', '0', '7000vE', '2017-08-31', '1500'], ['GP', '1', '7000vE', '2017-08-31', '1500']]
         IndependentDemand.extend(rows)
 

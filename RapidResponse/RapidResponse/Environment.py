@@ -75,7 +75,7 @@ class Environment:
                 self.log_location = None
                 raise SetupError("log directory not valid: " + configuration['log_directory'])
 
-        self.scenarios = self.set_scenarios({"Name": "Integration", "Scope": "Public"})
+        self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 
         if configuration['data_model_bootstrap']:
             pass

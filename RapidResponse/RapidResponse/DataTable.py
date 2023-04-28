@@ -20,11 +20,12 @@ class DataTable(Table):
     :param table_filter: string representation of any filter condition applied to the table
     :param sync: boolean control whether any updates are pushed back to RR
     :param refresh: boolean refresh row data on initialisation
+    :param scenario: dict {"Name": "Enterprise Data", "Scope": "Public"}
     :raises ValueError: environment or tablename is not provided, or tablename is not in data model
     :raises TypeError: environment, tablename is not correctly typed
     :raises DataError: key column not in column list. will log failure but not fail.
     """
-    def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None, sync: bool = True, refresh: bool = True):
+    def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None, sync: bool = True, refresh: bool = True, scenario = None):
         
         # validations
         if not isinstance(environment, Environment):
@@ -67,6 +68,16 @@ class DataTable(Table):
         self._keyed = deepcopy(temp_tab._keyed)
         self._table_fields = deepcopy(temp_tab._table_fields)
         self._table_type = deepcopy(temp_tab._table_type)
+
+        if scenario is None:
+            self.scenario = environment.scenarios[0]
+        else:
+            # check scenario has both Name and scope {"Name": "Enterprise Data", "Scope": "Public"}
+            if ['Name', 'Scope'] == list(scenario.keys()):
+                self.scenario = scenario
+            else:
+                raise ValueError('scenario not valid: ' + scenario)
+                #self.scenario = environment.scenarios[0]
 
         # set columns and filters
         try:
@@ -223,7 +234,7 @@ class DataTable(Table):
                  'Name': self._table_name}
 
         payload = json.dumps({
-            "Scenario": self.environment.scenarios[0],
+            "Scenario": self.scenario,
             "Table": table,
             "Fields": local_query_fields,
             "Filter": query_filter
@@ -313,7 +324,7 @@ class DataTable(Table):
             rows.append(values)
 
         payload = json.dumps({
-            'Scenario': self.environment.scenarios[0],
+            'Scenario': self.scenario,
             'Table': table,
             'Fields': local_query_fields,
             'Rows': rows
@@ -336,7 +347,7 @@ class DataTable(Table):
             response_dict = json.loads(response.text)
         else:
             raise RequestsError(response.text,
-                                "failure during bulk//upload create, status not 200" + '\nurl:' + url + '\npayload: ' + payload + '\nheaders' + headers)
+                                "failure during bulk//upload create, status not 200" + '\nurl:' + url)
         # print(response)
         if operation == 'upsert':
             self.uploadId = response_dict["UploadId"]
@@ -396,7 +407,7 @@ class DataTable(Table):
             rows.append(values)
 
         payload = json.dumps({
-            'Scenario': self.environment.scenarios[0],
+            'Scenario': self.scenario,
             'Table': table,
             'Fields': local_query_fields,
             'Rows': rows
@@ -419,7 +430,7 @@ class DataTable(Table):
             response_dict = json.loads(response.text)
         else:
             raise RequestsError(response.text,
-                                "failure during bulk//upload create, status not 200" + '\nurl:' + url + '\npayload: ' + payload + '\nheaders' + headers)
+                                "failure during bulk//upload create, status not 200" + '\nurl:' + url)
         # print(response)
         if operation == 'upsert':
             self.uploadId = response_dict["UploadId"]
