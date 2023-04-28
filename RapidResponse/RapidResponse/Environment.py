@@ -12,8 +12,7 @@ sample_configuration = {'url': 'http://localhost/rapidresponse',
                         'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel',
                         'auth_type': 'basic',
                         'username': 'gpinkney_ws',
-                        'password': '1L0veR@pidResponse',
-                        'log_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\'
+                        'password': '1L0veR@pidResponse'
                         }
 
 
@@ -62,18 +61,6 @@ class Environment:
         # set global headers and populate with auth details
         self.global_headers = {}
         self.refresh_auth()
-
-        # log file location
-        try:
-            self.log_location = configuration['log_directory']
-        except KeyError:
-            raise ValueError('log_directory not provided in configuration dict')
-        else:
-            if os.path.exists(configuration['log_directory']):
-                self.log_location = configuration['log_directory']
-            else:
-                self.log_location = None
-                raise SetupError("log directory not valid: " + configuration['log_directory'])
 
         self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 
