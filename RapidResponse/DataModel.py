@@ -3,51 +3,61 @@
 import csv
 import logging
 import os
+from pkg_resources import resource_filename, resource_exists
 
-from RapidResponse.RapidResponse.Err import DirectoryError
-from RapidResponse.RapidResponse.Table import Table, Column
+from RapidResponse.Err import DirectoryError
+from RapidResponse.Table import Table, Column
 
 
 class DataModel:
     """
     This is the data model for the environment. It includes information about the tables, columns, etc.
     """
-    def __init__(self, data_model_directory: str):
+    def __init__(self, data_model_directory):
         """
-        :param data_model_directory: file directory containing the Fields.tab and Tables.tab\n
+        :param data_model_directory: Optional. file directory containing the Fields.tab and Tables.tab\n
         :raises TypeError: The parameter data_model_directory type must be str
         :raises ValueError: The parameter data_model_directory must be provided
         :raises DirectoryError: directory not valid or file not valid
         """
 
         # validate parameter
-        if not isinstance(data_model_directory, str):
-            raise TypeError('The parameter data_model_directory type must be str')
-        if not data_model_directory:
-            raise ValueError('The parameter data_model_directory must be provided')
+        #if not isinstance(data_model_directory, str):
+        #    raise TypeError('The parameter data_model_directory type must be str')
+        #if not data_model_directory:
+        #    raise ValueError('The parameter data_model_directory must be provided')
 
         # validate its a valid directory
         if os.path.isdir(data_model_directory):
             self._data_model_dir = data_model_directory
-        else:
-            raise DirectoryError('directory not valid', data_model_directory)
+        #else:
+        #    raise DirectoryError('directory not valid', data_model_directory)
 
         self.tables = []
         self._fields = []
         logging.basicConfig(filename='dm_logging.log', filemode='w',
                             format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
-        try:
-            # check tables file is present, then load
-            if os.path.isfile(self._data_model_dir + '\\Tables.tab'):
-                self.load_table_data_from_file(self._data_model_dir + '\\Tables.tab')
-            else:
-                raise DirectoryError('file not valid', self._data_model_dir + '\\Tables.tab')
 
-            # check fields file is present, then load
-            if os.path.isfile(self._data_model_dir + '\\Fields.tab'):
-                self.load_field_data_from_file(self._data_model_dir + '\\Fields.tab')
+        try:
+            if resource_exists(__name__, 'data/Tables.tab'):
+                file_name = resource_filename(__name__, 'data/Tables.tab')
+                self.load_table_data_from_file(file_name)
             else:
-                raise DirectoryError('file not valid', self._data_model_dir + '\\Fields.tab')
+                # check tables file is present, then load
+                if os.path.isfile(self._data_model_dir + '\\Tables.tab'):
+                    self.load_table_data_from_file(self._data_model_dir + '\\Tables.tab')
+                else:
+                    raise DirectoryError('file not valid', self._data_model_dir + '\\Tables.tab')
+
+            if resource_exists(__name__, 'data/Fields.tab'):
+                file_name = resource_filename(__name__, 'data/Fields.tab')
+                self.load_field_data_from_file(file_name)
+            else:
+                # check fields file is present, then load
+                if os.path.isfile(self._data_model_dir + '\\Fields.tab'):
+                    self.load_field_data_from_file(self._data_model_dir + '\\Fields.tab')
+                else:
+                    raise DirectoryError('file not valid', self._data_model_dir + '\\Fields.tab')
         except:
             raise Exception
         else:

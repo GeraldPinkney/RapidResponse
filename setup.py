@@ -17,19 +17,20 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 # Fields marked as "Optional" may be commented out.
 
 setup(
-    name="RapidResponse",
-    version="2.0.0",
+    name="RapidPy",
+    version="0.0.4",
     description="A sample Python project",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/GeraldPinkney/RapidResponse",
     author="GP", # Heraldo Industries
-    package_dir={"": "RapidResponse"},
-    packages=find_packages(),  # Required
+    packages=find_packages(include=['RapidResponse']),  # Required
     python_requires=">=3.7, <4",
     install_requires=["requests"],  #  "csv", "logging", "os". all the other stuff is from standard lib
+    include_package_data=True,
     package_data={  # Optional
-        "": ["*.csv"], # includes all csv files (i.e. those data model ones)
-        "RapidResponse.DataModel": ["*.csv"], # this would only pick up that stuff in DM dir
+        "": ["data/*.tab"], # includes all csv files (i.e. those data model ones)
+        "RapidResponse.data": ["*.tab"], # this would only pick up that stuff in DM dir
     },
+    test_suite='tests',
 )

@@ -1,0 +1,622 @@
+﻿Table	Namespace	Type	Keyed	Historical	Vector	Delete Records	Record Creation	in Worksheets	Identification Fields	Present	List
+ClosedLoopAuditMapper	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::AuditID	Y
+ClosedLoopGenericDetail	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::IntegrationGroupID,AppsTest::StepNum	Y
+ClosedLoopGenericSetup	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::ClosedLoopIntegrationGroupID	Y
+ClosedLoopItems	AppsTest	Input	N	N	N	Y	Y	N		Y
+ClosedLoopMessage	AppsTest	Input	N	N	N	Y	Y	N		Y
+ClosedLoopOrders	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::OrderID	Y
+Exemplar	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::KeyBoolean,AppsTest::KeyDate,AppsTest::KeyDateTime,AppsTest::KeyInteger,AppsTest::KeyString,AppsTest::KeyTime	Y
+Exemplar_InputNote	AppsTest	Input	N	N	N	Y	N	N	Exemplar,UserId,Timestamp	Y
+Exemplar_LicensedInputNote	AppsTest	Input	N	N	N	Y	N	N	Exemplar,UserId,Timestamp	Y
+Exemplar_MissingInputNote	AppsTest	Input	N	N	N	Y	N	N	Exemplar,UserId,Timestamp	Y
+Licensed	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::KeyBoolean,AppsTest::KeyDate,AppsTest::KeyDateTime,AppsTest::KeyInteger,AppsTest::KeyString,AppsTest::KeyTime	N	LicenseAppsTest
+Licensed_InputNote	AppsTest	Input	N	N	N	Y	N	N	Licensed,UserId,Timestamp	N	LicenseAppsTest
+Licensed_MissingInputNote	AppsTest	Input	N	N	N	Y	N	N	Licensed,UserId,Timestamp	N	LicenseAppsTest
+LicensedVector	AppsTest	Input	Y	N	Y	Y	Y	N	AppsTest::ReferenceToBase,AppsTest::VectorKey	N	LicenseAppsTest
+LicensedVectorBase	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::BaseKey	N	LicenseAppsTest
+MissingVector	AppsTest	Input	Y	N	Y	Y	Y	N	AppsTest::ReferenceToBase,AppsTest::VectorKey	N	LicenseNeverExists
+MissingVectorBase	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::BaseKey	N	LicenseNeverExists
+NeverLicensed	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::KeyBoolean,AppsTest::KeyDate,AppsTest::KeyDateTime,AppsTest::KeyInteger,AppsTest::KeyString,AppsTest::KeyTime	N	LicenseNeverExists
+NeverLicensed_InputNote	AppsTest	Input	N	N	N	Y	N	N	NeverLicensed,UserId,Timestamp	N	LicenseNeverExists
+Normal	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::KeyString	Y
+NormalPartCompatible	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::PartCompatibleKey	Y
+NormalSiteCompatible	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::SiteCompatibleKey	Y
+NormalVector	AppsTest	Input	Y	N	Y	Y	Y	N	AppsTest::ReferenceToBase,AppsTest::VectorKey	Y
+NormalVectorBase	AppsTest	Input	Y	N	N	Y	Y	N	AppsTest::BaseKey	Y
+RRP149342	AppsTest	Input	N	N	N	Y	Y	N		Y
+NormalNoDependents	AppsTestDep	Input	Y	N	N	Y	Y	N	AppsTestDep::KeyString	Y
+AttributeMap	Core	Input	Y	N	N	Y	N	N		Y
+AttributeMapType	Core	Input	Y	N	N	Y	N	N		Y
+Calendar	Core	Input	Y	N	N	Y	N	Y		Y
+CalendarDate	Core	Input	N	N	N	Y	N	N	Calendar,Value	Y
+ControlSet	Core	Input	Y	N	N	Y	N	Y		Y
+CurrencyConversionForecast	Core	Input	N	N	N	Y	N	N		Y
+DataChange	Core	Calculated	N	N	N	Y	N	N		Y
+DataChange_Historical	Core	Calculated	N	N	N	Y	N	N		Y
+DataChange_Historical_Split	Core	Calculated	N	N	N	Y	N	N		Y
+DataChange_Local	Core	Calculated	N	N	N	Y	N	N		Y
+DataChange_Local_Split	Core	Calculated	N	N	N	Y	N	N		Y
+DataChange_PendingUpdate	Core	Calculated	N	N	N	Y	N	N		Y
+DataChange_PendingUpdate_Split	Core	Calculated	N	N	N	Y	N	N		Y
+HistoricalCurrencyConversion	Core	Input	N	Y	N	Y	N	N		Y
+HistoricalCurrencyHeader	Core	Input	Y	Y	N	Y	N	N		Y
+Numbers	Core	Calculated	N	N	N	Y	N	N		Y
+OriginatingFile	Core	Input	Y	N	N	Y	N	N		Y
+OriginatingSource	Core	Input	Y	N	N	Y	N	N		Y
+ScenarioSetting	Core	Input	Y	N	N	Y	N	N		Y
+Site	Core	Input	Y	N	N	Y	N	Y		Y
+ClosedLoopAuditMapper	CustomREST	Input	Y	N	N	Y	Y	N	CustomREST::AuditID,CustomREST::InterfaceName	Y
+ClosedLoopGenericDetail	CustomREST	Input	Y	N	N	Y	Y	N	CustomREST::IntegrationGroupID,CustomREST::InterfaceName	Y
+ClosedLoopGenericSetup	CustomREST	Input	Y	N	N	Y	Y	N	CustomREST::ClosedLoopIntegrationGroupID	Y
+ClosedLoopItems	CustomREST	Input	N	N	N	Y	Y	N		Y
+ClosedLoopMessage	CustomREST	Input	N	N	N	Y	Y	Y		Y
+ClosedLoopOrders	CustomREST	Input	Y	N	N	Y	Y	N	CustomREST::OrderID	Y
+BufferProfile	DDMRP	Input	Y	N	N	Y	N	Y		Y
+PartDDMRP	DDMRP	Input	Y	N	N	Y	N	N		Y
+PartParameters	DDMRP	Input	Y	N	N	Y	N	N		Y
+AffectedRecord	Exceptions	Input	Y	N	N	Y	Y	N	Exceptions::Exception,Exceptions::TableQualifiedName,Exceptions::AffectedRecordId	Y	CommandControlCenterFoundation
+Category	Exceptions	Input	Y	N	N	Y	Y	N	Exceptions::Value	Y	CommandControlCenterFoundation
+Exception	Exceptions	Input	Y	N	N	Y	N	N	Exceptions::Id	Y	CommandControlCenterFoundation
+Impact	Exceptions	Input	Y	N	N	Y	Y	N	Exceptions::Exception,Exceptions::Id	Y	CommandControlCenterFoundation
+ReasonCode	Exceptions	Input	Y	N	N	Y	Y	N	Exceptions::Value	Y	CommandControlCenterFoundation
+Resolution	Exceptions	Input	Y	N	N	Y	Y	N	Exceptions::Exception,Exceptions::Id	Y	CommandControlCenterFoundation
+ResolutionMetric	Exceptions	Input	Y	N	N	Y	Y	N	Exceptions::MetricName,Exceptions::Resolution	Y	CommandControlCenterFoundation
+Severity	Exceptions	Input	Y	N	N	Y	Y	Y	Exceptions::Value	Y	CommandControlCenterFoundation
+Status	Exceptions	Input	Y	N	N	Y	Y	Y	Exceptions::Value	Y	CommandControlCenterFoundation
+Type	Exceptions	Input	Y	N	N	Y	Y	Y	Exceptions::Value	Y	CommandControlCenterFoundation
+ABCCode	Mfg	Input	Y	N	N	Y	N	Y		Y
+Activity	Mfg	Calculated	N	N	N	Y	N	N		Y
+AggregatePartCustomer	Mfg	Input	Y	N	N	Y	Y	N		Y
+AggregatePartCustomerType	Mfg	Input	Y	N	N	Y	N	Y		Y
+Allocation	Mfg	Input	N	N	N	Y	N	N	Part,ScheduledReceipt	Y
+AllotmentOverride	Mfg	Input	Y	N	N	Y	Y	Y		Y
+AllotmentOverrideDetail	Mfg	Input	Y	N	N	Y	Y	N		Y
+AllotmentOverrideType	Mfg	Input	Y	N	N	Y	N	Y		Y
+AlternatePart	Mfg	Input	Y	N	N	Y	N	N		Y
+AlternatePartType	Mfg	Input	Y	N	N	Y	N	Y		Y
+AlternateRouting	Mfg	Input	N	N	N	Y	N	N	Part,Routing	Y
+AnalyticsConfiguration	Mfg	Input	Y	N	N	Y	N	N		Y
+Assumption	Mfg	Input	Y	N	N	Y	N	N		Y
+AssumptionByConstraint	Mfg	Input	Y	N	N	Y	N	N		Y
+AssumptionByPart	Mfg	Input	Y	N	N	Y	N	N		Y
+AssumptionByPartCustomer	Mfg	Input	Y	N	N	Y	N	N		Y
+AssumptionByPartSource	Mfg	Input	Y	N	N	Y	N	N		Y
+AssumptionStatus	Mfg	Input	Y	N	N	Y	N	Y		Y
+AssumptionType	Mfg	Input	Y	N	N	Y	N	Y		Y
+AutomatedLeadTimeType	Mfg	Input	Y	N	N	Y	Y	Y		Y
+AutomatedYieldType	Mfg	Input	Y	N	N	Y	Y	Y		Y
+AvailableRule	Mfg	Input	Y	N	N	Y	N	Y		Y
+AvailableToPromise	Mfg	Calculated	N	N	N	Y	N	N		Y
+BaselinePlannedOrder	Mfg	Input	N	N	N	Y	N	N	Part,DueDate	Y
+Batch	Mfg	Input	Y	N	N	Y	N	N		Y
+BatchStatus	Mfg	Input	Y	N	N	Y	N	Y		Y
+BestFitProfile	Mfg	Input	Y	N	N	Y	N	Y		Y
+BestFitProfileDetail	Mfg	Input	Y	N	N	Y	N	N		Y
+BillOfMaterial	Mfg	Input	N	N	N	Y	N	N	Assembly,Component	Y
+BillOfMaterialFeatureRule	Mfg	Calculated	N	N	N	Y	N	N		Y
+BlowThroughNewAllocation	Mfg	Calculated	N	N	N	Y	N	N		Y
+BlowThroughPlannedAllocation	Mfg	Calculated	N	N	N	Y	N	N		Y
+BOM_MUECumLead	Mfg	Calculated	N	N	N	Y	N	N		Y
+BOMAlternate	Mfg	Input	Y	N	N	Y	N	Y		Y
+BOMType	Mfg	Input	Y	N	N	Y	N	Y		Y
+BuyerCode	Mfg	Input	Y	N	N	Y	Y	Y		Y
+Capacity	Mfg	Input	N	N	N	Y	N	N	Workcenter,EffectiveInDate	Y
+CapacityOverride	Mfg	Input	Y	N	N	Y	N	N		Y
+Carrier	Mfg	Input	Y	N	N	Y	Y	Y		Y
+CausalFactor	Mfg	Input	Y	N	N	Y	Y	N		Y
+CausalFactorCategory	Mfg	Input	Y	N	N	Y	Y	Y		Y
+CausalFactorDetail	Mfg	Input	Y	N	N	Y	N	N		Y
+CausalFactorDetail_Notes	Mfg	Input	N	N	N	Y	N	N	CausalFactorDetail,UserId,Timestamp	Y
+Cluster	Mfg	Input	Y	N	N	Y	N	N		Y
+ClusterProperty	Mfg	Input	Y	N	N	Y	N	N		Y
+CoByProductSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+CollaborativeForecast	Mfg	Input	N	N	N	Y	N	N	Part,BucketDate	Y
+ConsensusForecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+ConsensusForecastDetail	Mfg	Calculated	N	N	N	Y	N	N		Y
+ConsensusForecastRollingHorizon	Mfg	Input	Y	N	N	Y	N	N		Y
+ConsensusForecastRollingHorizonWeight	Mfg	Calculated	N	N	N	Y	N	N		Y
+ConsensusForecastWeightByHeader	Mfg	Calculated	N	N	N	Y	N	N		Y
+Constraint	Mfg	Input	Y	N	N	Y	N	N		Y
+ConstraintAvailable	Mfg	Input	N	N	N	Y	N	N	Constraint,EffectiveInDate	Y
+ConstraintGroup	Mfg	Input	Y	N	N	Y	Y	Y		Y
+ConstraintLoad	Mfg	Calculated	N	N	N	Y	N	N		Y
+ConstraintSpreadLoad	Mfg	Calculated	N	N	N	Y	N	N		Y
+ConstraintType	Mfg	Input	Y	N	N	Y	N	Y		Y
+ConstraintUnitOfMeasure	Mfg	Input	Y	N	N	Y	N	Y		Y
+ConstraintUsed	Mfg	Calculated	N	N	N	Y	N	N		Y
+CostOfGoodsSold	Mfg	Calculated	N	N	N	Y	N	N		Y
+CostRollUp	Mfg	Calculated	N	N	N	Y	N	N		Y
+CRPOperation	Mfg	Input	Y	N	N	Y	N	N		Y
+CRPOperationState	Mfg	Input	Y	N	N	Y	N	N		Y
+CRPUnitOfMeasure	Mfg	Input	Y	N	N	Y	N	Y		Y
+CTPActivity	Mfg	Calculated	N	N	N	Y	N	N		Y
+CTPCoByProductSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+CTPForecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+CTPForecastCost	Mfg	Calculated	N	N	N	Y	N	N		Y
+CTPPlannedOrder	Mfg	Calculated	N	N	N	Y	N	N		Y
+CTPSafetyStockHoldings	Mfg	Calculated	N	N	N	Y	N	N		Y
+CTPSubstituteSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+CurveParameters	Mfg	Input	Y	N	N	Y	N	Y		Y
+Customer	Mfg	Input	Y	N	N	Y	Y	N		Y
+CustomerDestination	Mfg	Input	Y	N	N	Y	Y	N		Y
+CustomerGroup	Mfg	Input	Y	N	N	Y	Y	N		Y
+CustomerPrice	Mfg	Input	Y	N	N	Y	N	N		Y
+DaysSupplyPolicy	Mfg	Input	Y	N	N	Y	N	Y		Y
+DDMRPRule	Mfg	Input	Y	N	N	Y	N	Y		Y
+DeliveryRoute	Mfg	Input	Y	N	N	Y	Y	N		Y
+Demand	Mfg	Calculated	N	N	N	Y	N	N		Y
+DemandException	Mfg	Calculated	N	N	N	Y	N	N		Y
+DemandOrder	Mfg	Input	Y	N	N	Y	Y	N		Y
+DemandStatus	Mfg	Input	Y	N	N	Y	N	Y		Y
+DemandType	Mfg	Input	Y	N	N	Y	N	Y		Y
+Department	Mfg	Input	Y	N	N	Y	N	N		Y
+DependentConsensusForecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+DependentDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+DirectAssembly	Mfg	Calculated	N	N	N	Y	N	N		Y
+DirectComponent	Mfg	Calculated	N	N	N	Y	N	N		Y
+DisaggregationActualByPartCustomer	Mfg	Calculated	N	N	N	Y	N	N		Y
+DisaggregationRateByPartCustomer	Mfg	Calculated	N	N	N	Y	N	N		Y
+DistributionPlanningRule	Mfg	Input	Y	N	N	Y	N	Y		Y
+EngineeringChange	Mfg	Input	Y	N	N	Y	Y	N		Y
+EngineeringChange_Notes	Mfg	Input	N	N	N	Y	N	N	EngineeringChange,UserId,Timestamp	Y
+Event	Mfg	Input	Y	N	N	Y	N	Y		Y
+EventConsensusForecastDetail	Mfg	Calculated	N	N	N	Y	N	N		Y
+EventDisaggregationRate	Mfg	Calculated	N	N	N	Y	N	N		Y
+EventForecastDetailAdjustment	Mfg	Calculated	N	N	N	Y	N	N		Y
+EventPhase	Mfg	Input	Y	N	N	Y	N	N		Y
+EventPhaseHeader	Mfg	Input	Y	N	N	Y	N	N		Y
+EventStatisticalDisaggregationRate	Mfg	Calculated	N	N	N	Y	N	N		Y
+EventStatisticalForecastDetail	Mfg	Calculated	N	N	N	Y	N	N		Y
+EventStatisticalForecastDetailAdjustment	Mfg	Calculated	N	N	N	Y	N	N		Y
+EventType	Mfg	Input	Y	N	N	Y	Y	Y		Y
+ExpiryType	Mfg	Input	Y	N	N	Y	N	Y		Y
+Feature	Mfg	Input	Y	N	N	Y	N	Y		Y
+FeatureBOMForIndependentDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+FeatureMap	Mfg	Input	Y	N	N	Y	N	Y		Y
+FlatAssembly	Mfg	Calculated	N	N	N	Y	N	N		Y
+FlatBillDown	Mfg	Calculated	N	N	N	Y	N	N		Y
+FlatBillUp	Mfg	Calculated	N	N	N	Y	N	N		Y
+FlatComponent	Mfg	Calculated	N	N	N	Y	N	N		Y
+FlatConstraint	Mfg	Calculated	N	N	N	Y	N	N		Y
+FlatDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+FLPConstraint	Mfg	Calculated	N	N	N	Y	N	N		Y
+Forecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+ForecastConsumption	Mfg	Calculated	N	N	N	Y	N	N		Y
+ForecastDetail	Mfg	Input	Y	N	Y	Y	N	N		Y
+ForecastDisaggregationOverride	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastDisaggregationParameters	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastDisaggregationParametersByCategory	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastItem	Mfg	Input	Y	N	N	Y	N	Y		Y
+ForecastItemFitOutput	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastItemParameters	Mfg	Input	Y	N	N	Y	Y	N		Y
+ForecastItemParametersActual	Mfg	Calculated	N	N	N	Y	N	N		Y
+ForecastItemParametersFitOutput	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastItemParametersMap	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastItemParametersOutlier	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastItemParametersOutlier_Notes	Mfg	Input	N	N	N	Y	N	N	ForecastItemParametersOutlier,UserId,Timestamp	Y
+ForecastItemParametersRegressionCoefficient	Mfg	Input	Y	N	N	Y	N	N		Y
+ForecastItemParametersRegressionWeight	Mfg	Calculated	N	N	N	Y	N	N		Y
+ForecastItemParametersRegressor	Mfg	Calculated	N	N	N	Y	N	N		Y
+ForecastItemParametersType	Mfg	Input	Y	N	N	Y	N	Y		Y
+GroupPlanningOrder	Mfg	Calculated	N	N	N	Y	N	N		N	GroupPlanning
+GroupPlanningPolicy	Mfg	Input	Y	N	N	Y	N	Y		N	GroupPlanning
+HistoricalDemandActual	Mfg	Input	Y	Y	Y	Y	N	N		Y
+HistoricalDemandCategory	Mfg	Input	Y	N	N	Y	Y	Y		Y
+HistoricalDemandCategoryRollingWeight	Mfg	Input	Y	N	N	Y	N	N		Y
+HistoricalDemandCategoryType	Mfg	Input	Y	N	N	Y	N	Y		Y
+HistoricalDemandHeader	Mfg	Input	Y	Y	N	Y	Y	N		Y
+HistoricalDemandHeaderRollingWeight	Mfg	Input	Y	N	N	Y	N	N		Y
+HistoricalDemandHeaderTimePhasedAttributes	Mfg	Input	Y	N	N	Y	N	N		Y
+HistoricalDemandSeries	Mfg	Input	Y	Y	N	Y	N	N		Y
+HistoricalDemandSeriesDetail	Mfg	Input	Y	Y	Y	Y	N	N		Y
+HistoricalDemandWaterfall	Mfg	Calculated	N	N	N	Y	N	N		Y
+HistoricalPartKPI	Mfg	Input	N	Y	N	Y	N	N	Part,KPI,Date	Y
+HistoricalReceipt	Mfg	Input	Y	Y	N	Y	N	N		Y
+HistoricalReceiptHeader	Mfg	Input	Y	Y	N	Y	Y	N		Y
+HistoricalSupplyActual	Mfg	Input	Y	Y	Y	Y	N	N		Y
+HistoricalSupplyCategory	Mfg	Input	Y	N	N	Y	Y	Y		Y
+HistoricalSupplyHeader	Mfg	Input	Y	Y	N	Y	Y	N		Y
+HistoricalSupplySeries	Mfg	Input	Y	Y	N	Y	N	N		Y
+HistoricalSupplySeriesDetail	Mfg	Input	Y	Y	Y	Y	N	N		Y
+HistoricalSupplyWaterfall	Mfg	Calculated	N	N	N	Y	N	N		Y
+ImportedStatisticalForecast	Mfg	Input	Y	N	Y	Y	N	N		Y
+IncrementalRule	Mfg	Input	Y	N	N	Y	N	Y		Y
+IndependentDemand	Mfg	Input	Y	N	N	Y	N	N		Y
+IndependentDemand_Notes	Mfg	Input	N	N	N	Y	N	N	IndependentDemand,UserId,Timestamp	Y
+IndependentDemandByFeature	Mfg	Calculated	N	N	N	Y	N	N		Y
+IndependentDemandCost	Mfg	Calculated	N	N	N	Y	N	N		Y
+IndependentDemandFeature	Mfg	Calculated	N	N	N	Y	N	N		Y
+IndependentDemandFeatureList	Mfg	Input	Y	N	Y	Y	N	N		Y
+IndependentDemandFeatureSummary	Mfg	Calculated	N	N	N	Y	N	N		Y
+InProcess	Mfg	Calculated	N	N	N	Y	N	N		Y
+InventoryAnalysis	Mfg	Calculated	N	N	N	Y	N	N		Y
+InventoryCTPAnalysis	Mfg	Calculated	N	N	N	Y	N	N		Y
+InventorySummary	Mfg	Calculated	N	N	N	Y	N	N		Y
+InventoryTransfer	Mfg	Input	Y	N	N	Y	N	N		Y
+InventoryTransferType	Mfg	Input	Y	N	N	Y	N	Y		Y
+ItemSource	Mfg	Input	Y	N	N	Y	N	N		Y
+ItemSourceCandidate	Mfg	Calculated	N	N	N	Y	N	N		Y
+ItemSourceFitOutput	Mfg	Input	Y	N	N	Y	N	N		Y
+ItemSourceFitOutputClass	Mfg	Input	Y	N	N	Y	N	Y		Y
+ItemSourceFitOutputForecastModel	Mfg	Input	Y	N	N	Y	N	Y		Y
+ItemSourceFitOutputValueName	Mfg	Input	Y	N	N	Y	N	Y		Y
+ItemSourceHistoricalSupplyCategory	Mfg	Input	Y	N	N	Y	N	N		Y
+ItemSourceIntervalEffectivePartSource	Mfg	Calculated	N	N	N	Y	N	N		Y
+ItemSourcePartSourceEffectivityInterval	Mfg	Calculated	N	N	N	Y	N	N		Y
+ItemSourcePartSourceHistoricalLeadTime	Mfg	Calculated	N	N	N	Y	N	N		Y
+ItemSourcePartSourceHistoricalReceipt	Mfg	Calculated	N	N	N	Y	N	N		Y
+KPI	Mfg	Input	Y	N	N	Y	N	Y		Y
+LateSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadDailyCurrent	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadDailyPlanned	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadDetailCurrent	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadDetailPlanned	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadFLPPlanned	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadOperationNewOrderPlanned	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadOperationReceiptsCurrent	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadOperationReceiptsPlanned	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadWeeklyCurrent	Mfg	Calculated	N	N	N	Y	N	N		Y
+LoadWeeklyPlanned	Mfg	Calculated	N	N	N	Y	N	N		Y
+Location	Mfg	Input	Y	N	N	Y	Y	N		Y
+LogisticsLocation	Mfg	Input	Y	N	N	Y	N	N		Y
+MappedHistoryUsageByPartCustomer	Mfg	Calculated	N	N	N	Y	N	N		Y
+MaximumInventoryResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIODriverPart	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOFamilyIterationResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOFamilyResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOHistoricalSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOLeadTime	Mfg	Input	Y	N	N	Y	N	N		Y
+MEIOLeadTimeDistributionProfile	Mfg	Input	Y	N	N	Y	N	Y		Y
+MEIOLeadTimeDistributionProfilePoint	Mfg	Input	Y	N	N	Y	N	N		Y
+MEIOLeadTimeOutlier	Mfg	Input	Y	N	N	Y	N	N		Y
+MEIOLeadTimeOutlier_Notes	Mfg	Input	N	N	N	Y	N	N	MEIOLeadTimeOutlier,UserId,Timestamp	Y
+MEIOLeadTimeOutlierResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOLeadTimeOutlierResultSummary	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOLeadTimeType	Mfg	Input	Y	N	N	Y	N	Y		Y
+MEIOParentPart	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStage	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageDailyDemandParameterSet	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageHistoricalDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageHistoricalForecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageIterationResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageLink	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageLinkIterationResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageSimulation	Mfg	Calculated	N	N	N	Y	N	N		Y
+MEIOStageTimePhasedResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+MLSActivity	Mfg	Calculated	N	N	N	Y	N	N		Y
+Model	Mfg	Input	Y	N	N	Y	Y	Y		Y
+MUEPoolNettingType	Mfg	Input	Y	N	N	Y	N	Y		Y
+MultiEchelonSafetyStockRule	Mfg	Input	Y	N	N	Y	N	Y		Y
+MultiLevelSearchRule	Mfg	Input	Y	N	N	Y	N	Y		Y
+NetworkConfiguration	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+NewAllocation	Mfg	Calculated	N	N	N	Y	N	N		Y
+NewTransferAllocation	Mfg	Calculated	N	N	N	Y	N	N		Y
+OnHand	Mfg	Input	N	N	N	Y	N	N	Part,Location,Quantity	Y
+OnHandType	Mfg	Input	Y	N	N	Y	N	Y		Y
+Operation	Mfg	Input	N	N	N	Y	N	N	Routing,Number,Workcenter	Y
+OperationSequence	Mfg	Input	Y	N	N	Y	N	N		Y
+OperationSequenceType	Mfg	Input	Y	N	N	Y	N	Y		Y
+OperationType	Mfg	Input	Y	N	N	Y	N	Y		Y
+OptimizationConfiguration	Mfg	Input	Y	N	N	Y	N	Y		N	SupplyPlanningOptimization
+OptimizationConstraintUsed	Mfg	Input	Y	N	N	Y	N	N		N	SupplyPlanningOptimization
+OptimizationDynamicSafety	Mfg	Input	Y	N	N	Y	N	N		N	SupplyPlanningOptimization
+OptimizationObjectiveWeightOverride	Mfg	Input	Y	N	N	Y	N	Y		N	SPOEDevelopment
+OptimizationSummary	Mfg	Input	Y	N	N	Y	N	N		N	SupplyPlanningOptimization
+OptimizationSupply	Mfg	Input	Y	N	N	Y	N	N		N	SupplyPlanningOptimization
+OptimizationSupplyDemand	Mfg	Input	Y	N	N	Y	N	N		N	SupplyPlanningOptimization
+OrderPolicy	Mfg	Input	Y	N	N	Y	N	Y		Y
+OrderPriority	Mfg	Input	Y	N	N	Y	N	Y		Y
+OutlierType	Mfg	Input	Y	N	N	Y	N	Y		Y
+OverrideMajorChangeover	Mfg	Input	Y	N	N	Y	N	N		Y
+Part	Mfg	Input	Y	N	N	Y	N	N		Y
+Part_MUECumLead	Mfg	Calculated	N	N	N	Y	N	N		Y
+Part_MUEPoolValidation	Mfg	Calculated	N	N	N	Y	N	N		Y
+PartCustomer	Mfg	Input	Y	N	N	Y	Y	N		Y
+PartCustomerHistoryMap	Mfg	Input	Y	N	N	Y	Y	N		Y
+PartCustomerTimePhasedAttributes	Mfg	Input	Y	N	N	Y	N	N		Y
+PartSequence	Mfg	Input	Y	N	N	Y	N	Y		Y
+PartSource	Mfg	Input	Y	N	N	Y	N	N		Y
+PartSourceCTPPlannedOrder	Mfg	Calculated	N	N	N	Y	N	N		Y
+PartSourcePlannedOrder	Mfg	Calculated	N	N	N	Y	N	N		Y
+PartSourceScheduledReceipt	Mfg	Calculated	N	N	N	Y	N	N		Y
+PartSourceTimePhasedAttributes	Mfg	Input	Y	N	N	Y	N	N		Y
+PartSourceType	Mfg	Input	Y	N	N	Y	N	Y		Y
+PartSupplier	Mfg	Input	Y	N	N	Y	N	N		Y
+PartType	Mfg	Input	Y	N	N	Y	N	Y		Y
+PartUOMConversion	Mfg	Input	Y	N	N	Y	N	N		Y
+PeriodConstraintLoad	Mfg	Calculated	N	N	N	Y	N	N		Y
+PeriodsOfCoverage	Mfg	Calculated	N	N	N	Y	N	N		Y
+PeriodsOfCTPCoverage	Mfg	Calculated	N	N	N	Y	N	N		Y
+PlannedAllocation	Mfg	Calculated	N	N	N	Y	N	N		Y
+PlannedOrder	Mfg	Calculated	N	N	N	Y	N	N		Y
+PlannedTransferAllocation	Mfg	Calculated	N	N	N	Y	N	N		Y
+PlannerCode	Mfg	Input	Y	N	N	Y	Y	Y		Y
+PlanningCalendars	Mfg	Input	Y	N	N	Y	N	Y		Y
+PointsProfile	Mfg	Input	Y	N	N	Y	N	Y		Y
+Pool	Mfg	Input	Y	N	N	Y	Y	Y		Y
+PoolMap	Mfg	Input	N	N	N	Y	N	N	SupplyPool,DemandPool,PartType	Y
+PoolMapOverride	Mfg	Input	N	N	N	Y	N	N	SupplyPool,DemandPool,Part	Y
+ProductFamily	Mfg	Input	Y	N	N	Y	Y	Y		Y
+ProductionCycle	Mfg	Calculated	N	N	N	Y	N	N		Y
+ProductionGroup	Mfg	Input	Y	N	N	Y	N	Y		Y
+ProductionGroupRelationship	Mfg	Input	N	N	N	Y	N	N	Group1,Group2	N	GroupPlanning
+ProductionGroupRelationshipPolicy	Mfg	Input	Y	N	N	Y	N	Y		N	GroupPlanning
+ProductionRecurrence	Mfg	Input	Y	N	N	Y	N	Y		Y
+ProductionWheel	Mfg	Input	Y	N	N	Y	N	Y		Y
+ProductionWheelConstraint	Mfg	Input	Y	N	N	Y	N	N		Y
+ProductionWheelType	Mfg	Input	Y	N	N	Y	N	Y		Y
+ProfilePoint	Mfg	Input	Y	N	N	Y	N	N		Y
+ProjectedLeadTime	Mfg	Input	Y	N	N	Y	N	N		Y
+ProjectedYield	Mfg	Input	Y	N	N	Y	N	N		Y
+RangeOfCoverage	Mfg	Input	Y	N	N	Y	N	Y		Y
+RangeOfCoveragePartOverride	Mfg	Input	Y	N	N	Y	N	N		Y
+ReferenceForecastDimension	Mfg	Input	Y	N	N	Y	Y	N		Y
+ReferenceForecastTarget	Mfg	Input	Y	N	N	Y	Y	N		Y
+ReferencePart	Mfg	Input	Y	N	N	Y	Y	N		Y
+Region	Mfg	Input	Y	N	N	Y	Y	Y		Y
+RegionGroup	Mfg	Input	Y	N	N	Y	Y	Y		Y
+RegressionModel	Mfg	Input	Y	N	N	Y	N	Y		Y
+RegressionModelTerm	Mfg	Input	Y	N	N	Y	N	Y		Y
+Regressor	Mfg	Input	Y	N	N	Y	N	Y		Y
+RegressorCategory	Mfg	Input	Y	N	N	Y	N	Y		Y
+RegressorValue	Mfg	Input	Y	N	N	Y	N	N		Y
+Routing	Mfg	Input	Y	N	N	Y	Y	N		Y
+RParameter	Mfg	Input	Y	N	N	Y	N	N		Y
+RParameterSet	Mfg	Input	Y	N	N	Y	N	Y		Y
+SafetyLeadTimeProfile	Mfg	Input	Y	N	N	Y	N	Y		Y
+SafetyLeadTimeProfileDetail	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockAverageDemandProfile	Mfg	Input	Y	N	N	Y	N	Y		Y
+SafetyStockHistoricalDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockHistoricalForecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockHistoricalSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockItem	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockItemDemandParameterSet	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockItemFutureDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockItemMapping	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockItemOutlier	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockItemOutlier_Notes	Mfg	Input	N	N	N	Y	N	N	SafetyStockItemOutlier,UserId,Timestamp	Y
+SafetyStockItemOutlierResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockItemOutlierResultSummary	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockItemStatisticalTests	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockItemType	Mfg	Input	Y	N	N	Y	N	Y		Y
+SafetyStockOverride	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockPart	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockPolicy	Mfg	Input	Y	N	N	Y	N	Y		Y
+SafetyStockRangeOfCoverage	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+SafetyStockTimePhasedBounds	Mfg	Input	Y	N	N	Y	N	N		Y
+SafetyStockTimePhasedResult	Mfg	Calculated	N	N	N	Y	N	N		Y
+ScheduledReceipt	Mfg	Input	Y	N	N	Y	N	N		Y
+ScheduledReceipt_Notes	Mfg	Input	N	N	N	Y	N	N	ScheduledReceipt,UserId,Timestamp	Y
+ScheduledReceiptCost	Mfg	Calculated	N	N	N	Y	N	N		Y
+Shipment	Mfg	Input	Y	N	N	Y	Y	N		Y
+ShipmentPolicy	Mfg	Input	Y	N	N	Y	N	Y		Y
+ShipSet	Mfg	Input	Y	N	N	Y	Y	Y		Y
+ShipSetType	Mfg	Input	Y	N	N	Y	N	Y		Y
+Shop	Mfg	Input	Y	N	N	Y	Y	N		Y
+ShopKanban	Mfg	Input	Y	N	N	Y	N	N		Y
+SiteManager	Mfg	Input	Y	N	N	Y	N	N		Y
+SiteManagerType	Mfg	Input	Y	N	N	Y	N	Y		Y
+SolutionOverrideDetail	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+SolutionOverrideHeader	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+SOPAnalyticsConfiguration	Mfg	Input	Y	N	N	Y	N	N		Y
+Source	Mfg	Input	Y	N	N	Y	N	N		Y
+SourceConstraint	Mfg	Input	Y	N	N	Y	N	N		Y
+SourceKanban	Mfg	Input	Y	N	N	Y	N	N		Y
+SourceProductionWheel	Mfg	Input	Y	N	N	Y	N	N		Y
+SourceRule	Mfg	Input	Y	N	N	Y	N	Y		Y
+SPOEBalance	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOEConstraintUsed	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOEDynamicSafety	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOEIndependentDemand	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOEModelCoefficient	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SPOEModelConstraint	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SPOEModelInfo	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SPOEModelSolution	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SPOEModelVariable	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SPOENetworkLog	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SPOENetworkMetric	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SPOEObjective	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOESummary	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOESupply	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOESupplyDemand	Mfg	Calculated	N	N	N	Y	N	N		N	SupplyPlanningOptimization
+SPOEWarmStartValue	Mfg	Calculated	N	N	N	Y	N	N		N	SPOEDevelopment
+SpreadProfile	Mfg	Input	Y	N	N	Y	N	Y		Y
+StatisticalForecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastDetail	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastDisaggregationActual	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastDisaggregationMappedHistoryUsage	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastDisaggregationRate	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastFitOutput	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastMultiStepFitOutput	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastOutlier	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastOutlierSummary	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastPredictActual	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastRegressionCoefficient	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastResidualAutocorrelation	Mfg	Calculated	N	N	N	Y	N	N		Y
+StatisticalForecastResidualCount	Mfg	Calculated	N	N	N	Y	N	N		Y
+SubstituteGroup	Mfg	Input	Y	N	N	Y	N	N		Y
+SubstituteGroupType	Mfg	Input	Y	N	N	Y	N	Y		Y
+SubstituteSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+Supplier	Mfg	Input	Y	N	N	Y	Y	N		Y
+SupplierGroup	Mfg	Input	Y	N	N	Y	Y	N		Y
+Supply	Mfg	Calculated	N	N	N	Y	N	N		Y
+SupplyAllocation	Mfg	Input	Y	N	N	Y	N	N		Y
+SupplyAllocation_Notes	Mfg	Input	N	N	N	Y	N	N	SupplyAllocation,UserId,Timestamp	Y
+SupplyAllocationType	Mfg	Input	Y	N	N	Y	N	Y		Y
+SupplyDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+SupplyOrder	Mfg	Input	Y	N	N	Y	Y	N		Y
+SupplyStatus	Mfg	Input	Y	N	N	Y	N	Y		Y
+SupplyType	Mfg	Input	Y	N	N	Y	N	Y		Y
+TimePhasedDemandParameterSet	Mfg	Input	Y	N	N	Y	N	N		Y
+TimePhasedMaximumInventory	Mfg	Input	Y	N	N	Y	Y	N		Y
+TimePhasedPartSourceLeadTime	Mfg	Input	Y	N	N	Y	N	N		Y
+TimePhasedSafety	Mfg	Input	N	N	N	Y	N	N	Part,Date	Y
+TimePhasedSourceLeadTime	Mfg	Input	Y	N	N	Y	N	N		Y
+TimePhasedYield	Mfg	Input	Y	N	N	Y	N	N		Y
+ToleranceProfile	Mfg	Input	Y	N	N	Y	N	Y		Y
+ToleranceProfileZone	Mfg	Input	N	N	N	Y	N	N	ToleranceProfile,ControlSet,ZoneEndInterval	Y
+TransportationMode	Mfg	Input	Y	N	N	Y	Y	Y		Y
+TrialCoByProductSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+TrialConstraintShortage	Mfg	Calculated	N	N	N	Y	N	N		Y
+TrialConsumption	Mfg	Calculated	N	N	N	Y	N	N		Y
+TrialPlannedOrder	Mfg	Calculated	N	N	N	Y	N	N		Y
+TrialSubstituteSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+UnitOfMeasure	Mfg	Input	Y	N	N	Y	Y	Y		Y
+UnitOfMeasureCategory	Mfg	Input	Y	N	N	Y	Y	Y		Y
+ValidatePlannedOrder	Mfg	Calculated	N	N	N	Y	N	N		Y
+Warehouse	Mfg	Input	Y	N	N	Y	Y	N		Y
+WarmStartBOMSubstituteNewAllocation	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WarmStartBOMSubstitutePlannedAllocation	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WarmStartConsensusForecast	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WarmStartIndependentDemand	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WarmStartOnHandDemand	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WarmStartProduction	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WarmStartScheduledReceipt	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WarmStartSubstitute	Mfg	Input	Y	N	N	Y	N	N		N	SPOEDevelopment
+WhereConsumed	Mfg	Calculated	N	N	N	Y	N	N		Y
+WhereConsumedForDemand	Mfg	Calculated	N	N	N	Y	N	N		Y
+WhereConsumedForForecast	Mfg	Calculated	N	N	N	Y	N	N		Y
+WhereConsumedForSupply	Mfg	Calculated	N	N	N	Y	N	N		Y
+WhereConsumedToHighVolumeOrder	Mfg	Calculated	N	N	N	Y	N	N		Y
+WorkCenter	Mfg	Input	Y	N	N	Y	N	N		Y
+WorkCenterCapacity	Mfg	Calculated	N	N	N	Y	N	N		Y
+WorkCenterType	Mfg	Input	Y	N	N	Y	N	Y		Y
+Activity	ProcOrch	Input	Y	N	N	Y	Y	N		Y
+Assignment	ProcOrch	Input	Y	N	N	Y	N	N		Y
+Notification	ProcOrch	Input	Y	N	N	Y	Y	N		Y
+ProcessInstance	ProcOrch	Input	Y	N	N	Y	Y	Y		Y
+ProcessInstanceType	ProcOrch	Input	Y	N	N	Y	N	Y		Y
+SequenceFlow	ProcOrch	Input	Y	N	N	Y	Y	N		Y
+SubProcess	ProcOrch	Input	Y	N	N	Y	Y	N		Y
+AddressBook	ProdSched	Input	Y	N	N	Y	N	N	ProdSched::EndpointId,ProdSched::Site	Y	ProductionScheduling
+BaselineConflict	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+BaselineTaskLink	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+BonusSchedule	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+BonusScheduleByDate	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+BonusScheduleByInterval	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+Conflict	ProjMgmt	Calculated	N	N	N	Y	N	N		Y
+CriticalPath	ProjMgmt	Calculated	N	N	N	Y	N	N		Y
+CurvePoint	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+PenaltySchedule	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+PenaltyScheduleByDate	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+PenaltyScheduleByInterval	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+PointsCurve	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+Predecessor	ProjMgmt	Input	Y	N	N	Y	Y	N		Y
+Project	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+ProjectGroup	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+ProjectManager	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+ProjectStatus	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+ProjectType	ProjMgmt	Input	Y	N	N	Y	N	Y		Y
+Resource	ProjMgmt	Input	Y	N	N	Y	N	Y		Y
+ResourceAssignment	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceAssignmentAvailable	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceAvailable	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceCalendarException	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceCostActual	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceCosts	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceDataByDate	ProjMgmt	Calculated	N	N	N	Y	N	N		Y
+ResourceGroup	ProjMgmt	Input	Y	N	N	Y	Y	Y		Y
+ResourceGroupProjectOverride	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceGroupTaskOverride	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceLoad	ProjMgmt	Calculated	N	N	N	Y	N	N		Y
+ResourceProjectOverride	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+ResourceType	ProjMgmt	Input	Y	N	N	Y	N	Y		Y
+Task	ProjMgmt	Input	Y	N	N	Y	Y	N		Y
+Task_Notes	ProjMgmt	Input	N	N	N	Y	N	N	Task,UserId,Timestamp	Y
+TaskDemandLink	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+TaskDemandLinkCost	ProjMgmt	Calculated	N	N	N	Y	N	N		Y
+TaskHyperlink	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+TaskPartLink	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+TaskPartLinkCost	ProjMgmt	Calculated	N	N	N	Y	N	N		Y
+TaskSupplyLink	ProjMgmt	Input	Y	N	N	Y	N	N		Y
+TaskSupplyLinkCost	ProjMgmt	Calculated	N	N	N	Y	N	N		Y
+TaskType	ProjMgmt	Input	Y	N	N	Y	N	Y		Y
+WBS	ProjMgmt	Input	Y	N	N	Y	Y	N		Y
+IntegrationDataFileAttributes	PSTools	Input	Y	N	N	Y	N	N	PSTools::ID	Y
+IntegrationDataFileAttributes_DeveloperNotes	PSTools	Input	N	N	N	Y	N	N	IntegrationDataFileAttributes,UserId,Timestamp	Y
+UserImportStagingTable	PSTools	Input	Y	N	N	Y	Y	N	PSTools::UserId	Y
+AsyncMappingTable	PSToolsCandidate	Input	N	N	N	Y	Y	N		Y
+AsyncStagingTable	PSToolsCandidate	Input	N	N	N	Y	Y	N		Y
+GroupMembersImportStagingTable	PSToolsCandidate	Input	Y	N	N	Y	Y	N	PSToolsCandidate::GroupName,PSToolsCandidate::UserName	Y
+GroupMetaImportStagingTable	PSToolsCandidate	Input	Y	N	N	Y	Y	N	PSToolsCandidate::Name	Y
+GroupPermissionsImportStagingTable	PSToolsCandidate	Input	Y	N	N	Y	Y	N	PSToolsCandidate::Permission	Y
+GroupProfileImportStagingTable	PSToolsCandidate	Input	N	N	N	Y	Y	N		Y
+GroupResourcesImportStagingTable	PSToolsCandidate	Input	Y	N	N	Y	Y	N	PSToolsCandidate::Operation,PSToolsCandidate::Resource	Y
+UserGroupsImportStagingTable	PSToolsCandidate	Input	Y	N	N	Y	Y	N	PSToolsCandidate::GroupName,PSToolsCandidate::UserID	Y
+UserMetaImportStagingTable	PSToolsCandidate	Input	Y	N	N	Y	Y	N	PSToolsCandidate::UserID	Y
+UserProfileImportStagingTable	PSToolsCandidate	Input	Y	N	N	Y	Y	N	PSToolsCandidate::UserID	Y
+Class	Solutions	Input	Y	N	N	Y	N	Y		Y
+ConstraintMetric	Solutions	Input	Y	N	N	Y	Y	N	Solutions::Metric,Solutions::Constraint,Solutions::AsOf	Y
+ConstraintMetricValues	Solutions	Input	Y	N	N	Y	Y	N		Y
+Country	Solutions	Input	Y	N	N	Y	N	Y		Y
+DemandSegment	Solutions	Input	Y	N	N	Y	N	Y		Y	DemandSensing
+DemandSensingAIPForecast	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingConfiguration	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingExplanationCategory	Solutions	Input	Y	N	N	Y	Y	N		Y	DemandSensing
+DemandSensingFitOutput	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingForecast	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingForecastExplanation	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingForecastInsight	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingForecastItem	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingForecastItemInsight	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingLifeCycle	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandSensingNPIReference	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+DemandTypeGroup	Solutions	Input	Y	N	N	Y	N	Y		Y
+DRPConfiguration	Solutions	Input	Y	N	N	Y	N	N		Y
+ExplainabilityDataType	Solutions	Input	Y	N	N	Y	N	Y		Y
+ExplainabilityDriver	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+ExplainabilityDriverDetail	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+ExplainabilityDriverOverlay	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+ExplainabilityDriverSubType	Solutions	Input	Y	N	N	Y	N	Y		Y
+ExplainabilityDriverType	Solutions	Input	Y	N	N	Y	N	Y		Y
+ExplainabilityHistoricalDriverContribution	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+ExplainabilityLocalMetric	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+ExplainabilityMetricType	Solutions	Input	Y	N	N	Y	N	Y		Y
+ExplainabilityStatus	Solutions	Input	Y	N	N	Y	N	Y		Y
+HistoricalDemandOrder	Solutions	Input	Y	Y	N	Y	Y	N		Y
+HistoricalShipment	Solutions	Input	Y	Y	N	Y	Y	N		Y
+HistoricalSupplyOrder	Solutions	Input	Y	Y	N	Y	Y	N		Y
+HoldCode	Solutions	Input	Y	N	N	Y	N	Y		Y
+IMConfiguration	Solutions	Input	Y	N	N	Y	N	N		Y
+IndependentDemandSolution	Solutions	Input	Y	N	N	Y	N	N		Y
+IndependentDemandSolution_CustomerNotes	Solutions	Input	N	N	N	Y	N	N	IndependentDemandSolution,UserId,Timestamp	Y
+IndependentDemandSolution_SupplyNotes	Solutions	Input	N	N	N	Y	N	N	IndependentDemandSolution,UserId,Timestamp	Y
+InventoryCategory	Solutions	Input	Y	N	N	Y	N	Y		Y
+IPOConfiguration	Solutions	Input	Y	N	N	Y	N	N		Y
+LifeCycleState	Solutions	Input	Y	N	N	Y	N	Y		Y
+Metric	Solutions	Input	Y	N	N	Y	Y	N	Solutions::Metric	Y
+MetricAsOf	Solutions	Input	Y	N	N	Y	Y	N		Y
+MPSConfiguration	Solutions	Input	Y	N	N	Y	N	N		Y
+OFConfiguration	Solutions	Input	Y	N	N	Y	N	N		Y
+PartCustomerNPI	Solutions	Input	Y	N	N	Y	N	N		Y	DemandSensing
+PartLifeCycleState	Solutions	Input	Y	N	N	Y	N	N		Y
+PartMetric	Solutions	Input	Y	N	N	Y	Y	N	Solutions::Metric,Solutions::Part,Solutions::AsOf	Y
+PartMetricValues	Solutions	Input	Y	N	N	Y	Y	N		Y
+PartSolution	Solutions	Input	Y	N	N	Y	N	N		Y
+ProductHierarchy1	Solutions	Input	Y	N	N	Y	N	Y		Y
+ProductHierarchy2	Solutions	Input	Y	N	N	Y	N	Y		Y
+ProductHierarchy3	Solutions	Input	Y	N	N	Y	N	Y		Y
+Segment	Solutions	Input	Y	N	N	Y	Y	Y	Solutions::Strategy,Solutions::Value	Y
+SHSCConfiguration	Solutions	Input	Y	N	N	Y	N	N		Y
+SiteMetric	Solutions	Input	Y	N	N	Y	Y	N	Solutions::Metric,Solutions::AsOf	Y
+SiteMetricValues	Solutions	Input	Y	N	N	Y	Y	N		Y
+StorageType	Solutions	Input	Y	N	N	Y	N	Y		Y
+SubRegion	Solutions	Input	Y	N	N	Y	N	Y		Y
+SupplierMetric	Solutions	Input	Y	N	N	Y	Y	N	Solutions::Metric,Solutions::AsOf	Y
+SupplierMetricValues	Solutions	Input	Y	N	N	Y	Y	N		Y
+SupplyStage	Solutions	Input	Y	N	N	Y	N	Y		Y	LifeSciences
+TimePhasedInventoryNorm	Solutions	Input	Y	N	N	Y	N	N		Y
+TimePhasedLocationCapacity	Solutions	Input	Y	N	N	Y	N	N		Y
+TransferDestination	Solutions	Input	Y	N	N	Y	N	Y		Y
+Mfg__SupplyOrder_TextLine	SupCollab	Input	N	N	N	Y	N	N	SupplyOrder,UserId,Timestamp	Y
+U_Division	User	Input	Y	N	N	Y	Y	Y	User::U_Value	Y
+U_ProductFamily	User	Input	Y	N	N	Y	Y	Y	User::U_Value	Y
+U_ProductLine	User	Input	Y	N	N	Y	Y	Y	User::U_Value	Y
+Role	UsrAccess	Input	Y	N	N	Y	Y	Y	UsrAccess::Value	Y
+RoleGroup	UsrAccess	Input	Y	N	N	Y	Y	N	UsrAccess::GroupName,UsrAccess::Role	Y
+UserRole	UsrAccess	Input	Y	N	N	Y	Y	N	UsrAccess::Role,UsrAccess::UserName	Y
+PartValidation	Validation	Input	Y	N	N	Y	N	N		Y
+PartValidation_Notes	Validation	Input	N	N	N	Y	N	N	PartValidation,UserId,Timestamp	Y
+SAP_MD04	Validation	Input	N	N	N	Y	N	N		Y

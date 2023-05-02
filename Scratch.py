@@ -1,7 +1,8 @@
-from RapidResponse.RapidResponse.DataTable import DataTable
-from RapidResponse.RapidResponse.Environment import Environment, sample_configuration
-from RapidResponse.RapidResponse.Table import Table, Column
-from RapidResponse.RapidResponse.Worksheet import Workbook
+from RapidResponse.DataTable import DataTable
+from RapidResponse.Environment import Environment
+from samples import sample_configuration
+from RapidResponse.Table import Table, Column
+from RapidResponse.Worksheet import Workbook
 
 if __name__ == '__main__':
     env = Environment(sample_configuration)
@@ -104,3 +105,4 @@ mea_env = Environment(MEA_configuration)
 int_wb = {"Name": "[EU] Integration", "Scope": 'Public'}
 integration_workbook = Workbook(environment=mea_env, Scenario={'Name': 'Enterprise Data', 'Scope': 'Public'}, workbook=int_wb, SiteGroup="All Sites", WorksheetNames=['RRSite'],Filter={"Name": "All Parts", "Scope": "Public"})
 RRSite = integration_workbook.worksheets[0]
+

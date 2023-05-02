@@ -1,19 +1,9 @@
 import base64
 import json
-import logging
 import os
 import requests
-from RapidResponse.RapidResponse.DataModel import DataModel
-
-from RapidResponse.RapidResponse.Err import SetupError, RequestsError
-
-sample_configuration = {'url': 'http://localhost/rapidresponse',
-                        'data_model_bootstrap': 'KXSHelperREST',
-                        'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel',
-                        'auth_type': 'basic',
-                        'username': 'gpinkney_ws',
-                        'password': '1L0veR@pidResponse'
-                        }
+from RapidResponse.DataModel import DataModel
+from RapidResponse.Err import SetupError, RequestsError
 
 
 class Environment:
@@ -22,6 +12,7 @@ class Environment:
     :param configuration: dictionary containing necessary information for initialising environment
     :raises SetupError: Data Model directory not valid
     """
+
     def __init__(self, configuration: dict):
         if not isinstance(configuration, dict):
             raise TypeError('The parameter configuration type must be dict')

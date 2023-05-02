@@ -1,10 +1,8 @@
 import unittest
 
-import RapidResponse.RapidResponse.Table
-import RapidResponse.RapidResponse.DataModel as DM
-from RapidResponse.RapidResponse.Environment import Environment, sample_configuration
-from RapidResponse.RapidResponse.Err import DataError
-from RapidResponse.RapidResponse.Worksheet import Workbook, Worksheet
+from RapidResponse.Environment import Environment
+from samples import sample_configuration
+from RapidResponse.Worksheet import Worksheet
 
 
 # class MyTestCase(unittest.TestCase):

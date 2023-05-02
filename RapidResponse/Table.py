@@ -1,8 +1,7 @@
 # Table.py
-import collections
 from typing import Literal, NamedTuple
 
-from RapidResponse.RapidResponse.Err import DataError
+from RapidResponse.Err import DataError
 
 # Column = collections.namedtuple('Column', ['name', 'datatype', 'key', 'referencedTable', 'referencedNamespace', 'identification_fields'])
 

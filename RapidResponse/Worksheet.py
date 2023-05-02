@@ -4,8 +4,8 @@ import json
 import requests
 import logging
 
-from RapidResponse.RapidResponse.Err import RequestsError, DataError
-from RapidResponse.RapidResponse.Environment import Environment
+from RapidResponse.Err import RequestsError, DataError
+from RapidResponse.Environment import Environment
 
 class Cell:
     pass

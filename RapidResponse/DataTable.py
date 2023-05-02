@@ -4,9 +4,9 @@ import json
 import logging
 import requests
 from copy import deepcopy
-from RapidResponse.RapidResponse.Environment import Environment
-from RapidResponse.RapidResponse.Err import RequestsError, TableError, DataError
-from RapidResponse.RapidResponse.Table import Table
+from RapidResponse.Environment import Environment
+from RapidResponse.Err import RequestsError, DataError
+from RapidResponse.Table import Table
 
 # todo add controls to not allow update of calculated fields or delete of rows from calculated table
 
