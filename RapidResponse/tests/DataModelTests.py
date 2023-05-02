@@ -12,8 +12,7 @@ from RapidResponse.Err import DataError
 class DataModelTestCase(unittest.TestCase):
 
     def test_table_data_model(self):
-        data_model = DM.DataModel(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse')
+        data_model = DM.DataModel('C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         data_model.load_table_data_from_file(
             'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
         col1 = Table.Column('Column1', 'string', 'N')

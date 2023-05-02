@@ -1,7 +1,7 @@
 import unittest
 
 from RapidResponse.Environment import Environment
-from samples import sample_configuration
+from samples import sample_configuration, sample_no_dm
 from RapidResponse.Worksheet import Worksheet
 
 

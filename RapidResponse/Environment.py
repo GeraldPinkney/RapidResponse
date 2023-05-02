@@ -25,14 +25,6 @@ class Environment:
         except KeyError:
             raise ValueError('url not provided in configuration dict')
 
-        if os.path.exists(configuration['data_model_directory']):
-            self._data_model_dir = configuration['data_model_directory']
-        else:
-            raise SetupError("Data Model directory not valid: " + configuration['data_model_directory'])
-
-        # bootstrap in data model from local
-        self._data_model = DataModel(self._data_model_dir)
-
         # authentication
         try:
             self.auth_type = configuration['auth_type']
@@ -53,11 +45,28 @@ class Environment:
         self.global_headers = {}
         self.refresh_auth()
 
-        self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
+        try:
+            self._data_model_dir = configuration['data_model_directory']
+        except KeyError:
+            self._data_model_dir = None
+            #raise SetupError("Data Model directory not valid: " + configuration['data_model_directory'])
+        else:
+            if os.path.exists(configuration['data_model_directory']):
+                self._data_model_dir = configuration['data_model_directory']
+            else:
+                raise SetupError("Data Model directory not valid: " + configuration['data_model_directory'])
 
-        if configuration['data_model_bootstrap']:
-            pass
-        # todo add conditional logic to either get DM from local file, or from wbb
+        # bootstrap in data model from local
+        try:
+            bootstrap_wbk = configuration['data_model_bootstrap']
+        except KeyError:
+            self._data_model = DataModel(self._data_model_dir, None, None)
+        else:
+            self._data_model = DataModel(data_model_directory=None,url=self._base_url, headers=self.global_headers)
+
+
+
+        self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 
     def __repr__(self):
         return f'Environment(url={self._base_url!r}, data model directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
