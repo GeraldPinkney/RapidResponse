@@ -26,7 +26,7 @@ setup(
     include_package_data=True,
     package_data={  # Optional
         "": ["data/*.tab"], # includes all csv files (i.e. those data model ones)
-        "RapidResponse.data": ["*.tab"], # this would only pick up that stuff in DM dir
+        "RapidResponse.data": ["*.wbb"], # this would only pick up that stuff in DM dir
     },
     test_suite='tests',
 )
