@@ -14,7 +14,7 @@ long_description = (here / "RapidResponse/docs/README.md").read_text(encoding="u
 
 setup(
     name="RapidPy",
-    version="0.0.7",
+    version="0.0.8",
     description="A sample Python project",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,8 +25,7 @@ setup(
     install_requires=["requests"],  #  "csv", "logging", "os". all the other stuff is from standard lib
     include_package_data=True,
     package_data={  # Optional
-        "": ["data/*.tab"], # includes all csv files (i.e. those data model ones)
-        "RapidResponse.data": ["*.wbb"], # this would only pick up that stuff in DM dir
+        "": ["data/*.tab", "data/*.wwb"], # includes all tab files (i.e. those data model ones), and the wbb for data model bootstrapping
     },
     test_suite='tests',
 )

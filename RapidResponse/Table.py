@@ -125,3 +125,7 @@ class Table:
             return response
         else:
             raise DataError(name, "field: " + name + " not found in table fields.")
+
+    @property
+    def fields(self):
+        return self._table_fields

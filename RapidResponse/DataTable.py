@@ -73,11 +73,14 @@ class DataTable(Table):
             self.scenario = environment.scenarios[0]
         else:
             # check scenario has both Name and scope {"Name": "Enterprise Data", "Scope": "Public"}
-            if ['Name', 'Scope'] == list(scenario.keys()):
-                self.scenario = scenario
-            else:
-                raise ValueError('scenario not valid: ' + scenario)
-                #self.scenario = environment.scenarios[0]
+            try:
+                if ['Name', 'Scope'] == list(scenario.keys()):
+                    self.scenario = scenario
+                else:
+                    raise ValueError('scenario not valid: ' + scenario)
+                    #self.scenario = environment.scenarios[0]
+            except AttributeError:
+                raise ValueError("scenario parameter format is {'Name': 'Integration', 'Scope': 'Public'} " + scenario)
 
         # set columns and filters
         try:

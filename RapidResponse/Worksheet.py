@@ -7,6 +7,7 @@ import logging
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
 
+
 class Cell:
     pass
     # value, datatype, columnId
@@ -24,6 +25,7 @@ class Worksheet:
     :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
     :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
     """
+
     def __init__(self, environment, scenario, worksheet: str, workbook: dict, SiteGroup: str, Filter: dict = None,
                  VariableValues: dict = None):
         """
@@ -39,21 +41,21 @@ class Worksheet:
         """
 
         # validations
-        #environment
+        # environment
         if not isinstance(environment, Environment):
             raise TypeError("The parameter environment type must be Environment.")
         if not environment:
             raise ValueError("The parameter environment must not be empty.")
         self.environment = environment
 
-        #worksheet
+        # worksheet
         if not isinstance(worksheet, str):
             raise TypeError("The parameter worksheet type must be str.")
         if not worksheet:
             raise ValueError("The parameter worksheet must not be empty.")
         self._name = worksheet
 
-        #workbook
+        # workbook
         if not isinstance(workbook, dict):
             raise TypeError("The parameter workbook type must be dict.")
         if not workbook:
@@ -67,14 +69,14 @@ class Worksheet:
             raise ValueError("The parameter workbook must contain Scope.")
         self._parent_workbook = workbook
 
-        #sitegroup
+        # sitegroup
         if not isinstance(SiteGroup, str):
             raise TypeError("The parameter SiteGroup type must be str.")
         if not SiteGroup:
             raise ValueError("The parameter SiteGroup must not be empty.")
         self._site_group = SiteGroup
 
-        #scenario
+        # scenario
         if scenario:
             if not isinstance(scenario, dict):
                 raise TypeError("The parameter scenario type must be dict.")
@@ -190,7 +192,6 @@ class Worksheet:
             raise RequestsError(response.text,
                                 " failure during workbook initialise_for_extract, status not 200")
 
-
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
             if ws.get('Name') == self.name:
@@ -209,9 +210,7 @@ class Worksheet:
         """
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        burl = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[
-                                                                                             1:] + "&workbookName=" + \
-               self.parent_workbook['Name'] + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name
+        burl = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'] + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name
 
         pages = self.total_row_count // pagesize
         if self.total_row_count % pagesize != 0:
@@ -230,13 +229,13 @@ class Worksheet:
                 raise RequestsError(response.text,
                                     "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
 
-            #response_rows = response_dict['Rows']
-            #for r in response_rows:
+            # response_rows = response_dict['Rows']
+            # for r in response_rows:
             #    # print(r['Values'])
             #    rows.append()
-            #self.rows = rows
+            # self.rows = rows
             for r in response_dict["Rows"]:
-                #returned = rec.split('\t')
+                # returned = rec.split('\t')
                 self.rows.append(WorksheetRow(r['Values'], self))
 
         # print(len(rows))
@@ -295,15 +294,16 @@ class Worksheet:
         if response.status_code == 200:
             response_dict = json.loads(response.text)
             print(response_dict)
-            results = response_dict['Worksheets'][0] # this only supports single worksheet, so no idea why its an array.
-            response_readable = 'status: ' + response_dict['Success'] + \
-                '\nWorksheetName: ' + str(results['WorksheetName']) + \
-                '\nImportedRowCount: ' + str(results['ImportedRowCount']) + \
-                '\nInsertedRowCount: ' + str(results['InsertedRowCount']) + \
-                '\nModifiedRowCount: ' + str(results['ModifiedRowCount']) + \
-                '\nDeleteRowCount: ' + str(results['DeleteRowCount']) + \
-                '\nErrorRowCount: ' + str(results['ErrorRowCount']) + \
-                '\nErrors: ' + str(results['Errors'])
+            results = response_dict['Worksheets'][
+                0]  # this only supports single worksheet, so no idea why its an array.
+            response_readable = 'status: ' + str(response_dict['Success']) + \
+                                '\nWorksheetName: ' + str(results['WorksheetName']) + \
+                                '\nImportedRowCount: ' + str(results['ImportedRowCount']) + \
+                                '\nInsertedRowCount: ' + str(results['InsertedRowCount']) + \
+                                '\nModifiedRowCount: ' + str(results['ModifiedRowCount']) + \
+                                '\nDeletedRowCount: ' + str(results['DeletedRowCount']) + \
+                                '\nErrorRowCount: ' + str(results['ErrorRowCount']) + \
+                                '\nErrors: ' + str(results['Errors'])
             logging.info(response_readable)
         else:
             raise RequestsError(response.text,
@@ -325,6 +325,7 @@ class Workbook:
 
 
     """
+
     def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
                  Filter: dict = None, VariableValues: dict = None):
         """
@@ -389,7 +390,7 @@ class Workbook:
                 Worksheet(self.environment, self._scenario, name, self._workbook, self._site_group, self._filter,
                           self._variable_values))
 
-        #todo add __methods__
+        # todo add __methods__
 
     def __str__(self):
         return f'Name: {self.name!r}, Scope: {self.workbook_scope!r} '
@@ -460,11 +461,11 @@ class Workbook:
 
     def __getitem__(self, position):
         return self.worksheets[position]
-    #todo make sure these actually work
+
+    # todo make sure these actually work
 
     def indexof(self, rec):
         return self.worksheets.index(rec)
-
 
     def __contains__(self, item):
         # get key fields for table. then check if that value is present
@@ -496,33 +497,42 @@ class WorksheetRow(list):
 
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
-        #super().__setitem__(index, str(item))
+        # super().__setitem__(index, str(item))
         raise NotImplementedError
 
     def insert(self, index, item):
         # allows you to insert a new item at a given position in the underlying list using the index.
         raise NotImplementedError
+
     def append(self, item):
         # adds a single new item at the end of the underlying list
         raise NotImplementedError
+
     def extend(self, other):
         # adds a series of items to the end of the list.
         raise NotImplementedError
+
     def __add__(self, other):
         raise NotImplementedError
+
     def __radd__(self, other):
         raise NotImplementedError
+
     def __iadd__(self, other):
         raise NotImplementedError
+
     def join(self, separator=" "):
         # concatenates all the list’s items in a single string
         return separator.join(str(item) for item in self)
+
     def map(self, action):
         # yields new items that result from applying an action() callable to each item in the underlying list
         return type(self)(action(item) for item in self)
+
     def filter(self, predicate):
         # yields all the items that return True when calling predicate() on them
         return type(self)(item for item in self if predicate(item))
+
     def for_each(self, func):
         # calls func() on every item in the underlying list to generate some side effect.
         for item in self:

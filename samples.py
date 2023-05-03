@@ -14,8 +14,4 @@ sample_bootstrap = {'url': 'http://localhost/rapidresponse',
                         'password': '1L0veR@pidResponse'
                         }
 
-sample = {'url': 'http://localhost/rapidresponse',
-    'auth_type': 'basic',
-    'username': 'gpinkney_ws',
-    'password': '1L0veR@pidResponse'
-    }
+config = {'url': 'http://localhost/rapidresponse','auth_type': 'basic','username': 'gpinkney_ws','password': '1L0veR@pidResponse'}

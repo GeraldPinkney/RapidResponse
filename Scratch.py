@@ -20,7 +20,7 @@ if __name__ == '__main__':
     for i in IndependentDemand[0:5]:
         print(i)
 
-    part = DataTable(env, 'Mfg::Part')
+    part = DataTable(env, 'Mfg::Part', scenario={'Name': 'Integration', 'Scope': 'Public'})
     part.RefreshData()
     print(len(part))
     print(part)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
 
 MEA_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
-                        'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel',
+                        'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data',
                         'auth_type': 'basic',
                         'username': 'RestAPI',
                         'password': '1LoveR@pidResponse!',
