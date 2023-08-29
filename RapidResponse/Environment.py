@@ -49,7 +49,7 @@ class Environment:
             self._data_model_dir = configuration['data_model_directory']
         except KeyError:
             self._data_model_dir = None
-            #raise SetupError("Data Model directory not valid: " + configuration['data_model_directory'])
+            # raise SetupError("Data Model directory not valid: " + configuration['data_model_directory'])
         else:
             if os.path.exists(configuration['data_model_directory']):
                 self._data_model_dir = configuration['data_model_directory']
@@ -62,9 +62,7 @@ class Environment:
         except KeyError:
             self._data_model = DataModel(self._data_model_dir, None, None)
         else:
-            self._data_model = DataModel(data_model_directory=None,url=self._base_url, headers=self.global_headers)
-
-
+            self._data_model = DataModel(data_model_directory=None, url=self._base_url, headers=self.global_headers)
 
         self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 

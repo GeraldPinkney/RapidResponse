@@ -16,6 +16,7 @@ class DataModel:
     """
     This is the data model for the environment. It includes information about the tables, columns, etc.
     """
+
     def __init__(self, data_model_directory, url=None, headers=None):
         """
         :param data_model_directory: Optional. file directory containing the Fields.tab and Tables.tab\n
@@ -25,9 +26,9 @@ class DataModel:
         """
 
         # validate parameter
-        #if not isinstance(data_model_directory, str):
+        # if not isinstance(data_model_directory, str):
         #    raise TypeError('The parameter data_model_directory type must be str')
-        #if not data_model_directory:
+        # if not data_model_directory:
         #    raise ValueError('The parameter data_model_directory must be provided')
 
         self.tables = []
@@ -36,9 +37,11 @@ class DataModel:
                             format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
         # if url is provided, then assume we can load from KXSHelperREST
+        self._url = url
+        self._headers = headers
         if url:
-            self.load_table_data_from_helper_wbk(url, headers)
-            self.load_field_data_from_helper_wbk(url,headers)
+            self.load_table_data_from_helper_wbk(self._url, self._headers)
+            self.load_field_data_from_helper_wbk(self._url, self._headers)
 
         # otherwise, if we have the DM dir, then assume we load from that
         elif data_model_directory:
@@ -77,7 +80,7 @@ class DataModel:
         return self.__repr__() + '\nTables: ' + str(len(self.tables))
 
     def __repr__(self):
-        return f'DataModel(data_model_directory={self._data_model_dir!r})'
+        return f'DataModel(data_model_directory={self._data_model_dir!r}, url={self._url!r}, headers={self._headers!r})'
 
     def load_table_data_from_file(self, file_path: str):
         """
@@ -89,7 +92,8 @@ class DataModel:
             rowcount = 0
             reader = csv.DictReader(csvfile, delimiter='\t')  # update delimiter if its comma not tab
             for row in reader:
-                self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
+                self.tables.append(
+                    Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
                 rowcount += 1
             logging.info(f'info: filename {file_path} rowcount {rowcount}')
         return self.tables
@@ -115,11 +119,19 @@ class DataModel:
         :return: list of tables
         """
         for f in self._fields:
-            col = Column(f['Field'], f['Type'], f['Key'])
+            cols = []
             tab = Table(f['Table'], f['Namespace'])
+
+            if f['Type'] != 'Reference':
+                cols.append(Column(f['Field'], f['Type'], f['Key']))
+            else:
+                for ref in self._fields:
+                    if ref['Table'] == f['referencedTable'] and ref['Key'] == 'Y':
+                        cols.append(Column(f['Field']+'.'+ref['Field'], ref['Type'], f['Key'], ref['referencedTable']))
             if tab in self.tables:
                 i = self.tables.index(tab)
-                self.tables[i].add_fields(col)
+                self.tables[i].add_fields(cols)
+
         return self.tables
 
     def get_table(self, table: str, namespace: str):
@@ -191,7 +203,8 @@ class DataModel:
                 rows = ws.get('Rows')  # should be []
             else:
                 raise RequestsError('missing queryID')
-        q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[1:] + "&workbookName=" + 'KXSHelperREST' + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Tables'
+        q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[
+                                                                         1:] + "&workbookName=" + 'KXSHelperREST' + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Tables'
 
         pagesize = 500
         pages = total_row_count // pagesize
@@ -218,9 +231,9 @@ class DataModel:
             # self.rows = rows
             for r in response_dict["Rows"]:
                 # returned = rec.split('\t')
-                #self.rows.append(WorksheetRow(r['Values'], self))
+                # self.rows.append(WorksheetRow(r['Values'], self))
                 self.tables.append(Table(*r['Values']))
-                #self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
+                # self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
 
         return self.tables
 
@@ -275,7 +288,8 @@ class DataModel:
                 rows = ws.get('Rows')  # should be []
             else:
                 raise RequestsError('missing queryID')
-        q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[1:] + "&workbookName=" + 'KXSHelperREST' + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Fields'
+        q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[
+                                                                         1:] + "&workbookName=" + 'KXSHelperREST' + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Fields'
 
         pagesize = 500
         pages = total_row_count // pagesize
@@ -302,12 +316,21 @@ class DataModel:
             # self.rows = rows
             for r in response_dict["Rows"]:
                 # returned = rec.split('\t')
-                #self.rows.append(WorksheetRow(r['Values'], self))
+                # self.rows.append(WorksheetRow(r['Values'], self))
                 self._fields.append({'Table': r['Values'][0],
                                      'Namespace': r['Values'][1],
                                      'Field': r['Values'][2],
                                      'Type': r['Values'][3],
-                                     'Key': r['Values'][4]})
-                #self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
+                                     'Key': r['Values'][4],
+                                     'referencedTable': r['Values'][5]}
+                                    )
+                # self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
 
-        return self.tables
+        return self._fields
+
+    def __contains__(self, item):
+        # get key fields for table. then check if that value is present
+        if item in self.tables:
+            return True
+        else:
+            return False

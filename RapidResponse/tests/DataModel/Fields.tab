@@ -1,4 +1,4 @@
-﻿Table	Namespace		Field	Namespace	Key	Type	Calculated	Default Value	Related Table	Related Namespace	Corresponding Field	Corresponding Namespace	Record Deleted	Record Table	Record Field
+﻿Table	Namespace		Field	Namespace	Key	Type	Calculated	Default Value	referencedTable	Related Namespace	Corresponding Field	Corresponding Namespace	Record Deleted	Record Table	Record Field
 ClosedLoopAuditMapper	AppsTest		AuditID	AppsTest	Y	String	Input						Delete record	Y	Y
 ClosedLoopAuditMapper	AppsTest		InterfaceName	AppsTest	Y	Reference	Input		ClosedLoopGenericDetail	AppsTest	ClosedLoopAuditMappers	AppsTest	Delete record	Y	Y
 ClosedLoopAuditMapper	AppsTest		From	AppsTest	N	String	Input						Delete record	Y	Y

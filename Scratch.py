@@ -73,9 +73,9 @@ if __name__ == '__main__':
                   SiteGroup="All Sites",
                   Filter={"Name": "All Parts", "Scope": "Public"},
                   VariableValues=variable_values,
-                  WorksheetNames=["DataModel_Summary"]
+                  WorksheetNames=["DataModel_Summary","DataModel_Fields"]
                   )
-    # wb._initialise_for_extract()
+    wb.refresh()
     for x in wb.worksheets:
         print(x)
         xRows = x.fetch_data()
@@ -94,15 +94,18 @@ if __name__ == '__main__':
               ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
 
 
-MEA_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
-                        'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data',
+mea_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
+                        'data_model_bootstrap': 'KXSHelperREST',
                         'auth_type': 'basic',
                         'username': 'RestAPI',
-                        'password': '1LoveR@pidResponse!',
-                        'log_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\'
+                        'password': '1LoveR@pidResponse!'
                         }
-mea_env = Environment(MEA_configuration)
+mea_env = Environment(mea_configuration)
 int_wb = {"Name": "[EU] Integration", "Scope": 'Public'}
 integration_workbook = Workbook(environment=mea_env, Scenario={'Name': 'Enterprise Data', 'Scope': 'Public'}, workbook=int_wb, SiteGroup="All Sites", WorksheetNames=['RRSite'],Filter={"Name": "All Parts", "Scope": "Public"})
 RRSite = integration_workbook.worksheets[0]
 
+
+list_of_tables = ['Mfg::Part', 'Mfg::IndependentDemand', 'Mfg::Customer']
+for t in list_of_tables:
+    print(DataTable(env, t))

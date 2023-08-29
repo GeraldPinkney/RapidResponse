@@ -70,7 +70,7 @@ class DataTable(Table):
         self._table_type = deepcopy(temp_tab._table_type)
 
         if scenario is None:
-            self.scenario = environment.scenarios[0]
+            self.scenario = self.environment.scenarios[0]
         else:
             # check scenario has both Name and scope {"Name": "Enterprise Data", "Scope": "Public"}
             try:
@@ -87,7 +87,9 @@ class DataTable(Table):
             self.set_columns(columns)
         except DataError:
             # allow this to silently error and write it to log
-            pass
+            columns.extend(self._key_fields)
+            print(columns)
+            self.set_columns(columns)
         self.set_filter(table_filter)
 
         if refresh:
@@ -188,7 +190,6 @@ class DataTable(Table):
 
     def set_columns(self, columns: list = None):
         # if columns = None, then set columns to all fields on table
-        # todo handle situation where its a reference
         if columns is None:
             for c in self._table_fields:
                 if c.datatype != 'CompoundVector':
@@ -198,7 +199,7 @@ class DataTable(Table):
             # check whether columns provided includes all key fields
             for k in self._key_fields:
                 if k not in columns:
-                    raise DataError(k, 'key column not in column list')
+                    raise DataError(k, 'key column not in column list: ' + str(k))
 
             # add all valid fields to DataTable Cols
             for c in columns:

@@ -3,19 +3,21 @@ from typing import Literal, NamedTuple
 
 from RapidResponse.Err import DataError
 
-# Column = collections.namedtuple('Column', ['name', 'datatype', 'key', 'referencedTable', 'referencedNamespace', 'identification_fields'])
+# Column = collections.namedtuple('Column', ['name', 'datatype', 'key', 'referencedTable', 'identification_fields', 'RelatedTableWithNamespace'])
 
 
 class Column(NamedTuple):
     # prior implementation below
     # Column = collections.namedtuple('Column', ['name', 'datatype', 'key'])
+    #DATA_TYPE = Literal['String', 'Boolean', 'Date', 'DateTime', 'Integer', 'Money', 'Note', 'Quantity', 'QuantitySingle', 'Reference', 'Time', 'Vector Set']
     name: str
     datatype: str
     key: str
+    #DATA_TYPE = Literal['String', 'Boolean', 'Date', 'DateTime', 'Integer', 'Money', 'Note', 'Quantity', 'QuantitySingle', 'Reference', 'Time', 'Vector Set']
     # if datatype is Reference, then
     referencedTable: str = None
     referencedTableNamespace: str = None
-    # identification_fields: str = None
+    identification_fields: str = None
     correspondingField: str = None
     correspondingFieldNamespace: str = None
 
@@ -58,17 +60,25 @@ class Table:
         :raises ValueError: if parameter field is not provided
         """
         if not isinstance(field, Column):
-            raise TypeError('The parameter field type must be Column')
+            raise TypeError('The parameter field type must be Column. Is type: ' + str(type(field)))
         if not field:
             raise ValueError('The parameter field must be provided')
 
-        self._table_fields.append(field)
-        if field.key == 'Y':
-            self._key_fields.append(field.name)
+        if field in self._table_fields:
+            return 0
+            # todo come back to this and work out why on earth we are trying to assign fields multiple times.
+            # print('The field is already assigned to table')
+        else:
+            self._table_fields.append(field)
+            if field.key == 'Y':
+                self._key_fields.append(field.name)
 
-    def add_fields(self, *fields):
-        for f in fields:
-            self._add_field(f)
+    def add_fields(self, fields):
+        if isinstance(fields, Column):
+            self._add_field(fields)
+        else:
+            for f in fields:
+                self._add_field(f)
         return self._table_fields
 
     def _remove_field(self, field: Column):
@@ -126,6 +136,5 @@ class Table:
         else:
             raise DataError(name, "field: " + name + " not found in table fields.")
 
-    @property
     def fields(self):
         return self._table_fields
