@@ -131,8 +131,8 @@ class DataModel:
                 cols.append(Column(f['Field'], f['Type'], f['Key']))
             else:
                 for ref in self._fields:
-                    if ref['Table'] == f['referencedTable'] and ref['Key'] == 'Y':
-                        cols.append(Column(f['Field']+'.'+ref['Field'], ref['Type'], f['Key'], ref['referencedTable']))
+                    if ref['Table'] == f['referencedTable']: #and ref['Key'] == 'Y':
+                        cols.append(Column(f['Field']+'.'+ref['Field'], ref['Type'], ref['Key'], ref['referencedTable']))
             if tab in self.tables:
                 i = self.tables.index(tab)
                 self.tables[i].add_fields(cols)

@@ -87,7 +87,10 @@ class DataTable(Table):
             self.set_columns(columns)
         except DataError:
             # allow this to silently error and write it to log
-            columns.extend(self._key_fields)
+            for k in self._key_fields:
+                if k not in columns:
+                    columns.append(k)
+            #columns.extend(self._key_fields)
             print(columns)
             self.set_columns(columns)
         self.set_filter(table_filter)
@@ -192,7 +195,9 @@ class DataTable(Table):
         # if columns = None, then set columns to all fields on table
         if columns is None:
             for c in self._table_fields:
-                if c.datatype != 'CompoundVector':
+                if c.datatype != 'CompoundVector' and c.datatype != 'Reference':
+                    self.columns.append(c)
+                elif c.datatype == 'Reference' and c.key == 'Y':
                     self.columns.append(c)
             # self.columns = deepcopy(self._table_fields)
         else:

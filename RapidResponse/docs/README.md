@@ -245,7 +245,7 @@ wb = Workbook(environment=Environment(sample_configuration),
               VariableValues=variable_values,
               WorksheetNames=["DataModel_Summary"]
               )
-# wb._initialise_for_extract()
+wb.refresh()
 for x in wb.worksheets:
     print(x)
     xRows = x.fetch_data()

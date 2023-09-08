@@ -115,11 +115,11 @@ class DataTableTestCase(unittest.TestCase):
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = ['GP','Detroit','Default', '0', '7000vE','Detroit', '2017-08-31', '1500']
+        rows = ['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500']
         IndependentDemand.append(rows)
 
-        self.assertIn(['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
-        IndependentDemand.del_row(['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'])
+        self.assertIn(['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500'])
 
     # test slicing
 
