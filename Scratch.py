@@ -98,7 +98,7 @@ mea_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
                         'data_model_bootstrap': 'KXSHelperREST',
                         'auth_type': 'basic',
                         'username': 'RestAPI',
-                        'password': '1LoveR@pidResponse!'
+                        'password': 'WebAccess2021#'
                         }
 mea_env = Environment(mea_configuration)
 int_wb = {"Name": "[EU] Integration", "Scope": 'Public'}

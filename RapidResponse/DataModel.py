@@ -17,7 +17,7 @@ class DataModel:
     This is the data model for the environment. It includes information about the tables, columns, etc.
     """
 
-    def __init__(self, data_model_directory, url=None, headers=None):
+    def __init__(self, data_model_directory=None, url=None, headers=None, workbook=None):
         """
         :param data_model_directory: Optional. file directory containing the Fields.tab and Tables.tab\n
         :raises TypeError: The parameter data_model_directory type must be str
@@ -25,64 +25,69 @@ class DataModel:
         :raises DirectoryError: directory not valid or file not valid
         """
 
-        # validate parameter
-        # if not isinstance(data_model_directory, str):
-        #    raise TypeError('The parameter data_model_directory type must be str')
-        # if not data_model_directory:
-        #    raise ValueError('The parameter data_model_directory must be provided')
-
         self.tables = []
         self._fields = []
         logging.basicConfig(filename='dm_logging.log', filemode='w',
                             format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-        # if url is provided, then assume we can load from KXSHelperREST
         self._url = url
         self._headers = headers
-        if url:
-            self.load_table_data_from_helper_wbk(self._url, self._headers)
-            self.load_field_data_from_helper_wbk(self._url, self._headers)
+        self._workbook = workbook
+        self._data_model_dir = data_model_directory
 
+        # if we get a helper workbook, use that
+        if self._workbook:
+            self.load_from_workbook()
         # otherwise, if we have the DM dir, then assume we load from that
         elif data_model_directory:
-            self._data_model_dir = data_model_directory
-
-            # check tables file is present, then load
-            if os.path.isfile(self._data_model_dir + '\\Tables.tab'):
-                self.load_table_data_from_file(self._data_model_dir + '\\Tables.tab')
-            else:
-                raise DirectoryError('file not valid', self._data_model_dir + '\\Tables.tab')
-
-            # check fields file is present, then load
-            if os.path.isfile(self._data_model_dir + '\\Fields.tab'):
-                self.load_field_data_from_file(self._data_model_dir + '\\Fields.tab')
-            else:
-                raise DirectoryError('file not valid', self._data_model_dir + '\\Fields.tab')
-
+            self.load_from_directory()
         # otherwise, if these are not provided, then load from package resources
         else:
-            if resource_exists(__name__, 'data/Tables.tab'):
-                file_name = resource_filename(__name__, 'data/Tables.tab')
-                self.load_table_data_from_file(file_name)
-            else:
-                raise SetupError('failed to use data package - data/Tables.tab')
+            self.load_from_package_resources()
 
-            if resource_exists(__name__, 'data/Fields.tab'):
-                file_name = resource_filename(__name__, 'data/Fields.tab')
-                self.load_field_data_from_file(file_name)
-            else:
-                raise SetupError('failed to use data package - data/Fields.tab')
-
-        # if above was successful, then add fields to tables
-        self.add_fields_to_tables()
+        # then add fields to tables
+        self._add_fields_to_tables()
 
     def __str__(self):
         return self.__repr__() + '\nTables: ' + str(len(self.tables))
 
     def __repr__(self):
-        return f'DataModel(data_model_directory={self._data_model_dir!r}, url={self._url!r}, headers={self._headers!r})'
+        if self._data_model_dir:
+            return f'DataModel(data_model_directory={self._data_model_dir!r})'
+        else:
+            return f'DataModel(data_model_workbook={self._workbook!r}, url={self._url!r})'
 
-    def load_table_data_from_file(self, file_path: str):
+    def load_from_workbook(self):
+        self._load_table_data_from_helper_wbk(self._url, self._headers, self._workbook)
+        self._load_field_data_from_helper_wbk(self._url, self._headers, self._workbook)
+
+    def load_from_directory(self):
+        # check tables file is present, then load
+        if os.path.isfile(self._data_model_dir + '\\Tables.tab'):
+            self._load_table_data_from_file(self._data_model_dir + '\\Tables.tab')
+        else:
+            raise DirectoryError('file not valid', self._data_model_dir + '\\Tables.tab')
+
+        # check fields file is present, then load
+        if os.path.isfile(self._data_model_dir + '\\Fields.tab'):
+            self._load_field_data_from_file(self._data_model_dir + '\\Fields.tab')
+        else:
+            raise DirectoryError('file not valid', self._data_model_dir + '\\Fields.tab')
+
+    def load_from_package_resources(self):
+        if resource_exists(__name__, 'data/Tables.tab'):
+            file_name = resource_filename(__name__, 'data/Tables.tab')
+            self._load_table_data_from_file(file_name)
+        else:
+            raise SetupError('failed to use data package - data/Tables.tab')
+
+        if resource_exists(__name__, 'data/Fields.tab'):
+            file_name = resource_filename(__name__, 'data/Fields.tab')
+            self._load_field_data_from_file(file_name)
+        else:
+            raise SetupError('failed to use data package - data/Fields.tab')
+
+    def _load_table_data_from_file(self, file_path: str):
         """
         load table data from local file. will not have field data until enriched\n
         :param file_path: file path containing the Tables.tab file
@@ -98,7 +103,7 @@ class DataModel:
             logging.info(f'info: filename {file_path} rowcount {rowcount}')
         return self.tables
 
-    def load_field_data_from_file(self, file_path: str):
+    def _load_field_data_from_file(self, file_path: str):
         """
         load field data from local file\n
         :param file_path: file path containing the Fields.tab file
@@ -113,7 +118,7 @@ class DataModel:
             logging.info(f'info: filename {file_path} rowcount {rowcount}')
         return self._fields
 
-    def add_fields_to_tables(self):
+    def _add_fields_to_tables(self):
         """
         iterate over fields populated from file & add them to the tables\n
         :return: list of tables
@@ -140,6 +145,7 @@ class DataModel:
         :param table: string tablename
         :param namespace: string namespace of table
         :return: Table(table, namespace)
+        :raises ValueError: tablename is not in data model
         """
 
         tab = Table(table, namespace)
@@ -147,12 +153,12 @@ class DataModel:
             i = self.tables.index(tab)
             return self.tables[i]
         else:
-            raise ValueError('the table provided is not valid')
+            raise ValueError('the table provided is not valid: ' + str(tab))
 
     def tables(self):
         return self.tables
 
-    def load_table_data_from_helper_wbk(self, url, headers):
+    def _load_table_data_from_helper_wbk(self, url, headers, workbook):
         b_url = url
         url = b_url + "/integration/V1/data/workbook"
         headers = headers
@@ -165,7 +171,7 @@ class DataModel:
             },
             "WorkbookParameters": {
                 "Workbook": {
-                    "Name": "KXSHelperREST",
+                    "Name": workbook,
                     "Scope": "Public"
                 },
                 "SiteGroup": "All Sites",
@@ -199,8 +205,8 @@ class DataModel:
             if ws.get('Name') == 'DataModel_Tables':
                 queryID = ws['QueryHandle']['QueryID']
                 total_row_count = ws.get('TotalRowCount')
-                columns = ws.get('Columns')
-                rows = ws.get('Rows')  # should be []
+                # columns = ws.get('Columns')
+                # rows = ws.get('Rows')  # should be []
             else:
                 raise RequestsError('missing queryID')
         q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[
@@ -237,7 +243,7 @@ class DataModel:
 
         return self.tables
 
-    def load_field_data_from_helper_wbk(self, url, headers):
+    def _load_field_data_from_helper_wbk(self, url, headers, workbook):
         b_url = url
         url = b_url + "/integration/V1/data/workbook"
         headers = headers
@@ -250,7 +256,7 @@ class DataModel:
             },
             "WorkbookParameters": {
                 "Workbook": {
-                    "Name": "KXSHelperREST",
+                    "Name": workbook,
                     "Scope": "Public"
                 },
                 "SiteGroup": "All Sites",
@@ -284,12 +290,12 @@ class DataModel:
             if ws.get('Name') == 'DataModel_Fields':
                 queryID = ws['QueryHandle']['QueryID']
                 total_row_count = ws.get('TotalRowCount')
-                columns = ws.get('Columns')
-                rows = ws.get('Rows')  # should be []
+                # columns = ws.get('Columns')
+                # rows = ws.get('Rows')  # should be []
             else:
                 raise RequestsError('missing queryID')
         q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[
-                                                                         1:] + "&workbookName=" + 'KXSHelperREST' + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Fields'
+                                                                         1:] + "&workbookName=" + workbook + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Fields'
 
         pagesize = 500
         pages = total_row_count // pagesize
@@ -329,8 +335,20 @@ class DataModel:
         return self._fields
 
     def __contains__(self, item):
-        # get key fields for table. then check if that value is present
-        if item in self.tables:
+
+        if not isinstance(item, Table):
+            tabarray = item.split('::')
+            try:
+                to_check = Table(tabarray[1], tabarray[0])
+            except IndexError:
+                raise ValueError('table name parameter must be in format namespace::tablename')
+        else:
+            to_check = item
+
+        if to_check in self.tables:
             return True
         else:
             return False
+
+    def __getitem__(self, position):
+        return self.tables[position]

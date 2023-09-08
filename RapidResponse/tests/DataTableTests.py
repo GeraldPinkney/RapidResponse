@@ -108,6 +108,18 @@ class DataTableTestCase(unittest.TestCase):
         IndependentDemand.del_row(['GP','SOPDC-NorthAmerica','DCConsensus', '1', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'])
 
     # test update of attribute of individual record
+    def test_data_table_col_update(self):
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order.Id', 'Order.Site','Order.Customer.Name', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
+
+        # execute
+        rows = ['GP','Detroit','Default', '0', '7000vE','Detroit', '2017-08-31', '1500']
+        IndependentDemand.append(rows)
+
+        self.assertIn(['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'])
 
     # test slicing
 

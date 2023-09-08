@@ -60,9 +60,9 @@ class Environment:
         try:
             bootstrap_wbk = configuration['data_model_bootstrap']
         except KeyError:
-            self._data_model = DataModel(self._data_model_dir, None, None)
+            self.data_model = DataModel(self._data_model_dir, None, None, None)
         else:
-            self._data_model = DataModel(data_model_directory=None, url=self._base_url, headers=self.global_headers)
+            self.data_model = DataModel(data_model_directory=None, url=self._base_url, headers=self.global_headers, workbook=bootstrap_wbk)
 
         self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 
@@ -71,6 +71,9 @@ class Environment:
 
     def __str__(self):
         return f'Environment(url={self._base_url!r})'
+
+    def __contains__(self, item):
+        return item in self.data_model
 
     def _getOauth2(self):
         """return the access token from RR instance based on clientID and client secret"""
@@ -158,9 +161,17 @@ class Environment:
             raise ValueError("The parameter namespace must not be empty.")
 
         # get the Table from the data model and return it.
-        tab = self._data_model.get_table(table, namespace)
+        tab = self.data_model.get_table(table, namespace)
         return tab
 
     def refresh_auth(self):
         auth = self._getAuth(self.auth_type)
         self.global_headers['Authorization'] = str(auth)
+
+    @property
+    def data_model(self):
+        return self._data_model
+
+    @data_model.setter
+    def data_model(self, dm):
+        self._data_model = dm

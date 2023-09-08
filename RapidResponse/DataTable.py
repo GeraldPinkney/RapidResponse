@@ -53,7 +53,7 @@ class DataTable(Table):
         self.environment = environment
         self._table_data = []
         self.columns = []
-        self._filter = None
+        self._filter = table_filter
 
         # total_row_count used during export data gathering
         self.total_row_count = 0
@@ -225,7 +225,7 @@ class DataTable(Table):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
         local_query_fields = []
         if self._filter:
-            query_filter = '[' + self._filter + ']'
+            query_filter = self._filter
         else:
             query_filter = ''
         # print(self._table_fields)

@@ -37,7 +37,7 @@ class Table:
         self._identification_fields = identification_fields
 
     def __repr__(self):
-        return f'Table(name={self._table_namespace + "::" + self._table_name!r}, fields={self._table_fields!r}, type={self._table_type!r}, keyed={self._keyed!r}, identification fields={self._identification_fields!r})'
+        return f'Table(name={self.name!r}, fields={self._table_fields!r}, type={self._table_type!r}, keyed={self._keyed!r}, identification fields={self._identification_fields!r})'
 
     def __eq__(self, other):
         """
@@ -45,8 +45,8 @@ class Table:
         :param other: needs properties of _table_namespace and _table_name. does not typecheck for it being of type Table
         :return: boolean
         """
-        full_name = self._table_namespace + "::" + self._table_name
-        if other._table_namespace + "::" + other._table_name == full_name:
+        #full_name = self._table_namespace + "::" + self._table_name
+        if other.name == self.name:
             return True
         else:
             return False
@@ -138,3 +138,17 @@ class Table:
 
     def fields(self):
         return self._table_fields
+
+    @property
+    def name(self):
+        return self._table_namespace + "::" + self._table_name
+
+    @name.setter
+    def name(self, new_name):
+        tabarray = new_name.split('::')
+        try:
+            self._table_name = tabarray[1]
+            self._table_namespace = tabarray[0]
+        except IndexError:
+            raise ValueError('table name parameter must be in format namespace::tablename')
+

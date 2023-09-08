@@ -13,9 +13,9 @@ long_description = (here / "RapidResponse/docs/README.md").read_text(encoding="u
 
 
 setup(
-    name="RapidPy",
-    version="0.0.10",
-    description="RapidResponse libraries",
+    name="RapidResponse",
+    version="0.0.11",
+    description="RapidResponse library",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/GeraldPinkney/RapidResponse",

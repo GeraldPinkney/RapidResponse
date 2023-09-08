@@ -1,13 +1,13 @@
 
 
-sample_configuration = {'url': 'http://localhost/rapidresponse',
+local_sample_configuration = {'url': 'http://localhost/rapidresponse',
                         'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data',
                         'auth_type': 'basic',
                         'username': 'gpinkney_ws',
                         'password': '1L0veR@pidResponse'
                         }
 
-sample_bootstrap = {'url': 'http://localhost/rapidresponse',
+local_sample_bootstrap = {'url': 'http://localhost/rapidresponse',
                         'data_model_bootstrap': 'KXSHelperREST',
                         'auth_type': 'basic',
                         'username': 'gpinkney_ws',
@@ -15,3 +15,10 @@ sample_bootstrap = {'url': 'http://localhost/rapidresponse',
                         }
 
 config = {'url': 'http://localhost/rapidresponse','auth_type': 'basic','username': 'gpinkney_ws','password': '1L0veR@pidResponse'}
+
+mea_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
+                        'data_model_bootstrap': 'KXSHelperREST',
+                        'auth_type': 'basic',
+                        'username': 'RestAPI',
+                        'password': 'WebAccess2021#'
+                        }
