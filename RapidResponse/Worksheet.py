@@ -39,7 +39,7 @@ class Worksheet:
         :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
         """
-
+        self.logger = logging.getLogger('RapidPy.wb.ws')
         # validations
         # environment
         if not isinstance(environment, Environment):
@@ -187,8 +187,8 @@ class Worksheet:
             response_dict = json.loads(response.text)
 
         else:
-            print(payload)
-            print(url)
+            self.logger.error(payload)
+            self.logger.error(url)
             raise RequestsError(response.text,
                                 " failure during workbook initialise_for_extract, status not 200")
 
@@ -245,7 +245,7 @@ class Worksheet:
         try:
             self._initialise_for_extract()
         except:
-            print("bail, its a scam!")
+            self.logger.error("bail, its a scam!")
         else:
             return self._retrieve_worksheet_data()
 
@@ -293,7 +293,7 @@ class Worksheet:
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
-            print(response_dict)
+            self.logger.info(response_dict)
             results = response_dict['Worksheets'][
                 0]  # this only supports single worksheet, so no idea why its an array.
             response_readable = 'status: ' + str(response_dict['Success']) + \
@@ -304,7 +304,7 @@ class Worksheet:
                                 '\nDeletedRowCount: ' + str(results['DeletedRowCount']) + \
                                 '\nErrorRowCount: ' + str(results['ErrorRowCount']) + \
                                 '\nErrors: ' + str(results['Errors'])
-            logging.info(response_readable)
+            self.logger.info(response_readable)
         else:
             raise RequestsError(response.text,
                                 "failure during workbook-worksheet upload, status not 200" + '\nurl:' + url)
@@ -341,6 +341,7 @@ class Workbook:
 
 
         """
+        self.logger = logging.getLogger('RapidPy.wb')
         if not isinstance(environment, Environment):
             raise TypeError("The parameter environment type must be Environment.")
         if not environment:
@@ -401,7 +402,7 @@ class Workbook:
             try:
                 ws.fetch_data()
             except:
-                print('something went wrong with ' + ws.name)
+                self.logger.error('something went wrong with ' + ws.name)
 
     @property
     def filter(self):
