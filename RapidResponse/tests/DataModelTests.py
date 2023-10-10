@@ -33,6 +33,10 @@ class DataModel_init_TestCase(unittest.TestCase):
         tab1 = Table.Table(name='Part', namespace='Mfg')
         self.assertEqual(tab, tab1)
 
+    def test__default_column_assignment(self):
+        data_model = DM.DataModel(
+            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+
 class DataModelWBKTestCase(unittest.TestCase):
 
     def test_get_table_from_data_model(self):

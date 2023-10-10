@@ -67,15 +67,15 @@ class DataTableTestCase(unittest.TestCase):
     def test_data_table_append(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site','Order.Customer', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity', 'Order.Pool']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = ['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500']
+        rows = ['GP','SOPDC-NorthAmerica', 'FC102', 'DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500','']
         IndependentDemand.append(rows)
 
-        self.assertIn(['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
-        IndependentDemand.del_row(['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'])
+        self.assertIn(['GP','SOPDC-NorthAmerica', 'FC102', 'DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500',''], IndependentDemand)
+        IndependentDemand.del_row(['GP','SOPDC-NorthAmerica', 'FC102', 'DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500',''])
 
     # test del
     def test_data_table_delete(self):
@@ -111,15 +111,15 @@ class DataTableTestCase(unittest.TestCase):
     def test_data_table_col_update(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site','Order.Customer.Name', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site','Order.Customer', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity', 'Order.Pool']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = ['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500']
+        rows = ['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500', '']
         IndependentDemand.append(rows)
 
-        self.assertIn(['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500'], IndependentDemand)
-        IndependentDemand.del_row(['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500'])
+        self.assertIn(['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500', ''], IndependentDemand)
+        IndependentDemand.del_row(['GP','Detroit','Customer BetterBuy','Default', '0', '7000vE','Detroit', '2017-08-31', '1500', ''])
 
     # test slicing
 
@@ -134,10 +134,10 @@ class DataRowTestCase(unittest.TestCase):
     def test_row_init(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site','Order.Customer', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
         # execute
-        rec = DataRow(['GP','SOPDC-NorthAmerica','DCConsensus', '0', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
+        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140', 'ManagementFcst'], IndependentDemand)
         print(rec)
 
     def test_row_length_mismatch(self):

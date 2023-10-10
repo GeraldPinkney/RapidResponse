@@ -6,7 +6,7 @@ import requests
 from copy import deepcopy
 from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, DataError
-from RapidResponse.Table import Table
+from RapidResponse.Table import Table, Column
 
 # todo add controls to not allow update of calculated fields or delete of rows from calculated table
 
@@ -26,7 +26,10 @@ class DataTable(Table):
     :raises DataError: key column not in column list. will log failure but not fail.
     """
     def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None, sync: bool = True, refresh: bool = True, scenario = None):
-        
+
+        logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+        self.logger = logging.getLogger('RapidPy.dt')
+
         # validations
         if not isinstance(environment, Environment):
             raise TypeError("The parameter environment type must be Environment.")
@@ -91,7 +94,7 @@ class DataTable(Table):
                 if k not in columns:
                     columns.append(k)
             #columns.extend(self._key_fields)
-            print(columns)
+            #print(columns)
             self.set_columns(columns)
         self.set_filter(table_filter)
 
@@ -195,9 +198,13 @@ class DataTable(Table):
         # if columns = None, then set columns to all fields on table
         if columns is None:
             for c in self._table_fields:
-                if c.datatype != 'CompoundVector' and c.datatype != 'Reference':
-                    self.columns.append(c)
-                elif c.datatype == 'Reference' and c.key == 'Y':
+                if c.datatype == 'CompoundVector':
+                    pass
+                elif '.' in c.name and c.key == 'N':
+                    pass
+                elif c.datatype == 'Reference' and c.key == 'N':
+                    pass
+                else:
                     self.columns.append(c)
             # self.columns = deepcopy(self._table_fields)
         else:
@@ -208,11 +215,20 @@ class DataTable(Table):
 
             # add all valid fields to DataTable Cols
             for c in columns:
-                col = self.get_field(c)
-                if col.datatype != 'CompoundVector':
-                    self.columns.append(col)
-                else:
-                    logging.info(col.name + ' skipped due to type CompoundVector')
+                try:
+                    col = self.get_field(c)
+                except DataError:
+                    if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
+                        # ToDo come back and fix tis
+                        col = Column(c, 'String', 'N',None)
+                finally:
+                    if col.datatype == 'CompoundVector':
+                        self.logger.info(col.name + ' skipped due to type CompoundVector')
+                        pass
+                    elif col.datatype == 'Reference':
+                        self.columns.append(col)
+                    else:
+                        self.columns.append(col)
             # add fields to columns
 
     def set_filter(self, value: str):
@@ -392,7 +408,7 @@ class DataTable(Table):
             results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-        logging.info(response_readable)
+        self.logger.info(response_readable)
         # todo if Status is failure, do something.
 
     def _create_deletion(self, *args):
@@ -475,7 +491,7 @@ class DataTable(Table):
             results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-        logging.info(response)
+        self.logger.info(response)
 
 
 class DataRow(list):

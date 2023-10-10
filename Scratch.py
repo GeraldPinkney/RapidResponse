@@ -109,3 +109,6 @@ RRSite = integration_workbook.worksheets[0]
 list_of_tables = ['Mfg::Part', 'Mfg::IndependentDemand', 'Mfg::Customer']
 for t in list_of_tables:
     print(DataTable(env, t))
+
+
+print(list((filter(lambda x: x['Table'] == 'Part' and x['Field'] == 'Site', env.data_model._fields))))

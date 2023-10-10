@@ -8,7 +8,7 @@ import os
 import requests
 from pkg_resources import resource_filename, resource_exists
 
-from RapidResponse.Err import DirectoryError, SetupError, RequestsError
+from RapidResponse.Err import DirectoryError, SetupError, RequestsError, DataError
 from RapidResponse.Table import Table, Column
 
 
@@ -27,8 +27,8 @@ class DataModel:
 
         self.tables = []
         self._fields = []
-        logging.basicConfig(filename='dm_logging.log', filemode='w',
-                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+        logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+        self.logger = logging.getLogger('RapidPy.dm')
 
         self._url = url
         self._headers = headers
@@ -100,7 +100,7 @@ class DataModel:
                 self.tables.append(
                     Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
                 rowcount += 1
-            logging.info(f'info: filename {file_path} rowcount {rowcount}')
+            self.logger.info(f'info: filename {file_path} rowcount {rowcount}')
         return self.tables
 
     def _load_field_data_from_file(self, file_path: str):
@@ -115,12 +115,13 @@ class DataModel:
             for row in reader:
                 self._fields.append(row)
                 rowcount += 1
-            logging.info(f'info: filename {file_path} rowcount {rowcount}')
+            self.logger.info(f'info: filename {file_path} rowcount {rowcount}')
         return self._fields
 
     def _add_fields_to_tables(self):
         """
         iterate over fields populated from file & add them to the tables\n
+        Should contain all possible fields that could be accessed from this table
         :return: list of tables
         """
         for f in self._fields:
@@ -131,13 +132,73 @@ class DataModel:
                 cols.append(Column(f['Field'], f['Type'], f['Key']))
             else:
                 for ref in self._fields:
-                    if ref['Table'] == f['referencedTable']: #and ref['Key'] == 'Y':
-                        cols.append(Column(f['Field']+'.'+ref['Field'], ref['Type'], ref['Key'], ref['referencedTable']))
+                    if ref['Table'] == f['referencedTable'] and f['Key'] == 'Y': # and ref['Key'] == 'Y':
+                        cols.append(Column(f['Field'] + '.' + ref['Field'], ref['Type'], ref['Key'], ref['referencedTable']))
+                    elif ref['Table'] == f['referencedTable'] and f['Key'] == 'N':
+                        cols.append(Column(f['Field'] + '.' + ref['Field'], ref['Type'], f['Key'], ref['referencedTable']))
+                    else:
+                        pass
             if tab in self.tables:
                 i = self.tables.index(tab)
                 self.tables[i].add_fields(cols)
 
         return self.tables
+
+    def _validate_fully_qualified_field_name(self,tablename, fieldname):
+        isValid = False
+        #basecase
+        if '.' not in fieldname:
+            isValid = self._is_valid_field(tablename, fieldname)
+        else:
+            fieldarray = fieldname.split('.')
+            fieldarray.insert(0,tablename)
+
+            for i in range(len(fieldarray)-1):
+                # check it is a valid field
+                #
+                if self._is_valid_field(fieldarray[i], fieldarray[i+1]):
+                    isValid = True
+                    if self._is_reference_field(fieldarray[i], fieldarray[i+1]):
+                        fieldarray[i + 1] = self._get_referenced_table(fieldarray[i], fieldarray[i+1])
+                else:
+                    isValid = False
+
+        return isValid
+
+    def _is_valid_field(self, tablename, fieldname):
+        # take as input a tablename and field name (like mfg::part, ReferencePart.BrandSubFlag.BrandFlag.Name
+        # return tablename, fieldname, field type, referenced table
+        #fieldarray = fieldname.split('.')
+        #if len(fieldarray)
+        for f in self._fields:
+            if f['Table'] == tablename and f['Field'] == fieldname:
+                return True
+        return False
+
+    def _get_referenced_table(self, tablename, fieldname):
+        referencedTable = None
+        if '.' not in fieldname:
+            for f in self._fields:
+                if f['Table'] == tablename and f['Field'] == fieldname and f['Type'] == 'Reference':
+                    referencedTable = f['referencedTable']
+                    return referencedTable
+        else:
+            raise ValueError('Fieldname cannot be . qualified')
+
+        return referencedTable
+
+
+    def _is_reference_field(self, tablename, fieldname):
+
+        # list((filter(lambda x: x['Table'] == tablename and x['Field'] == fieldname, env.data_model._fields)))
+        if '.' not in fieldname:
+            for f in self._fields:
+                if f['Table'] == tablename and f['Field'] == fieldname and f['Type'] == 'Reference':
+                    return True
+            return False
+        else:
+            raise ValueError('Fieldname cannot be . qualified')
+
 
     def get_table(self, table: str, namespace: str):
         """

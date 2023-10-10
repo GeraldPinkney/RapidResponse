@@ -21,6 +21,12 @@ class Column(NamedTuple):
     correspondingField: str = None
     correspondingFieldNamespace: str = None
 
+    def __eq__(self, other):
+        if other.name == self.name:
+            return True
+        else:
+            return False
+
 
 class Table:
     TABLE_TYPE = Literal['Input', 'Calculated']
@@ -131,6 +137,7 @@ class Table:
         for f in self._table_fields:
             if name == f.name:
                 response = f
+                return response
         if response:
             return response
         else:
