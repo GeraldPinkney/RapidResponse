@@ -410,7 +410,7 @@ class DataTable(Table):
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
         self.logger.info(response_readable)
         self.logger.info(response_dict)
-        # todo if Status is failure, do something.
+
         if results['Status'] == 'Failure':
             self.logger.error(response_readable)
             self.logger.error(response_dict)
@@ -499,13 +499,19 @@ class DataTable(Table):
             raise RequestsError(response.text, "failure during bulk//upload complete, status not 200" + '\nurl:' + url)
 
         results = response_dict['Results']
-        response = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
+        response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
             results['InsertedRowCount']) + '\nModifiedRowCount: ' + str(
             results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
         self.logger.info(response)
+        self.logger.info(response_readable)
+        self.logger.info(response_dict)
 
+        if results['Status'] == 'Failure':
+            self.logger.error(response_readable)
+            self.logger.error(response_dict)
+            raise RequestsError(response.text, "failure during bulk delete complete")
 
 class DataRow(list):
 
@@ -600,6 +606,6 @@ class DataRow(list):
     def pre_process(self, input):
         # todo implement this
         # key purpose of this method is to handle the date messiness.
-        # if datatype is date or datetime then convert past to 01/01/1900 and future to 31/12/2100 and current to
+        # if datatype is date or datetime then convert past to 01/01/1970 and future to 31/12/9999 and current to
         output = str(input)
         return output
