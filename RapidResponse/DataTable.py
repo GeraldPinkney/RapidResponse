@@ -409,7 +409,20 @@ class DataTable(Table):
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
         self.logger.info(response_readable)
+        self.logger.info(response_dict)
         # todo if Status is failure, do something.
+        if results['Status'] == 'Failure':
+            self.logger.error(response_readable)
+            self.logger.error(response_dict)
+            raise RequestsError(response.text, "failure during bulk upload complete")
+        elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
+            self.logger.error(response_readable)
+            self.logger.error(response_dict)
+            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(results['ErrorRowCount']))
+        else:
+            self.logger.info(response_readable)
+            self.logger.info(response_dict)
+
 
     def _create_deletion(self, *args):
         operation = 'delete'
