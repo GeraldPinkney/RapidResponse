@@ -285,7 +285,7 @@ class DataTable(Table):
         self.exportID = response_dict["ExportId"]
         self.total_row_count = response_dict["TotalRows"]
 
-    def _get_export_results(self, startRow: int = 0, pageSize: int = 5):
+    def _get_export_results(self, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
         url = self.environment._base_url + "/integration/V1/bulk/export/" + self.exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
@@ -302,11 +302,16 @@ class DataTable(Table):
         else:
             raise RequestsError(response, "failure during get bulk//export results, status not 200")
 
+        #for rec in response_dict["Rows"]:
+        #    returned = rec.split('\t')
+        #    self._table_data.append(DataRow(returned, self))
+        rows = []
         for rec in response_dict["Rows"]:
             returned = rec.split('\t')
-            self._table_data.append(DataRow(returned, self))
+            rows.append(DataRow(returned, self))
+        return rows
 
-    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5, ):
+    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
         url = self.environment._base_url + "/integration/V1/bulk/export/" + self.exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
@@ -328,34 +333,39 @@ class DataTable(Table):
             rows.append(DataRow(returned, self))
         return rows
 
-    async def main_get_export_results_async(self, data_range):
+    async def _main_get_export_results_async(self, data_range):
         tasks = []
         client = httpx.AsyncClient()
-        for i in range(0, self.total_row_count, data_range):
+        for i in range(0, self.total_row_count-data_range, data_range):
             tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
-        data = await asyncio.gather(*tasks)
-        self._table_data = list(data)
+        #data = await asyncio.gather(*tasks)
+        #self._table_data = list(data)
+        for coroutine in asyncio.as_completed(tasks):
+            self._table_data.extend(await coroutine)
+
+    def _RefreshData_old(self, data_range: int = 5000):
+        # check tablename is set, check fields are set
+        self._table_data.clear()
+        self.environment.refresh_auth()
+        # initialise_for_extract query
+        self._create_export()
+        for i in range(0, self.total_row_count, data_range):
+            self._table_data.extend(self._get_export_results(i, data_range))
+        self.exportID = None
 
     def RefreshData(self, data_range: int = 5000):
-        # check tablename is set, check fields are set
         self._table_data.clear()
         self.environment.refresh_auth()
         # initialise_for_extract query
         self._create_export()
-
-        for i in range(0, self.total_row_count, data_range):  #
-            self._get_export_results(i, data_range)
+        asyncio.run(self._main_get_export_results_async(data_range))
         self.exportID = None
 
-    def RefreshData_async(self, data_range: int = 5000):
-        # check tablename is set, check fields are set
-        self._table_data.clear()
-        self.environment.refresh_auth()
-        # initialise_for_extract query
-        self._create_export()
-
-        asyncio.run(self.main_get_export_results_async(data_range))
-        self.exportID = None
+        remaining_records = self.total_row_count % data_range
+        if remaining_records > 0:
+            self._create_export()
+            self._table_data.extend(self._get_export_results(self.total_row_count-remaining_records, data_range))
+            self.exportID = None
 
     def add_row(self, rec):
         self.environment.refresh_auth()
@@ -365,7 +375,7 @@ class DataTable(Table):
 
     def add_rows(self, rows: list):
         self.environment.refresh_auth()
-        for i in range(0, len(rows), 500000):
+        for i in range(0, len(rows), 500_000):
             self._create_upload(*rows)
             self._complete_upload()
             self.uploadId = None
