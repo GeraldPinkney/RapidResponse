@@ -112,3 +112,5 @@ for t in list_of_tables:
 
 
 print(list((filter(lambda x: x['Table'] == 'Part' and x['Field'] == 'Site', env.data_model._fields))))
+
+

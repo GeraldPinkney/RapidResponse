@@ -3,6 +3,8 @@
 import json
 import logging
 import requests
+import asyncio
+import httpx
 from copy import deepcopy
 from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, DataError
@@ -304,6 +306,36 @@ class DataTable(Table):
             returned = rec.split('\t')
             self._table_data.append(DataRow(returned, self))
 
+    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5, ):
+        # using slicing on the query handle to strip off the #
+        url = self.environment._base_url + "/integration/V1/bulk/export/" + self.exportID[1:] + "?startRow=" + str(
+            startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
+        # print(url)
+        rows = []
+        headers = self.environment.global_headers
+        # print(url)
+        # print(headers)
+        response = await client.get(url=url, headers=headers)
+
+        # check on response = 200 or whatever
+        if response.status_code == 200:
+            response_dict = json.loads(response.text)
+        else:
+            raise RequestsError(response, "failure during get bulk//export results, status not 200")
+
+        for rec in response_dict["Rows"]:
+            returned = rec.split('\t')
+            rows.append(DataRow(returned, self))
+        return rows
+
+    async def main_get_export_results_async(self, data_range):
+        tasks = []
+        client = httpx.AsyncClient()
+        for i in range(0, self.total_row_count, data_range):
+            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
+        data = await asyncio.gather(*tasks)
+        self._table_data = list(data)
+
     def RefreshData(self, data_range: int = 5000):
         # check tablename is set, check fields are set
         self._table_data.clear()
@@ -313,6 +345,16 @@ class DataTable(Table):
 
         for i in range(0, self.total_row_count, data_range):  #
             self._get_export_results(i, data_range)
+        self.exportID = None
+
+    def RefreshData_async(self, data_range: int = 5000):
+        # check tablename is set, check fields are set
+        self._table_data.clear()
+        self.environment.refresh_auth()
+        # initialise_for_extract query
+        self._create_export()
+
+        asyncio.run(self.main_get_export_results_async(data_range))
         self.exportID = None
 
     def add_row(self, rec):
@@ -514,7 +556,7 @@ class DataTable(Table):
             raise RequestsError(response.text, "failure during bulk delete complete")
 
 class DataRow(list):
-
+    # Can only be initialised from DataTable, therefore no need to validate its a good record on creation.
     def __init__(self, iterable, data_table: DataTable):
         # initialises a new instance DataRow(['GP', '0', '7000vE', '2017-08-31'], IndependentDemand)
 
@@ -606,6 +648,11 @@ class DataRow(list):
     def pre_process(self, input):
         # todo implement this
         # key purpose of this method is to handle the date messiness.
-        # if datatype is date or datetime then convert past to 01/01/1970 and future to 31/12/9999 and current to
+        ''' if datatype is date or datetime then convert
+        past to 01/01/1970
+        future to 31/12/9999
+        current to time.now()
+        undefined to
+        '''
         output = str(input)
         return output

@@ -2,7 +2,7 @@ import unittest
 
 from RapidResponse.Environment import Environment
 from samples import sample_configuration
-from RapidResponse.Worksheet import Worksheet
+from RapidResponse.Worksheet import Worksheet, Workbook, WorksheetRow
 
 
 # class MyTestCase(unittest.TestCase):
@@ -48,10 +48,13 @@ class WorksheetTestCase(unittest.TestCase):
         ws._retrieve_worksheet_data()
         print(ws.rows)
 
-    def ws_with_simple(self):
-        #ws = Worksheet(environment=Environment(sample_configuration),
-        #               workbook={'Part Properties': 'Public')
-        pass
+    def test_ws_simple(self):
+        ws = Worksheet(environment=Environment(sample_configuration), scenario=None, worksheet="OnHand",
+                       workbook={'Name': '.Input Tables', "Scope": 'Public'}, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"})
+        self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+        self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
+        self.assertNotEqual(len(ws.columns), 0, "cols not set")
 
 # todo test private resource, test diff parameters provided, test multiple worksheets
 

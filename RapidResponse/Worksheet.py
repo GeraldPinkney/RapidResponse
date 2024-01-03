@@ -103,8 +103,8 @@ class Worksheet:
         self._queryID = None
         self.total_row_count = None
 
-        # initialise for extract to get colum lists and total row count
-        self._initialise_for_extract()
+        self.fetch_data()
+
 
     @property
     def name(self):
@@ -165,8 +165,6 @@ class Worksheet:
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
             "SiteGroup": self._site_group,  # "All Sites"
-            # "Filter": self._filter, # {"Name": "All Parts", "Scope": "Public"}
-            # "VariableValues": self._variable_values,
             "WorksheetNames": [self.name]
         }
         # add optional parameters if they were provided
@@ -244,6 +242,8 @@ class Worksheet:
     def fetch_data(self):
         try:
             self._initialise_for_extract()
+        except TypeError:
+            raise RequestsError(msg='likely due to invalid worksheetname')
         except:
             self.logger.error("bail, its a scam!")
         else:
