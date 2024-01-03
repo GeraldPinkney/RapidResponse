@@ -101,7 +101,7 @@ class DataTable(Table):
         self.set_filter(table_filter)
 
         if refresh:
-            self.RefreshData()
+            self.RefreshData_async()
 
     def __bool__(self):
         if len(self._table_data) > 0:
@@ -217,6 +217,7 @@ class DataTable(Table):
 
             # add all valid fields to DataTable Cols
             for c in columns:
+                col = None
                 try:
                     col = self.get_field(c)
                 except DataError:
@@ -244,7 +245,7 @@ class DataTable(Table):
         index = self.indexof(rec)
         self.__delitem__(index)
 
-    def _create_export(self):
+    def _create_export(self, session):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
         local_query_fields = []
         if self._filter:
@@ -266,11 +267,15 @@ class DataTable(Table):
             "Fields": local_query_fields,
             "Filter": query_filter
         })
+
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
         url = self.environment._base_url + "/integration/V1/bulk/export"
 
-        response = requests.request("POST", url, headers=headers, data=payload)
+        req = requests.Request("POST", url, headers=headers, data=payload)
+        #response = requests.request("POST", url, headers=headers, data=payload)
+        prepped = req.prepare()
+        response = session.send(prepped)
 
         # check valid response
         if response.status_code == 200:
@@ -285,7 +290,7 @@ class DataTable(Table):
         self.exportID = response_dict["ExportId"]
         self.total_row_count = response_dict["TotalRows"]
 
-    def _get_export_results(self, startRow: int = 0, pageSize: int = 5000):
+    def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
         url = self.environment._base_url + "/integration/V1/bulk/export/" + self.exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
@@ -294,7 +299,10 @@ class DataTable(Table):
         headers = self.environment.global_headers
         # print(url)
         # print(headers)
-        response = requests.request("GET", url, headers=headers)
+        req = requests.Request("GET", url, headers=headers)
+        prepped = req.prepare()
+        response = session.send(prepped)
+        #response = requests.request("GET", url, headers=headers)
 
         # check on response = 200 or whatever
         if response.status_code == 200:
@@ -343,29 +351,40 @@ class DataTable(Table):
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
-    def _RefreshData_old(self, data_range: int = 5000):
-        # check tablename is set, check fields are set
-        self._table_data.clear()
-        self.environment.refresh_auth()
-        # initialise_for_extract query
-        self._create_export()
-        for i in range(0, self.total_row_count, data_range):
-            self._table_data.extend(self._get_export_results(i, data_range))
-        self.exportID = None
+        remaining_records = self.total_row_count % data_range
+        if remaining_records > 0:
+            self._table_data.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
+        await client.aclose()
 
     def RefreshData(self, data_range: int = 5000):
+        # check tablename is set, check fields are set
+        s = requests.Session()
+        self.environment.refresh_auth()
+
+        self._table_data.clear()
+        self._create_export(s)
+        for i in range(0, self.total_row_count, data_range):
+            self._table_data.extend(self._get_export_results(s, i, data_range))
+        self.exportID = None
+        s.close()
+
+    def RefreshData_async(self, data_range: int = 5000):
         self._table_data.clear()
         self.environment.refresh_auth()
         # initialise_for_extract query
-        self._create_export()
+        s = requests.Session()
+        self._create_export(s)
+        s.close()
         asyncio.run(self._main_get_export_results_async(data_range))
         self.exportID = None
 
-        remaining_records = self.total_row_count % data_range
+        '''remaining_records = self.total_row_count % data_range
         if remaining_records > 0:
-            self._create_export()
-            self._table_data.extend(self._get_export_results(self.total_row_count-remaining_records, data_range))
-            self.exportID = None
+            s = requests.Session()
+            self._create_export(s)
+            self._table_data.extend(
+                self._get_export_results(s, self.total_row_count - remaining_records, data_range))
+            self.exportID = None'''
 
     def add_row(self, rec):
         self.environment.refresh_auth()
@@ -474,7 +493,6 @@ class DataTable(Table):
         else:
             self.logger.info(response_readable)
             self.logger.info(response_dict)
-
 
     def _create_deletion(self, *args):
         operation = 'delete'
