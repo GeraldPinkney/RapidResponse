@@ -134,11 +134,9 @@ class DataModel:
             else:
                 for ref in self._fields:
                     if ref['Table'] == f['referencedTable'] and f['Key'] == 'Y':  # and ref['Key'] == 'Y':
-                        cols.append(
-                            Column(f['Field'] + '.' + ref['Field'], ref['Type'], ref['Key'], ref['referencedTable']))
+                        cols.append(Column(f['Field'] + '.' + ref['Field'], ref['Type'], ref['Key'], ref['referencedTable']))
                     elif ref['Table'] == f['referencedTable'] and f['Key'] == 'N':
-                        cols.append(
-                            Column(f['Field'] + '.' + ref['Field'], ref['Type'], f['Key'], ref['referencedTable']))
+                        cols.append(Column(f['Field'] + '.' + ref['Field'], ref['Type'], f['Key'], ref['referencedTable']))
                     else:
                         pass
             if tab in self.tables:

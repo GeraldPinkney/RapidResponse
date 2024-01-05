@@ -222,7 +222,6 @@ class DataTable(Table):
                     col = self.get_field(c)
                 except DataError:
                     if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
-                        # ToDo come back and fix tis
                         col = Column(c, 'String', 'N',None)
                 finally:
                     if col.datatype == 'CompoundVector':

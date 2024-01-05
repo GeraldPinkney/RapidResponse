@@ -14,7 +14,7 @@ long_description = (here / "RapidResponse/docs/README.md").read_text(encoding="u
 
 setup(
     name="RapidResponse",
-    version="1.0.0",
+    version="1.0.1",
     description="RapidResponse library",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -23,7 +23,7 @@ setup(
     packages=find_packages(),  # Required include=['RapidResponse']
     #package_dir={"": "."},
     python_requires=">=3.10, <4",
-    install_requires=["requests"],  #  "csv", "logging", "os". all the other stuff is from standard lib
+    install_requires=["requests","httpx"],  #  "csv", "logging", "os". all the other stuff is from standard lib
     include_package_data=True,
     package_data={  # Optional
         "": ["data/*.tab", "data/*.wwb", "docs/*.md"], # includes all tab files (i.e. those data model ones), and the wbb for data model bootstrapping
