@@ -167,10 +167,8 @@ class DataModel:
         return isValid
 
     def _is_valid_field(self, tablename, fieldname):
-        # take as input a tablename and field name (like mfg::part, ReferencePart.BrandSubFlag.BrandFlag.Name
-        # return tablename, fieldname, field type, referenced table
-        # fieldarray = fieldname.split('.')
-        # if len(fieldarray)
+        # take as input a tablename and field name (like Part, ReferencePart.BrandSubFlag.BrandFlag.Name)
+
         for f in self._fields:
             if f['Table'] == tablename and f['Field'] == fieldname:
                 return True
