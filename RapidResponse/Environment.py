@@ -67,7 +67,7 @@ class Environment:
         self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 
     def __repr__(self):
-        return f'Environment(url={self._base_url!r}, data model directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
+        return f'Environment(url={self._base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
 
     def __str__(self):
         return f'Environment(url={self._base_url!r})'
