@@ -33,9 +33,52 @@ class DataModel_init_TestCase(unittest.TestCase):
         tab1 = Table.Table(name='Part', namespace='Mfg')
         self.assertEqual(tab, tab1)
 
-    def test__default_column_assignment(self):
+    def test_default_column_assignment(self):
         data_model = DM.DataModel(
             'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+
+    def test_fully_qual_fieldname(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        valid = dm._validate_fully_qualified_field_name('mfg::part', 'ReferencePart.ProductHierarchy1.Value')
+        self.assertTrue(valid)
+
+    def test_neg_fully_qual_fieldname(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        valid = dm._validate_fully_qualified_field_name('mfg::part', 'ReferencePart.ProductHierarchy1.Fake')
+        self.assertFalse(valid)
+
+    def test_is_valid_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        valid = dm._is_valid_field('Part', 'ReferencePart')
+        self.assertTrue(valid)
+
+    def test_neg_is_valid_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        valid = dm._is_valid_field('Part', 'ReferenceParty')
+        self.assertFalse(valid)
+
+    def test_get_ref_tab(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        tab = dm._get_referenced_table('PartSource', 'TransferPart')
+        self.assertEqual(tab, 'Part')
+
+    def test_val_error_get_ref_tab(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        with self.assertRaises(ValueError):
+            tab = dm._get_referenced_table('PartSource', 'TransferPart.ReferencePart')
+
 
 class DataModelWBKTestCase(unittest.TestCase):
 

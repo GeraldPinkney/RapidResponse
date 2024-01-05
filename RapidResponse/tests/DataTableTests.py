@@ -56,13 +56,13 @@ class DataTableTestCase(unittest.TestCase):
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = [['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '01', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'],
-                ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '10', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500']]
+        rows = [['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'],
+                ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '100', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500']]
         IndependentDemand.extend(rows)
 
-        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '01', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
-        IndependentDemand.del_row(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '01', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'])
-        IndependentDemand.del_row(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '10', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'])
+        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(rows[0])
+        IndependentDemand.del_row(rows[1])
 
     # test append
     def test_data_table_append(self):
