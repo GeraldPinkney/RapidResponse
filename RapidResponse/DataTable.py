@@ -123,8 +123,9 @@ class DataTable(Table):
             return False
 
     def __repr__(self):
+
         return f'DataTable(environment={self.environment!r},name={self._table_namespace + "::" + self._table_name!r},' \
-               f'columns={self.columns!r}, filter={self._filter!r}, sync={self._sync!r}) '
+               f'columns={[col.name for col in self.columns]!r}, filter={self._filter!r}, sync={self._sync!r}) '
 
     def __str__(self):
         # return self and first 5 rows
@@ -201,14 +202,14 @@ class DataTable(Table):
         if columns is None:
             for c in self._table_fields:
                 if c.datatype == 'CompoundVector':
-                    pass
+                    self.logger.info(c.name + ' skipped due to type CompoundVector')
                 elif '.' in c.name and c.key == 'N':
-                    pass
+                    self.logger.info(c.name + ' skipped as non key reference')
                 elif c.datatype == 'Reference' and c.key == 'N':
-                    pass
+                    self.logger.info(c.name + ' skipped as non key reference')
                 else:
                     self.columns.append(c)
-            # self.columns = deepcopy(self._table_fields)
+
         else:
             # check whether columns provided includes all key fields
             for k in self._key_fields:
@@ -223,6 +224,8 @@ class DataTable(Table):
                 except DataError:
                     if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
                         col = Column(c, 'String', 'N',None)
+                    else:
+                        self.logger.warning(col.name + ' incorrect field name')
                 finally:
                     if col.datatype == 'CompoundVector':
                         self.logger.info(col.name + ' skipped due to type CompoundVector')
@@ -386,6 +389,7 @@ class DataTable(Table):
             self.exportID = None'''
 
     def add_row(self, rec):
+        s = requests.Session()
         self.environment.refresh_auth()
         self._create_upload(rec)
         self._complete_upload()
