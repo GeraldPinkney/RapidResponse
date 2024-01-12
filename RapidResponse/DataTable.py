@@ -473,7 +473,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            print(response)
+            #print(response)
             raise RequestsError(response.text, "failure during bulk//upload complete, status not 200" + '\nurl:' + url)
 
         results = response_dict['Results']
@@ -482,8 +482,7 @@ class DataTable(Table):
             results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-        self.logger.info(response_readable)
-        self.logger.info(response_dict)
+
 
         if results['Status'] == 'Failure':
             self.logger.error(response_readable)

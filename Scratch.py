@@ -78,7 +78,7 @@ if __name__ == '__main__':
     wb.refresh()
     for x in wb.worksheets:
         print(x)
-        xRows = x.fetch_data()
+        xRows = x.RefreshData()
         print(xRows)
 
     wb_ords = Workbook(environment=Environment(sample_configuration),

@@ -1,5 +1,4 @@
 # Worksheet.py
-
 import json
 import requests
 import logging
@@ -27,7 +26,7 @@ class Worksheet:
     """
 
     def __init__(self, environment, scenario, worksheet: str, workbook: dict, SiteGroup: str, Filter: dict = None,
-                 VariableValues: dict = None):
+                 VariableValues: dict = None, sync: bool = True, refresh: bool = True):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
@@ -39,7 +38,7 @@ class Worksheet:
         :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
         """
-        self.logger = logging.getLogger('RapidPy.wb.ws')
+        self._logger = logging.getLogger('RapidPy.wb.ws')
         # validations
         # environment
         if not isinstance(environment, Environment):
@@ -49,17 +48,17 @@ class Worksheet:
         self.environment = environment
 
         # worksheet
-        if not isinstance(worksheet, str):
-            raise TypeError("The parameter worksheet type must be str.")
+        #if not isinstance(worksheet, str):
+        #    raise TypeError("The parameter worksheet type must be str.")
         if not worksheet:
             raise ValueError("The parameter worksheet must not be empty.")
-        self._name = worksheet
+        self._name = str(worksheet)
 
         # workbook
-        if not isinstance(workbook, dict):
-            raise TypeError("The parameter workbook type must be dict.")
-        if not workbook:
-            raise ValueError("The parameter workbook must not be empty.")
+        #if not isinstance(workbook, dict):
+        #    raise TypeError("The parameter workbook type must be dict.")
+        #if not workbook:
+        #    raise ValueError("The parameter workbook must not be empty.")
         wb_keys = workbook.keys()
         if len(wb_keys) != 2:
             raise ValueError("The parameter workbook must contain only Name and Scope.")
@@ -75,6 +74,8 @@ class Worksheet:
         if not SiteGroup:
             raise ValueError("The parameter SiteGroup must not be empty.")
         self._site_group = SiteGroup
+        self._sync = bool(sync)
+        self._refresh = bool(refresh)
 
         # scenario
         if scenario:
@@ -93,8 +94,6 @@ class Worksheet:
 
         self._filter = Filter
         self._variable_values = VariableValues
-
-        # todo add support for filter expression
         # todo add support for hierarchies
 
         self.columns = []
@@ -103,8 +102,7 @@ class Worksheet:
         self._queryID = None
         self.total_row_count = None
 
-        self.fetch_data()
-
+        self.RefreshData()
 
     @property
     def name(self):
@@ -153,7 +151,7 @@ class Worksheet:
             response = response + '...'
         return response
 
-    def _initialise_for_extract(self):
+    def _create_export(self, session):
         """
 
         :return: response_dict
@@ -178,15 +176,17 @@ class Worksheet:
             'WorkbookParameters': workbook_parameters
         })
 
-        response = requests.request("POST", url, headers=headers, data=payload)
+        req = requests.Request("POST", url, headers=headers, data=payload)
+        prepped = req.prepare()
+        response = session.send(prepped)
+
         # print(response.text)
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
-
         else:
-            self.logger.error(payload)
-            self.logger.error(url)
+            self._logger.error(payload)
+            self._logger.error(url)
             raise RequestsError(response.text,
                                 " failure during workbook initialise_for_extract, status not 200")
 
@@ -199,55 +199,56 @@ class Worksheet:
                 self.rows = ws.get('Rows')  # should be []
         return response_dict
 
-    def _retrieve_worksheet_data(self, pagesize=500):
+    def _get_export_results(self, session, startRow: int = 0, pageSize: int = 500):
         # add some checking for not null, blah. check pagesize is not insane
         """
 
-        :param pagesize:
+        :param session:
+        :param startRow:
+        :param pageSize:
         :return: rows[]
         """
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        burl = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'] + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name
+        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[
+                                                                                            1:] + "&workbookName=" + \
+              self.parent_workbook['Name'] + "&Scope=" + self.parent_workbook[
+                  'Scope'] + "&worksheetName=" + self.name + "&startRow=" + str(
+            startRow) + "&pageSize=" + str(pageSize)
 
-        pages = self.total_row_count // pagesize
-        if self.total_row_count % pagesize != 0:
-            pages = pages + 1
+        req = requests.Request("GET", url, headers=headers)
+        prepped = req.prepare()
+        response = session.send(prepped)
 
-        for i in range(pages):
-            url = burl + "&startRow=" + str(0 + (pagesize * i)) + "&pageSize=" + str(pagesize)
-            response = requests.request("GET", url,
-                                        headers=headers)  # using GET means you can embed stuff in url, rather than the POST endpoint which needs you to have stuff in payload
-            # check valid response
-            if response.status_code == 200:
-                response_dict = json.loads(response.text)
+        # check valid response
+        if response.status_code == 200:
+            response_dict = json.loads(response.text)
+        else:
+            raise RequestsError(response.text,
+                                "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
 
-            else:
+        rows = []
+        for rec in response_dict["Rows"]:
+            rows.append(WorksheetRow(rec['Values'], self))
+        return rows
 
-                raise RequestsError(response.text,
-                                    "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
-
-            # response_rows = response_dict['Rows']
-            # for r in response_rows:
-            #    # print(r['Values'])
-            #    rows.append()
-            # self.rows = rows
-            for r in response_dict["Rows"]:
-                # returned = rec.split('\t')
-                self.rows.append(WorksheetRow(r['Values'], self))
-
-        # print(len(rows))
-        return self.rows
-
-    def fetch_data(self):
+    def RefreshData(self, data_range: int = 50000):
+        s = requests.Session()
+        self.environment.refresh_auth()
         try:
-            self._initialise_for_extract()
+            self._create_export(s)
         except TypeError:
             raise RequestsError(msg='likely due to invalid worksheetname')
         except:
-            self.logger.error("bail, its a scam!")
+            self._logger.error("bail, its a scam!")
+            raise RequestsError(msg='Error during create export')
         else:
-            return self._retrieve_worksheet_data()
+            self.rows.clear()
+            for i in range(0, self.total_row_count, data_range):
+                self.rows.extend(self._get_export_results(s, i, data_range))
+        finally:
+            self._queryID = None
+            s.close()
 
     def upload(self, *args):
         """
@@ -273,15 +274,10 @@ class Worksheet:
         if self._variable_values:
             workbook_parameters['VariableValues'] = self._variable_values
 
-        rows = []
-        for i in args:
-            # create inner array (list)
-            # arr = [i]
-            # arr.append(i)
-            # create dict containing single element {"Values": []}
-            values = {"Values": i}
-            # append to Rows
-            rows.append(values)
+        rows = [{"Values": i} for i in args]
+        #for i in args:
+        #    values = {"Values": i}
+        #    rows.append(values)
 
         payload = json.dumps({
             'Scenario': self._scenario,
@@ -293,22 +289,35 @@ class Worksheet:
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
-            self.logger.info(response_dict)
-            results = response_dict['Worksheets'][
-                0]  # this only supports single worksheet, so no idea why its an array.
-            response_readable = 'status: ' + str(response_dict['Success']) + \
-                                '\nWorksheetName: ' + str(results['WorksheetName']) + \
-                                '\nImportedRowCount: ' + str(results['ImportedRowCount']) + \
-                                '\nInsertedRowCount: ' + str(results['InsertedRowCount']) + \
-                                '\nModifiedRowCount: ' + str(results['ModifiedRowCount']) + \
-                                '\nDeletedRowCount: ' + str(results['DeletedRowCount']) + \
-                                '\nErrorRowCount: ' + str(results['ErrorRowCount']) + \
-                                '\nErrors: ' + str(results['Errors'])
-            self.logger.info(response_readable)
         else:
+            self._logger.error(payload)
             raise RequestsError(response.text,
-                                "failure during workbook-worksheet upload, status not 200" + '\nurl:' + url)
-        # print(response)
+                                f"failure during workbook-worksheet upload, status {response.status_code} \nurl: {url}")
+
+        results = response_dict['Worksheets'][0]  # this only supports single worksheet, so no idea why its an array.
+        response_readable = 'status: ' + str(response_dict['Success']) + \
+                            '\nWorksheetName: ' + str(results['WorksheetName']) + \
+                            '\nImportedRowCount: ' + str(results['ImportedRowCount']) + \
+                            '\nInsertedRowCount: ' + str(results['InsertedRowCount']) + \
+                            '\nModifiedRowCount: ' + str(results['ModifiedRowCount']) + \
+                            '\nDeletedRowCount: ' + str(results['DeletedRowCount']) + \
+                            '\nErrorRowCount: ' + str(results['ErrorRowCount']) + \
+                            '\nErrors: ' + str(results['Errors'])
+
+        if response_dict['Success'] and results['ErrorRowCount'] <= 0:
+            self._logger.info(response_readable)
+            self._logger.info(response_dict)
+        elif response_dict['Success'] and results['ErrorRowCount'] > 0:
+            self._logger.warning(response_readable)
+            self._logger.warning(response_dict)
+            self._logger.warning(payload)
+            raise RequestsError(response.text,
+                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}")
+        else:
+            self._logger.error(response_readable)
+            self._logger.error(response_dict)
+            self._logger.error(payload)
+            raise RequestsError(response.text, f"failure during worksheet upload")
         return results
 
 
@@ -349,11 +358,11 @@ class Workbook:
         self.environment = environment
 
         if Scenario:
-            if not isinstance(Scenario, dict):
-                raise TypeError("The parameter scenario type must be dict.")
+            #if not isinstance(Scenario, dict):
+            #    raise TypeError("The parameter scenario type must be dict.")
             scenario_keys = Scenario.keys()
-            if len(scenario_keys) != 2:
-                raise ValueError("The parameter scenario must contain only Name and Scope.")
+            #if len(scenario_keys) != 2:
+            #    raise ValueError("The parameter scenario must contain only Name and Scope.")
             if 'Name' not in scenario_keys:
                 raise ValueError("The parameter scenario must contain Name.")
             if 'Scope' not in scenario_keys:
@@ -362,14 +371,14 @@ class Workbook:
         else:
             self._scenario = self.environment.scenarios[0]
 
-        if not isinstance(workbook, dict):
-            raise TypeError("The parameter workbook type must be dict.")
+        #if not isinstance(workbook, dict):
+        #    raise TypeError("The parameter workbook type must be dict.")
         if not workbook:
             raise ValueError("The parameter workbook must not be empty.")
 
         wb_keys = workbook.keys()
-        if len(wb_keys) != 2:
-            raise ValueError("The parameter workbook must contain only Name and Scope.")
+        #if len(wb_keys) != 2:
+        #    raise ValueError("The parameter workbook must contain only Name and Scope.")
         if 'Name' not in wb_keys:
             raise ValueError("The parameter workbook must contain Name.")
         if 'Scope' not in wb_keys:
@@ -379,10 +388,15 @@ class Workbook:
         if not isinstance(SiteGroup, str):
             raise TypeError("The parameter SiteGroup type must be str.")
         if not SiteGroup:
-            raise ValueError("The parameter SiteGroup must not be empty.")
-        self._site_group = SiteGroup
+            #raise ValueError("The parameter SiteGroup must not be empty.")
+            self._site_group = 'All Sites'
+        else:
+            self._site_group = SiteGroup
 
-        self._filter = Filter
+        if not Filter:
+            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
+        else:
+            self._filter = Filter
         self._variable_values = VariableValues
 
         self.worksheets = []
@@ -400,7 +414,7 @@ class Workbook:
         # populate all child worksheets with data
         for ws in self.worksheets:
             try:
-                ws.fetch_data()
+                ws.RefreshData()
             except:
                 self.logger.error('something went wrong with ' + ws.name)
 
@@ -438,8 +452,8 @@ class Workbook:
 
     @scenario.setter
     def scenario(self, new_scenario):
-        if not isinstance(new_scenario, dict):
-            raise TypeError("The parameter scenario type must be dict.")
+        #if not isinstance(new_scenario, dict):
+        #    raise TypeError("The parameter scenario type must be dict.")
         scenario_keys = new_scenario.keys()
         if len(scenario_keys) != 2:
             raise ValueError("The parameter scenario must contain only Name and Scope.")
@@ -450,12 +464,18 @@ class Workbook:
         self._scenario = new_scenario
 
     @property
+    def environment(self):
+        return self.environment
+
+
+
+    @property
     def site_group(self):
         return self._site_group
 
     @site_group.setter
     def site_group(self, new_site_group):
-        self._site_group = new_site_group
+        self._site_group = str(new_site_group)
 
     def __len__(self):
         return len(self.worksheets)
@@ -479,13 +499,12 @@ class Workbook:
 class WorksheetRow(list):
     def __init__(self, iterable, worksheet: Worksheet):
         # initialises a new instance WorksheetRow(['GP', '0', '7000vE', '2017-08-31'], WorksheetName)
-
+        if not isinstance(worksheet, Worksheet):
+            raise TypeError("The parameter worksheet type must be Worksheet.")
         # grab the necessary info from owning table
         self._worksheet = worksheet
 
         # perform validations
-        if not isinstance(worksheet, Worksheet):
-            raise TypeError("The parameter worksheet type must be Worksheet.")
         if len(iterable) == len(self._worksheet.columns):
             super().__init__(str(item) for item in iterable)
         else:

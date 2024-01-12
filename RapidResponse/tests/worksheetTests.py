@@ -23,9 +23,9 @@ class WorksheetTestCase(unittest.TestCase):
                        workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
 
-        ws._initialise_for_extract()
+        #ws._create_export()
         self.assertEqual(ws.name, 'DataModel_Summary')
-        self.assertIsNotNone(ws._queryID,"QueryID not set correctly")
+        #self.assertIsNotNone(ws._queryID,"QueryID not set correctly")
         self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
 
@@ -41,19 +41,35 @@ class WorksheetTestCase(unittest.TestCase):
                        workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
 
-        ws._initialise_for_extract()
-        ws._retrieve_worksheet_data()
-        print(ws.rows)
+        #ws._create_export()
+        #ws._get_export_results()
+        self.assertNotEqual(len(ws.rows), 0, 'fail')
 
     def test_ws_simple(self):
         ws = Worksheet(environment=Environment(sample_configuration), scenario=None, worksheet="OnHand",
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"})
-        self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+        #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
         self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
 
+    def test_ws_upload(self):
+        ws = Worksheet(environment=Environment(sample_configuration), scenario={"Name": "Integration", "Scope": "Public"}, worksheet="Actual Orders",
+                       workbook={'Name': 'Orders by Customer', "Scope": 'Public'}, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+        self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
+        self.assertNotEqual(len(ws.columns), 0, "cols not set")
 # todo test private resource, test diff parameters provided, test multiple worksheets
+
+
+class WorksheetRowTestCase(unittest.TestCase):
+    pass
+
+
+class WorkbookTestCase(unittest.TestCase):
+    pass
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -248,7 +248,7 @@ wb = Workbook(environment=Environment(sample_configuration),
 wb.refresh()
 for x in wb.worksheets:
     print(x)
-    xRows = x.fetch_data()
+    xRows = x.RefreshData()
     print(xRows)
 ```
 Create workbook and upload to that workbook
