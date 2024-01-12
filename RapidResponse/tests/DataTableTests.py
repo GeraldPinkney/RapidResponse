@@ -171,6 +171,7 @@ class DataRowTestCase(unittest.TestCase):
             dr = DataRow(['GP','SOPDC-NorthAmerica','DCConsensus' '0', '7000vE', '2017-08-31', '1500'], IndependentDemand)
 
 
+# todo test the _sync attribute
 
 if __name__ == '__main__':
     unittest.main()

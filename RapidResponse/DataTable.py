@@ -193,8 +193,6 @@ class DataTable(Table):
         if isinstance(*args, type(DataRow)):
             self._table_data.extend(*args)
         else:
-            to_add = [DataRow(item, self) for item in args[0]]
-
             self._table_data.extend([DataRow(item, self) for item in args[0]])
 
     def set_columns(self, columns: list = None):
@@ -282,6 +280,44 @@ class DataTable(Table):
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
+        elif response.status_code == 400:
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The request contains an error")
+        elif response.status_code == 401:
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text,
+                                f"status: {response.status_code}. Failure during bulk//export create, Invalid credentials provided for the user account or the authorization method is not supported by the endpoint")
+        elif response.status_code == 403:
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The user specified does not have permission to perform web service operations")
+        elif response.status_code == 404:
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text,
+                                f"status: {response.status_code}. Failure during bulk//export create, The specified endpoint is not valid or does not exist")
+        elif response.status_code == 405:
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The specified HTTP method is not supported by the endpoint")
+        elif response.status_code == 415:
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The specified media type is not supported by the endpoint")
+        elif response.status_code == 503:
+            print(payload)
+            print(response.content)
+            print(response.text)
+            raise RequestsError(response.text,
+                                f"status: {response.status_code}. Failure during bulk//export create, RapidResponse is not available.")
         else:
             print(payload)
             print(response.content)

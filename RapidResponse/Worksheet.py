@@ -8,8 +8,23 @@ from RapidResponse.Environment import Environment
 
 
 class Cell:
+    def __init__(self, value, datatype, columnId):
+        self.value = value
+        self.datatype = datatype
+        self.columnId = columnId
     pass
     # value, datatype, columnId
+
+    @property
+    def value(self):
+        if self.datatype == 'Date':
+            return self.value # format needs to be '07-06-20'
+        else:
+            return self.value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
 
 
 class Worksheet:
@@ -25,8 +40,8 @@ class Worksheet:
     :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
     """
 
-    def __init__(self, environment, scenario, worksheet: str, workbook: dict, SiteGroup: str, Filter: dict = None,
-                 VariableValues: dict = None, sync: bool = True, refresh: bool = True):
+    def __init__(self, environment, worksheet: str, workbook: dict, scenario=None, SiteGroup: str = None,
+                 Filter: dict = None, VariableValues: dict = None, sync: bool = True, refresh: bool = True):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
@@ -68,12 +83,6 @@ class Worksheet:
             raise ValueError("The parameter workbook must contain Scope.")
         self._parent_workbook = workbook
 
-        # sitegroup
-        if not isinstance(SiteGroup, str):
-            raise TypeError("The parameter SiteGroup type must be str.")
-        if not SiteGroup:
-            raise ValueError("The parameter SiteGroup must not be empty.")
-        self._site_group = SiteGroup
         self._sync = bool(sync)
         self._refresh = bool(refresh)
 
@@ -92,7 +101,19 @@ class Worksheet:
         else:
             self._scenario = self.environment.scenarios[0]
 
-        self._filter = Filter
+        # sitegroup
+        #if not isinstance(SiteGroup, str):
+        #    raise TypeError("The parameter SiteGroup type must be str.")
+        if not SiteGroup:
+            # raise ValueError("The parameter SiteGroup must not be empty.")
+            self._site_group = 'All Sites'
+        else:
+            self._site_group = str(SiteGroup)
+
+        if not Filter:
+            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
+        else:
+            self._filter = Filter
         self._variable_values = VariableValues
         # todo add support for hierarchies
 
@@ -119,6 +140,51 @@ class Worksheet:
     @property
     def parent_workbook_scope(self):
         return self._parent_workbook['Scope']
+
+    @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, new_filter):
+        if not isinstance(new_filter, dict):
+            raise TypeError("filter must be dict.")
+        if not new_filter:
+            raise ValueError("filter must not be empty.")
+
+        filt_keys = new_filter.keys()
+        if len(filt_keys) != 2:
+            raise ValueError("filter must contain only Name and Scope.")
+        if 'Name' not in filt_keys:
+            raise ValueError("filter must contain Name.")
+        if 'Scope' not in filt_keys:
+            raise ValueError("filter must contain Scope.")
+        self._filter = new_filter
+
+    @property
+    def scenario(self):
+        return self._scenario
+
+    @scenario.setter
+    def scenario(self, new_scenario):
+        #if not isinstance(new_scenario, dict):
+        #    raise TypeError("The parameter scenario type must be dict.")
+        scenario_keys = new_scenario.keys()
+        if len(scenario_keys) != 2:
+            raise ValueError("The parameter scenario must contain only Name and Scope.")
+        if 'Name' not in scenario_keys:
+            raise ValueError("The parameter scenario must contain Name.")
+        if 'Scope' not in scenario_keys:
+            raise ValueError("The parameter scenario must contain Scope.")
+        self._scenario = new_scenario
+
+    @property
+    def site_group(self):
+        return self._site_group
+
+    @site_group.setter
+    def site_group(self, new_site_group):
+        self._site_group = str(new_site_group)
 
     def __len__(self):
         return len(self.rows)
@@ -150,6 +216,44 @@ class Worksheet:
                 response = response + 'rownum: ' + str(i) + ' ' + str(self.rows[i]) + '\n'
             response = response + '...'
         return response
+
+    def __setitem__(self, key, value):
+        if not isinstance(value, WorksheetRow):
+            self.rows[key] = WorksheetRow(value, self)
+        else:
+            self.rows[key] = value
+        if self._sync:
+            self.environment.refresh_auth()
+            self.upload(self.rows[key])
+
+    def add_row(self, rec):
+        s = requests.Session()
+        self.environment.refresh_auth()
+        self.upload(rec)
+
+    def add_rows(self, rows: list):
+        self.environment.refresh_auth()
+        for i in range(0, len(rows), 500_000):
+            self.upload(*rows)
+
+    def append(self, values):
+        # adds a single new item at the end of the underlying list
+        if self._sync:
+            self.add_row(values)
+
+        if not isinstance(values, WorksheetRow):
+            self.rows.append(WorksheetRow(values, self))
+        else:
+            self.rows.append(values)
+
+    def extend(self, *args):
+        if self._sync:
+            self.add_rows(*args)
+
+        if isinstance(*args, type(WorksheetRow)):
+            self.rows.extend(*args)
+        else:
+            self.rows.extend([WorksheetRow(item, self) for item in args[0]])
 
     def _create_export(self, session):
         """
@@ -275,9 +379,6 @@ class Worksheet:
             workbook_parameters['VariableValues'] = self._variable_values
 
         rows = [{"Values": i} for i in args]
-        #for i in args:
-        #    values = {"Values": i}
-        #    rows.append(values)
 
         payload = json.dumps({
             'Scenario': self._scenario,
@@ -402,7 +503,7 @@ class Workbook:
         self.worksheets = []
         for name in WorksheetNames:
             self.worksheets.append(
-                Worksheet(self.environment, self._scenario, name, self._workbook, self._site_group, self._filter,
+                Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
                           self._variable_values))
 
         # todo add __methods__
@@ -437,6 +538,7 @@ class Workbook:
         if 'Scope' not in filt_keys:
             raise ValueError("filter must contain Scope.")
         self._filter = new_filter
+        # todo apply filter to all worksheets
 
     @property
     def name(self):
@@ -462,12 +564,7 @@ class Workbook:
         if 'Scope' not in scenario_keys:
             raise ValueError("The parameter scenario must contain Scope.")
         self._scenario = new_scenario
-
-    @property
-    def environment(self):
-        return self.environment
-
-
+        # todo apply scenario to all worksheets
 
     @property
     def site_group(self):
@@ -476,6 +573,7 @@ class Workbook:
     @site_group.setter
     def site_group(self, new_site_group):
         self._site_group = str(new_site_group)
+        # todo apply value to all worksheets
 
     def __len__(self):
         return len(self.worksheets)
@@ -496,6 +594,8 @@ class Workbook:
             return False
 
 
+
+
 class WorksheetRow(list):
     def __init__(self, iterable, worksheet: Worksheet):
         # initialises a new instance WorksheetRow(['GP', '0', '7000vE', '2017-08-31'], WorksheetName)
@@ -504,12 +604,14 @@ class WorksheetRow(list):
         # grab the necessary info from owning table
         self._worksheet = worksheet
 
-        # perform validations
-        if len(iterable) == len(self._worksheet.columns):
-            super().__init__(str(item) for item in iterable)
-        else:
-            raise DataError(str(iterable), 'mismatch in length of worksheet columns ' + str(
-                len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
+        if len(iterable) != len(self._worksheet.columns):
+            raise DataError(str(iterable), 'mismatch in length of worksheet columns ' + str(len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
+
+        super().__init__(str(item) for item in iterable)
+        #for x in range(len(iterable)):
+
+        #super().__init__(Cell(item, ) for item in iterable)
+
 
     @property
     def columns(self):
