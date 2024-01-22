@@ -123,7 +123,8 @@ class Worksheet:
         self._queryID = None
         self.total_row_count = None
 
-        self.RefreshData()
+        if self._refresh:
+            self.RefreshData()
 
     @property
     def name(self):
