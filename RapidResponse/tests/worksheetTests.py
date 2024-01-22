@@ -45,6 +45,19 @@ class WorksheetTestCase(unittest.TestCase):
         #ws._get_export_results()
         self.assertNotEqual(len(ws.rows), 0, 'fail')
 
+    def test_worksheet_retrieve_with_amp(self):
+        variable_values = {
+            "DemandShipment": "Actual",
+            "SupplyShipment": "All",
+            "DemandForecast": "All",
+            "SupplyForecast": "All",
+            "InventoryPlan": "All"
+        }
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Supply and Demand (Units)",
+                       workbook={'Name': 'S&OP Plan Review', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
+        self.assertNotEqual(len(ws.rows), 0, 'fail')
+
     def test_ws_simple(self):
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
@@ -67,9 +80,9 @@ class WorksheetTestCase(unittest.TestCase):
 
     def test_ws_extend(self):
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
-                       workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
-                       scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
-                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
 
         self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
@@ -77,11 +90,17 @@ class WorksheetTestCase(unittest.TestCase):
                'DC-NorthAmerica'],['102-CDMAc', '12345', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
                'DC-NorthAmerica']]
         ws.extend(recs)
+
+    def test_ws_slice(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+                       workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+                       scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+        self.assertIsNotNone(ws[0:10], "slice count not zero")
 # todo test private resource, test diff parameters provided, test multiple worksheets
 # chagne value in place
 # self.rows[0][0] = xx
-    # test slicing
-
     # test bool
 
     # test indexof
@@ -89,8 +108,21 @@ class WorksheetTestCase(unittest.TestCase):
     # test contains
 
 class WorksheetRowTestCase(unittest.TestCase):
-    pass
+    def test_wsr_init(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        wsr = WorksheetRow(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'], ws)
+        self.assertNotEqual(len(wsr), 0)
 
+    def test_wsr_dynamic_attr_access(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        wsr = WorksheetRow(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'], ws)
+        self.assertEqual(wsr.OrderId, '102-CDMAc')
 
 class WorkbookTestCase(unittest.TestCase):
     pass

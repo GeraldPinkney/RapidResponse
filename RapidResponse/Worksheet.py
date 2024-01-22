@@ -70,25 +70,25 @@ class Worksheet:
         self._name = str(worksheet)
 
         # workbook
-        #if not isinstance(workbook, dict):
-        #    raise TypeError("The parameter workbook type must be dict.")
-        #if not workbook:
-        #    raise ValueError("The parameter workbook must not be empty.")
+        '''if not isinstance(workbook, dict):
+            raise TypeError("The parameter workbook type must be dict.")
+        if not workbook:
+            raise ValueError("The parameter workbook must not be empty.")
         wb_keys = workbook.keys()
         if len(wb_keys) != 2:
             raise ValueError("The parameter workbook must contain only Name and Scope.")
         if 'Name' not in wb_keys:
             raise ValueError("The parameter workbook must contain Name.")
         if 'Scope' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Scope.")
-        self._parent_workbook = workbook
+            raise ValueError("The parameter workbook must contain Scope.")'''
+        self._parent_workbook = dict({"Name": workbook['Name'], "Scope": workbook['Scope']})
 
         self._sync = bool(sync)
         self._refresh = bool(refresh)
 
         # scenario
         if scenario:
-            if not isinstance(scenario, dict):
+            '''if not isinstance(scenario, dict):
                 raise TypeError("The parameter scenario type must be dict.")
             scenario_keys = scenario.keys()
             if len(scenario_keys) != 2:
@@ -96,8 +96,8 @@ class Worksheet:
             if 'Name' not in scenario_keys:
                 raise ValueError("The parameter scenario must contain Name.")
             if 'Scope' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Scope.")
-            self._scenario = scenario
+                raise ValueError("The parameter scenario must contain Scope.")'''
+            self._scenario = dict({"Name": scenario['Name'], "Scope": scenario['Scope']})
         else:
             self._scenario = self.environment.scenarios[0]
 
@@ -147,7 +147,7 @@ class Worksheet:
 
     @filter.setter
     def filter(self, new_filter):
-        if not isinstance(new_filter, dict):
+        '''if not isinstance(new_filter, dict):
             raise TypeError("filter must be dict.")
         if not new_filter:
             raise ValueError("filter must not be empty.")
@@ -158,8 +158,8 @@ class Worksheet:
         if 'Name' not in filt_keys:
             raise ValueError("filter must contain Name.")
         if 'Scope' not in filt_keys:
-            raise ValueError("filter must contain Scope.")
-        self._filter = new_filter
+            raise ValueError("filter must contain Scope.")'''
+        self._filter = dict({"Name": new_filter['Name'], "Scope": new_filter['Scope']})
 
     @property
     def scenario(self):
@@ -169,14 +169,14 @@ class Worksheet:
     def scenario(self, new_scenario):
         #if not isinstance(new_scenario, dict):
         #    raise TypeError("The parameter scenario type must be dict.")
-        scenario_keys = new_scenario.keys()
-        if len(scenario_keys) != 2:
-            raise ValueError("The parameter scenario must contain only Name and Scope.")
-        if 'Name' not in scenario_keys:
-            raise ValueError("The parameter scenario must contain Name.")
-        if 'Scope' not in scenario_keys:
-            raise ValueError("The parameter scenario must contain Scope.")
-        self._scenario = new_scenario
+        #scenario_keys = new_scenario.keys()
+        #if len(scenario_keys) != 2:
+        #    raise ValueError("The parameter scenario must contain only Name and Scope.")
+        #if 'Name' not in scenario_keys:
+        #    raise ValueError("The parameter scenario must contain Name.")
+        #if 'Scope' not in scenario_keys:
+        #    raise ValueError("The parameter scenario must contain Scope.")
+        self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
 
     @property
     def site_group(self):
@@ -257,7 +257,7 @@ class Worksheet:
 
     def _create_export(self, session):
         """
-
+        :param session:
         :return: response_dict
         """
         headers = self.environment.global_headers
@@ -291,8 +291,8 @@ class Worksheet:
         else:
             self._logger.error(payload)
             self._logger.error(url)
-            raise RequestsError(response.text,
-                                " failure during workbook initialise_for_extract, status not 200")
+            raise RequestsError(response,
+                                f"failure during POST workbook initialise_for_extract to: {url}", payload)
 
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
@@ -314,11 +314,7 @@ class Worksheet:
         """
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[
-                                                                                            1:] + "&workbookName=" + \
-              self.parent_workbook['Name'] + "&Scope=" + self.parent_workbook[
-                  'Scope'] + "&worksheetName=" + self.name + "&startRow=" + str(
-            startRow) + "&pageSize=" + str(pageSize)
+        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&','%26') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
 
         req = requests.Request("GET", url, headers=headers)
         prepped = req.prepare()
@@ -328,8 +324,8 @@ class Worksheet:
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response.text,
-                                "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
+            raise RequestsError(response,
+                                f"failure during GET workbook retrieve_worksheet_data to: {url}", None)
 
         rows = []
         for rec in response_dict["Rows"]:
@@ -342,10 +338,10 @@ class Worksheet:
         try:
             self._create_export(s)
         except TypeError:
-            raise RequestsError(msg='likely due to invalid worksheetname')
+            raise RequestsError(None, msg='likely due to invalid worksheetname')
         except:
             self._logger.error("bail, its a scam!")
-            raise RequestsError(msg='Error during create export')
+            raise RequestsError(None, msg='Error during create export')
         else:
             self.rows.clear()
             for i in range(0, self.total_row_count, data_range):
@@ -392,8 +388,8 @@ class Worksheet:
             response_dict = json.loads(response.text)
         else:
             self._logger.error(payload)
-            raise RequestsError(response.text,
-                                f"failure during workbook-worksheet upload, status {response.status_code} \nurl: {url}")
+            raise RequestsError(response,
+                                f"failure during workbook-worksheet upload, POST to: {url}", payload)
 
         results = response_dict['Worksheets'][0]  # this only supports single worksheet, so no idea why its an array.
         response_readable = 'status: ' + str(response_dict['Success']) + \
@@ -412,13 +408,13 @@ class Worksheet:
             self._logger.warning(response_readable)
             self._logger.warning(response_dict)
             self._logger.warning(payload)
-            raise RequestsError(response.text,
-                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}")
+            raise RequestsError(response,
+                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {url}", payload)
         else:
             self._logger.error(response_readable)
             self._logger.error(response_dict)
             self._logger.error(payload)
-            raise RequestsError(response.text, f"failure during worksheet upload")
+            raise RequestsError(response, f"failure during worksheet upload", payload)
         return results
 
 
@@ -611,7 +607,34 @@ class WorksheetRow(list):
         #for x in range(len(iterable)):
 
         #super().__init__(Cell(item, ) for item in iterable)
+    def __getattr__(self, name):
+        # method only called as fallback when no named attribute
+        cls = type(self)
+        try:
+            Ids = [i['Id'] for i in self.columns]
+            pos = Ids.index(name)
+        except ValueError: # thrown if could not find name
+            pos = -1
+        if 0 <= pos < len(self.columns):
+            return self[pos]
+        msg = f'{cls.__name__!r} object has no attribute {name!r}'
+        raise AttributeError(msg)
 
+    '''def __setattr__(self, name, value):
+        cls = type(self)
+
+        if name in self.__dict__:
+            super().__setattr__(name, value)
+            return 0
+        Ids = [i['Id'] for i in self.columns]
+        if name in Ids:
+            pos = Ids.index(name)
+            self.__setitem__(pos, value)
+        else:
+            error = ''
+        if error:
+            msg = error.format(cls_name=cls.__name__, attr_name=name)
+            raise AttributeError(msg)'''
 
     @property
     def columns(self):

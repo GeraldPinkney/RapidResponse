@@ -2,6 +2,8 @@
 
 import json
 import logging
+import operator
+
 import requests
 import asyncio
 import httpx
@@ -114,6 +116,7 @@ class DataTable(Table):
 
     def __getitem__(self, position):
         return self._table_data[position]
+        # todo change this so a slice will return an instance of DataRow
 
     def __contains__(self, item):
         # get key fields for table. then check if that value is present
@@ -253,8 +256,9 @@ class DataTable(Table):
         else:
             query_filter = ''
         # print(self._table_fields)
-        for f in self.columns:
-            local_query_fields.append(f.name)
+        #for f in self.columns:
+        #    local_query_fields.append(f.name)
+        local_query_fields = [f.name for f in self.columns]
 
         # print(type(local_query_string))
         # print(local_query_string)
@@ -280,49 +284,9 @@ class DataTable(Table):
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
-        elif response.status_code == 400:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The request contains an error")
-        elif response.status_code == 401:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text,
-                                f"status: {response.status_code}. Failure during bulk//export create, Invalid credentials provided for the user account or the authorization method is not supported by the endpoint")
-        elif response.status_code == 403:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The user specified does not have permission to perform web service operations")
-        elif response.status_code == 404:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text,
-                                f"status: {response.status_code}. Failure during bulk//export create, The specified endpoint is not valid or does not exist")
-        elif response.status_code == 405:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The specified HTTP method is not supported by the endpoint")
-        elif response.status_code == 415:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text, f"status: {response.status_code}. Failure during bulk//export create, The specified media type is not supported by the endpoint")
-        elif response.status_code == 503:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text,
-                                f"status: {response.status_code}. Failure during bulk//export create, RapidResponse is not available.")
         else:
-            print(payload)
-            print(response.content)
-            print(response.text)
-            raise RequestsError(response.text, "failure during bulk//export create, status not 200")
+            #print(payload)
+            raise RequestsError(response, f"error during POST to: {url}", payload)
         # print(response)
 
         self.exportID = response_dict["ExportId"]
@@ -346,15 +310,16 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, "failure during get bulk//export results, status not 200")
+            raise RequestsError(response, f"error during POST to: {url}", None)
 
         #for rec in response_dict["Rows"]:
         #    returned = rec.split('\t')
         #    self._table_data.append(DataRow(returned, self))
-        rows = []
-        for rec in response_dict["Rows"]:
-            returned = rec.split('\t')
-            rows.append(DataRow(returned, self))
+        #rows = []
+        #for rec in response_dict["Rows"]:
+        #    returned = rec.split('\t')
+        #    rows.append(DataRow(returned, self))
+        rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
         return rows
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
@@ -372,11 +337,12 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, "failure during get bulk//export results, status not 200")
+            raise RequestsError(response, f"error during POST to: {url}", None)
 
-        for rec in response_dict["Rows"]:
-            returned = rec.split('\t')
-            rows.append(DataRow(returned, self))
+        #for rec in response_dict["Rows"]:
+        #    returned = rec.split('\t')
+        #    rows.append(DataRow(returned, self))
+        rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
         return rows
 
     async def _main_get_export_results_async(self, data_range):
@@ -445,18 +411,16 @@ class DataTable(Table):
                  'Name': self._table_name}
         local_query_fields = []
         # print(self._table_fields)
-        for f in self.columns:
-            local_query_fields.append(f.name)
+        #for f in self.columns:
+        #    local_query_fields.append(f.name)
+        local_query_fields = [f.name for f in self.columns]
 
         rows = []
-        for i in args:
-            # create inner array (list)
-            # arr = [i]
-            # arr.append(i)
-            # create dict containing single element {"Values": []}
-            values = {"Values": i}
-            # append to Rows
-            rows.append(values)
+        #for i in args:
+        #    values = {"Values": i}
+        #    # append to Rows
+        #    rows.append(values)
+        rows = [{"Values": i} for i in args]
 
         payload = json.dumps({
             'Scenario': self.scenario,
@@ -481,8 +445,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response.text,
-                                "failure during bulk//upload create, status not 200" + '\nurl:' + url)
+            raise RequestsError(response, f"error during POST to: {url}", payload)
         # print(response)
         if operation == 'upsert':
             self.uploadId = response_dict["UploadId"]
@@ -509,9 +472,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            #print(response)
-            raise RequestsError(response.text, "failure during bulk//upload complete, status not 200" + '\nurl:' + url)
-
+            raise RequestsError(response, f"error during POST to: {url}")
         results = response_dict['Results']
         response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
             results['InsertedRowCount']) + '\nModifiedRowCount: ' + str(
@@ -519,14 +480,9 @@ class DataTable(Table):
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
 
-
         if results['Status'] == 'Failure':
-            self.logger.error(response_readable)
-            self.logger.error(response_dict)
-            raise RequestsError(response.text, "failure during bulk upload complete")
+            raise RequestsError(response, f"error during POST to: {url}", None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
-            self.logger.error(response_readable)
-            self.logger.error(response_dict)
             raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(results['ErrorRowCount']))
         else:
             self.logger.info(response_readable)
@@ -539,18 +495,20 @@ class DataTable(Table):
                  'Name': self._table_name}
         local_query_fields = []
         # print(self._table_fields)
-        for f in self.columns:
-            local_query_fields.append(f.name)
+        #for f in self.columns:
+        #    local_query_fields.append(f.name)
+        local_query_fields = [f.name for f in self.columns]
 
         rows = []
-        for i in args:
+        #for i in args:
             # create inner array (list)
             # arr = [i]
             # arr.append(i)
             # create dict containing single element {"Values": []}
-            values = {"Values": i}
+        #    values = {"Values": i}
             # append to Rows
-            rows.append(values)
+        #    rows.append(values)
+        rows = [{"Values": i} for i in args]
 
         payload = json.dumps({
             'Scenario': self.scenario,
@@ -575,8 +533,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response.text,
-                                "failure during bulk//upload create, status not 200" + '\nurl:' + url)
+            raise RequestsError(response, f"Failure during bulk//export create. Error during POST to: {url}", payload)
         # print(response)
         if operation == 'upsert':
             self.uploadId = response_dict["UploadId"]
@@ -603,8 +560,8 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            print(response)
-            raise RequestsError(response.text, "failure during bulk//upload complete, status not 200" + '\nurl:' + url)
+            #print(response)
+            raise RequestsError(response, f"error during POST to: {url}", None)
 
         results = response_dict['Results']
         response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
@@ -619,19 +576,24 @@ class DataTable(Table):
         if results['Status'] == 'Failure':
             self.logger.error(response_readable)
             self.logger.error(response_dict)
-            raise RequestsError(response.text, "failure during bulk delete complete")
+            raise RequestsError(response, f"error during POST to: {url}", None)
+
+    @property
+    def sync(self):
+        return self._sync
+
 
 class DataRow(list):
     # Can only be initialised from DataTable, therefore no need to validate its a good record on creation.
     def __init__(self, iterable, data_table: DataTable):
         # initialises a new instance DataRow(['GP', '0', '7000vE', '2017-08-31'], IndependentDemand)
 
-        # grab the necessary info from owning table
-        self._data_table = data_table
-
         # perform validations
         if not isinstance(data_table, DataTable):
             raise TypeError("The parameter data_table type must be DataTable.")
+        # grab the necessary info from owning table
+        self._data_table = data_table
+
         if len(iterable) == len(self._data_table.columns):
             super().__init__(str(item) for item in iterable)
         else:
@@ -641,11 +603,38 @@ class DataRow(list):
         # assign a new value using the item’s index, like a_list[index] = item
 
         # when something is updated it should be pushed back to RR, if datatable is sync
-        super().__setitem__(index, str(item))
-        if self._data_table._sync:
+        if self._data_table.sync:
             self._data_table.add_row(self)
+        super().__setitem__(index, str(item))
+
+    def __getattr__(self, name):
+        # method only called as fallback when no named attribute
+        cls = type(self)
+        try:
+            Ids = [i.name for i in self.columns]
+            pos = Ids.index(name)
+        except ValueError: # thrown if could not find name
+            pos = -1
+        if 0 <= pos < len(self.columns):
+            return self[pos]
+        msg = f'{cls.__name__!r} object has no attribute {name!r}'
+        raise AttributeError(msg)
+
+    '''def g__setattr__(self, name, value):
+        cls = type(self)
+
+        if name in self.__dict__:
+            super().__setattr__(name, value)
+            return 0
+        Ids = [i.name for i in self.columns]
+        if name in Ids:
+            pos = Ids.index(name)
+            self.__setitem__(pos, value)
         else:
-            pass
+            error = ''
+        if error:
+            msg = error.format(cls_name=cls.__name__, attr_name=name)
+            raise AttributeError(msg)'''
 
     @property
     def columns(self):
@@ -711,14 +700,4 @@ class DataRow(list):
         for item in self:
             func(item)
 
-    def pre_process(self, input):
-        # todo implement this
-        # key purpose of this method is to handle the date messiness.
-        ''' if datatype is date or datetime then convert
-        past to 01/01/1970
-        future to 31/12/9999
-        current to time.now()
-        undefined to
-        '''
-        output = str(input)
-        return output
+

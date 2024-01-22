@@ -170,6 +170,14 @@ class DataRowTestCase(unittest.TestCase):
         with self.assertRaises(DataError):
             dr = DataRow(['GP','SOPDC-NorthAmerica','DCConsensus' '0', '7000vE', '2017-08-31', '1500'], IndependentDemand)
 
+    def test_dynamic_attribute_access(self):
+        env = Environment(sample_configuration)
+        cols = ['Order.Id', 'Order.Site', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
+                'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
+        # execute
+        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'],IndependentDemand)
+        self.assertEqual(rec.Line, str(1))
 
 # todo test the _sync attribute
 

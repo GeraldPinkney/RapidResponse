@@ -113,4 +113,24 @@ for t in list_of_tables:
 
 print(list((filter(lambda x: x['Table'] == 'Part' and x['Field'] == 'Site', env.data_model._fields))))
 
+def create_scenario(name, parent):
+    env = Environment(sample_configuration)
+    url = "http://localhost/rapidresponse/integration/V1/script/Public/Ignite_Create_Scenario"
+    payload = json.dumps({
+        "parentScenario": {'Name': 'Baseline', 'Scope': 'Public'},
+        "newScenario": "Good2Great",
+        "permenantScenario": "Y",
+        "updateAutomatically": "Y",
+        "userGroup": "Data Administrators"
+    })
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)
+
+
 
