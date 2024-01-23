@@ -35,7 +35,7 @@ class DataTable(Table):
                  sync: bool = True, refresh: bool = True, scenario=None):
 
         #logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
-        self.logger = logging.getLogger('RapidPy.dt')
+        self._logger = logging.getLogger('RapidPy.dt')
 
         # validations
         if not isinstance(environment, Environment):
@@ -58,8 +58,8 @@ class DataTable(Table):
         except IndexError:
             raise ValueError('table name parameter must be in format namespace::tablename')
 
-        self.uploadId = None
-        self.exportID = None
+        self._uploadId = None
+        self._exportID = None
         self.environment = environment
         self._table_data = []
         self.columns = []
@@ -103,7 +103,6 @@ class DataTable(Table):
             # columns.extend(self._key_fields)
             # print(columns)
             self.set_columns(columns)
-        self.set_filter(table_filter)
 
         if refresh:
             self.RefreshData_async()
@@ -151,7 +150,7 @@ class DataTable(Table):
             self.environment.refresh_auth()
             self._create_upload(self._table_data[key])
             self._complete_upload()
-            self.uploadId = None
+            self._uploadId = None
 
     def __delitem__(self, key):
 
@@ -160,7 +159,7 @@ class DataTable(Table):
             # self.environment.refresh_auth()
             self._create_deletion(self._table_data[key])
             self._complete_deletion()
-            self.uploadId = None
+            self._uploadId = None
 
             del self._table_data[key]
         else:
@@ -206,11 +205,11 @@ class DataTable(Table):
         if columns is None:
             for c in self._table_fields:
                 if c.datatype == 'CompoundVector':
-                    self.logger.info(c.name + ' skipped due to type CompoundVector')
+                    self._logger.info(c.name + ' skipped due to type CompoundVector')
                 elif '.' in c.name and c.key == 'N':
-                    self.logger.info(c.name + ' skipped as non key reference')
+                    self._logger.info(c.name + ' skipped as non key reference')
                 elif c.datatype == 'Reference' and c.key == 'N':
-                    self.logger.info(c.name + ' skipped as non key reference')
+                    self._logger.info(c.name + ' skipped as non key reference')
                 else:
                     self.columns.append(c)
 
@@ -229,10 +228,10 @@ class DataTable(Table):
                     if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
                         col = Column(c, 'String', 'N', None)
                     else:
-                        self.logger.warning(col.name + ' incorrect field name')
+                        self._logger.warning(col.name + ' incorrect field name')
                 finally:
                     if col.datatype == 'CompoundVector':
-                        self.logger.info(col.name + ' skipped due to type CompoundVector')
+                        self._logger.info(col.name + ' skipped due to type CompoundVector')
                         pass
                     elif col.datatype == 'Reference':
                         self.columns.append(col)
@@ -292,12 +291,12 @@ class DataTable(Table):
             raise RequestsError(response, f"error during POST to: {url}", payload)
         # print(response)
 
-        self.exportID = response_dict["ExportId"]
+        self._exportID = response_dict["ExportId"]
         self.total_row_count = response_dict["TotalRows"]
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
-        url = self.environment._base_url + "/integration/V1/bulk/export/" + self.exportID[1:] + "?startRow=" + str(
+        url = self.environment._base_url + "/integration/V1/bulk/export/" + self._exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
 
@@ -327,7 +326,7 @@ class DataTable(Table):
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
-        url = self.environment._base_url + "/integration/V1/bulk/export/" + self.exportID[1:] + "?startRow=" + str(
+        url = self.environment._base_url + "/integration/V1/bulk/export/" + self._exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
         rows = []
@@ -373,7 +372,7 @@ class DataTable(Table):
         self._create_export(s)
         for i in range(0, self.total_row_count, data_range):
             self._table_data.extend(self._get_export_results(s, i, data_range))
-        self.exportID = None
+        self._exportID = None
         s.close()
 
     def RefreshData_async(self, data_range: int = 5000):
@@ -384,7 +383,7 @@ class DataTable(Table):
         self._create_export(s)
         s.close()
         asyncio.run(self._main_get_export_results_async(data_range))
-        self.exportID = None
+        self._exportID = None
 
         '''remaining_records = self.total_row_count % data_range
         if remaining_records > 0:
@@ -392,21 +391,21 @@ class DataTable(Table):
             self._create_export(s)
             self._table_data.extend(
                 self._get_export_results(s, self.total_row_count - remaining_records, data_range))
-            self.exportID = None'''
+            self._exportID = None'''
 
     def add_row(self, rec):
         s = requests.Session()
         self.environment.refresh_auth()
         self._create_upload(rec)
         self._complete_upload()
-        self.uploadId = None
+        self._uploadId = None
 
     def add_rows(self, rows: list):
         self.environment.refresh_auth()
         for i in range(0, len(rows), 500_000):
             self._create_upload(*rows)
             self._complete_upload()
-            self.uploadId = None
+            self._uploadId = None
 
     def _create_upload(self, *args):
         operation = 'upsert'
@@ -452,9 +451,9 @@ class DataTable(Table):
             raise RequestsError(response, f"error during POST to: {url}", payload)
         # print(response)
         if operation == 'upsert':
-            self.uploadId = response_dict["UploadId"]
+            self._uploadId = response_dict["UploadId"]
         elif operation == 'delete':
-            self.uploadId = response_dict["RemovalId"]
+            self._uploadId = response_dict["RemovalId"]
         else:
             raise ValueError('invalid operation')
 
@@ -464,9 +463,9 @@ class DataTable(Table):
         # headers['Content-Type'] = 'application/json'
         url = self.environment._base_url + "/integration/V1/bulk/"
         if operation == 'upsert':
-            url = url + "upload/" + self.uploadId[1:] + '/complete'
+            url = url + "upload/" + self._uploadId[1:] + '/complete'
         elif operation == 'delete':
-            url = url + "remove/" + self.uploadId[1:] + '/complete'
+            url = url + "remove/" + self._uploadId[1:] + '/complete'
         else:
             raise ValueError('invalid operation')
 
@@ -487,11 +486,10 @@ class DataTable(Table):
         if results['Status'] == 'Failure':
             raise RequestsError(response, f"error during POST to: {url}", None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
-            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(
-                results['ErrorRowCount']))
+            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(results['ErrorRowCount']))
         else:
-            self.logger.info(response_readable)
-            self.logger.info(response_dict)
+            self._logger.info(response_readable)
+            self._logger.info(response_dict)
 
     def _create_deletion(self, *args):
         operation = 'delete'
@@ -541,9 +539,9 @@ class DataTable(Table):
             raise RequestsError(response, f"Failure during bulk//deletion create. Error during POST to: {url}", payload)
         # print(response)
         if operation == 'upsert':
-            self.uploadId = response_dict["UploadId"]
+            self._uploadId = response_dict["UploadId"]
         elif operation == 'delete':
-            self.uploadId = response_dict["RemovalId"]
+            self._uploadId = response_dict["RemovalId"]
         else:
             raise ValueError('invalid operation')
 
@@ -553,9 +551,9 @@ class DataTable(Table):
         # headers['Content-Type'] = 'application/json'
         url = self.environment._base_url + "/integration/V1/bulk/"
         if operation == 'upsert':
-            url = url + "upload/" + self.uploadId[1:] + '/complete'
+            url = url + "upload/" + self._uploadId[1:] + '/complete'
         elif operation == 'delete':
-            url = url + "remove/" + self.uploadId[1:] + '/complete'
+            url = url + "remove/" + self._uploadId[1:] + '/complete'
         else:
             raise ValueError('invalid operation')
 
@@ -574,13 +572,13 @@ class DataTable(Table):
             results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
             results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-        self.logger.info(response)
-        self.logger.info(response_readable)
-        self.logger.info(response_dict)
+        self._logger.info(response)
+        self._logger.info(response_readable)
+        self._logger.info(response_dict)
 
         if results['Status'] == 'Failure':
-            self.logger.error(response_readable)
-            self.logger.error(response_dict)
+            self._logger.error(response_readable)
+            self._logger.error(response_dict)
             raise RequestsError(response, f"Error during bulk//deletion complete. Error during POST to: {url}", None)
 
     @property

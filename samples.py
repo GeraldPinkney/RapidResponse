@@ -24,8 +24,8 @@ local_sample_bootstrap = {'url': 'http://localhost/rapidresponse',
 config = {'url': 'http://localhost/rapidresponse','auth_type': 'basic','username': 'gpinkney_ws','password': '1L0veR@pidResponse'}
 
 mea_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
-                        'data_model_bootstrap': 'KXSHelperREST',
-                        'auth_type': 'basic',
-                        'username': 'RestAPI',
-                        'password': 'WebAccess2021#'
-                        }
+'data_model_bootstrap': 'KXSHelperREST',
+'auth_type': 'basic',
+'username': 'RestAPI',
+'password': 'WebAccess2021#'
+}
