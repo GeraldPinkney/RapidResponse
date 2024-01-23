@@ -14,7 +14,7 @@ class Cell:
         self.columnId = columnId
     pass
     # value, datatype, columnId
-
+    # todo add date handling here
     @property
     def value(self):
         if self.datatype == 'Date':
@@ -178,6 +178,10 @@ class Worksheet:
         #if 'Scope' not in scenario_keys:
         #    raise ValueError("The parameter scenario must contain Scope.")
         self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
+
+    @property
+    def sync(self):
+        return self._sync
 
     @property
     def site_group(self):

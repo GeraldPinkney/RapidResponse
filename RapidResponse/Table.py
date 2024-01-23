@@ -1,6 +1,6 @@
 # Table.py
 from typing import Literal, NamedTuple
-
+import logging
 from RapidResponse.Err import DataError
 
 # Column = collections.namedtuple('Column', ['name', 'datatype', 'key', 'referencedTable', 'identification_fields', 'RelatedTableWithNamespace'])
@@ -31,8 +31,8 @@ class Column(NamedTuple):
 class Table:
     TABLE_TYPE = Literal['Input', 'Calculated']
 
-    def __init__(self, name: str, namespace: str, table_type: TABLE_TYPE = 'Input', keyed: str = None,
-                 identification_fields: str = None):
+    def __init__(self, name: str, namespace: str, table_type: TABLE_TYPE = 'Input', keyed: str = None,identification_fields: str = None):
+        self._logger = logging.getLogger('RapidPy.wb.tab')
         self._table_fields = []
         self._key_fields = []
 

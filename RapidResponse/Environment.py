@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import os
 import requests
 from RapidResponse.DataModel import DataModel
@@ -14,6 +15,9 @@ class Environment:
     """
 
     def __init__(self, configuration: dict):
+        logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+        self._logger = logging.getLogger('RapidPy.env')
+
         if not isinstance(configuration, dict):
             raise TypeError('The parameter configuration type must be dict')
         if not configuration:
@@ -99,7 +103,7 @@ class Environment:
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, "failure during oauth2, status not 200")
+            raise RequestsError(response, "failure during oauth2, status not 200", payload)
         # return response_text["access_token"]
         # print(response_dict["access_token"])
         return response_dict["access_token"]

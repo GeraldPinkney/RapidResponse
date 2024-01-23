@@ -27,8 +27,7 @@ class DataModel:
 
         self.tables = []
         self._fields = []
-        logging.basicConfig(filename='logging.log', filemode='w',
-                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+        #logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
         self.logger = logging.getLogger('RapidPy.dm')
 
         self._url = url

@@ -12,6 +12,7 @@ from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Table import Table, Column
 
+
 # todo add controls to not allow update of calculated fields or delete of rows from calculated table
 
 class DataTable(Table):
@@ -29,9 +30,11 @@ class DataTable(Table):
     :raises TypeError: environment, tablename is not correctly typed
     :raises DataError: key column not in column list. will log failure but not fail.
     """
-    def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None, sync: bool = True, refresh: bool = True, scenario = None):
 
-        logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None,
+                 sync: bool = True, refresh: bool = True, scenario=None):
+
+        #logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
         self.logger = logging.getLogger('RapidPy.dt')
 
         # validations
@@ -85,7 +88,7 @@ class DataTable(Table):
                     self.scenario = scenario
                 else:
                     raise ValueError('scenario not valid: ' + scenario)
-                    #self.scenario = environment.scenarios[0]
+                    # self.scenario = environment.scenarios[0]
             except AttributeError:
                 raise ValueError("scenario parameter format is {'Name': 'Integration', 'Scope': 'Public'} " + scenario)
 
@@ -97,8 +100,8 @@ class DataTable(Table):
             for k in self._key_fields:
                 if k not in columns:
                     columns.append(k)
-            #columns.extend(self._key_fields)
-            #print(columns)
+            # columns.extend(self._key_fields)
+            # print(columns)
             self.set_columns(columns)
         self.set_filter(table_filter)
 
@@ -224,7 +227,7 @@ class DataTable(Table):
                     col = self.get_field(c)
                 except DataError:
                     if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
-                        col = Column(c, 'String', 'N',None)
+                        col = Column(c, 'String', 'N', None)
                     else:
                         self.logger.warning(col.name + ' incorrect field name')
                 finally:
@@ -256,7 +259,7 @@ class DataTable(Table):
         else:
             query_filter = ''
         # print(self._table_fields)
-        #for f in self.columns:
+        # for f in self.columns:
         #    local_query_fields.append(f.name)
         local_query_fields = [f.name for f in self.columns]
 
@@ -277,7 +280,7 @@ class DataTable(Table):
         url = self.environment._base_url + "/integration/V1/bulk/export"
 
         req = requests.Request("POST", url, headers=headers, data=payload)
-        #response = requests.request("POST", url, headers=headers, data=payload)
+        # response = requests.request("POST", url, headers=headers, data=payload)
         prepped = req.prepare()
         response = session.send(prepped)
 
@@ -285,7 +288,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            #print(payload)
+            # print(payload)
             raise RequestsError(response, f"error during POST to: {url}", payload)
         # print(response)
 
@@ -304,7 +307,7 @@ class DataTable(Table):
         req = requests.Request("GET", url, headers=headers)
         prepped = req.prepare()
         response = session.send(prepped)
-        #response = requests.request("GET", url, headers=headers)
+        # response = requests.request("GET", url, headers=headers)
 
         # check on response = 200 or whatever
         if response.status_code == 200:
@@ -312,11 +315,11 @@ class DataTable(Table):
         else:
             raise RequestsError(response, f"error during POST to: {url}", None)
 
-        #for rec in response_dict["Rows"]:
+        # for rec in response_dict["Rows"]:
         #    returned = rec.split('\t')
         #    self._table_data.append(DataRow(returned, self))
-        #rows = []
-        #for rec in response_dict["Rows"]:
+        # rows = []
+        # for rec in response_dict["Rows"]:
         #    returned = rec.split('\t')
         #    rows.append(DataRow(returned, self))
         rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
@@ -339,7 +342,7 @@ class DataTable(Table):
         else:
             raise RequestsError(response, f"error during POST to: {url}", None)
 
-        #for rec in response_dict["Rows"]:
+        # for rec in response_dict["Rows"]:
         #    returned = rec.split('\t')
         #    rows.append(DataRow(returned, self))
         rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
@@ -348,16 +351,17 @@ class DataTable(Table):
     async def _main_get_export_results_async(self, data_range):
         tasks = []
         client = httpx.AsyncClient()
-        for i in range(0, self.total_row_count-data_range, data_range):
+        for i in range(0, self.total_row_count - data_range, data_range):
             tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
-        #data = await asyncio.gather(*tasks)
-        #self._table_data = list(data)
+        # data = await asyncio.gather(*tasks)
+        # self._table_data = list(data)
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
         remaining_records = self.total_row_count % data_range
         if remaining_records > 0:
-            self._table_data.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
+            self._table_data.extend(
+                await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
         await client.aclose()
 
     def RefreshData(self, data_range: int = 5000):
@@ -411,12 +415,12 @@ class DataTable(Table):
                  'Name': self._table_name}
         local_query_fields = []
         # print(self._table_fields)
-        #for f in self.columns:
+        # for f in self.columns:
         #    local_query_fields.append(f.name)
         local_query_fields = [f.name for f in self.columns]
 
         rows = []
-        #for i in args:
+        # for i in args:
         #    values = {"Values": i}
         #    # append to Rows
         #    rows.append(values)
@@ -483,7 +487,8 @@ class DataTable(Table):
         if results['Status'] == 'Failure':
             raise RequestsError(response, f"error during POST to: {url}", None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
-            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(results['ErrorRowCount']))
+            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(
+                results['ErrorRowCount']))
         else:
             self.logger.info(response_readable)
             self.logger.info(response_dict)
@@ -495,18 +500,18 @@ class DataTable(Table):
                  'Name': self._table_name}
         local_query_fields = []
         # print(self._table_fields)
-        #for f in self.columns:
+        # for f in self.columns:
         #    local_query_fields.append(f.name)
         local_query_fields = [f.name for f in self.columns]
 
         rows = []
-        #for i in args:
-            # create inner array (list)
-            # arr = [i]
-            # arr.append(i)
-            # create dict containing single element {"Values": []}
+        # for i in args:
+        # create inner array (list)
+        # arr = [i]
+        # arr.append(i)
+        # create dict containing single element {"Values": []}
         #    values = {"Values": i}
-            # append to Rows
+        # append to Rows
         #    rows.append(values)
         rows = [{"Values": i} for i in args]
 
@@ -533,7 +538,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, f"Failure during bulk//export create. Error during POST to: {url}", payload)
+            raise RequestsError(response, f"Failure during bulk//deletion create. Error during POST to: {url}", payload)
         # print(response)
         if operation == 'upsert':
             self.uploadId = response_dict["UploadId"]
@@ -560,8 +565,8 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            #print(response)
-            raise RequestsError(response, f"error during POST to: {url}", None)
+            # print(response)
+            raise RequestsError(response, f"Failure during bulk//deletion complete. Error during POST to: {url}", None)
 
         results = response_dict['Results']
         response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
@@ -576,7 +581,7 @@ class DataTable(Table):
         if results['Status'] == 'Failure':
             self.logger.error(response_readable)
             self.logger.error(response_dict)
-            raise RequestsError(response, f"error during POST to: {url}", None)
+            raise RequestsError(response, f"Error during bulk//deletion complete. Error during POST to: {url}", None)
 
     @property
     def sync(self):
@@ -597,7 +602,8 @@ class DataRow(list):
         if len(iterable) == len(self._data_table.columns):
             super().__init__(str(item) for item in iterable)
         else:
-            raise DataError(str(iterable), 'mismatch in length of data table columns '+ str(len(self._data_table.columns)) +  ' and row: ' + str(len(iterable)))
+            raise DataError(str(iterable), 'mismatch in length of data table columns ' + str(
+                len(self._data_table.columns)) + ' and row: ' + str(len(iterable)))
 
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
@@ -612,8 +618,8 @@ class DataRow(list):
         cls = type(self)
         try:
             Ids = [i.name for i in self.columns]
-            pos = Ids.index(name)
-        except ValueError: # thrown if could not find name
+            pos = Ids.index(name.replace('_', '.'))
+        except ValueError:  # thrown if could not find name
             pos = -1
         if 0 <= pos < len(self.columns):
             return self[pos]
@@ -651,7 +657,7 @@ class DataRow(list):
     def append(self, item):
         # adds a single new item at the end of the underlying list
         raise NotImplementedError
-        if len(self)+1 == len(self._data_table.columns):
+        if len(self) + 1 == len(self._data_table.columns):
             super().append(str(item))
         else:
             raise DataError(item, "cannot append as num of cols does not match length of new rec")
@@ -661,7 +667,7 @@ class DataRow(list):
     def extend(self, other):
         # adds a series of items to the end of the list.
         raise NotImplementedError
-        if len(self)+len(other) == len(self._data_table.columns):
+        if len(self) + len(other) == len(self._data_table.columns):
             if isinstance(other, type(self)):
                 super().extend(other)
             else:
@@ -699,5 +705,3 @@ class DataRow(list):
         # calls func() on every item in the underlying list to generate some side effect.
         for item in self:
             func(item)
-
-
