@@ -46,7 +46,9 @@ class RequestsError(Error):
         self.response = response
         self.msg = "RequestsError: " + msg
         self.payload = payload
-        if response.status_code == 400:
+        if response is None:
+            self.msg + f"\n No idea ."
+        elif response.status_code == 400:
             self.msg + f"\nstatus: {response.status_code}. The request body contains an error."
         elif response.status_code == 401:
             self.msg + f"\nstatus: {response.status_code}. Invalid credentials provided for the user account or the authorization method is not supported by the endpoint"

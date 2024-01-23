@@ -66,6 +66,12 @@ class WorksheetTestCase(unittest.TestCase):
         self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
 
+    def test_ws_refresh_False(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+                       workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, refresh=False)
+        self.assertEqual(len(ws), 0)
+
     def test_ws_append(self):
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
                        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
@@ -101,11 +107,37 @@ class WorksheetTestCase(unittest.TestCase):
 # todo test private resource, test diff parameters provided, test multiple worksheets
 # chagne value in place
 # self.rows[0][0] = xx
-    # test bool
+    def test_ws_setitem(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+                       workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+                       scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        rec = ws[0]
+        rec[1] = '12345'
 
+    def test_ws_change(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+                       workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"})
+        #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+
+    def test_ws_simple_bool(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+                       workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"})
+        #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+        self.assertTrue(ws)
+
+    def test_ws_simple_bool_f(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+                       workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, refresh=False)
+        #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+        self.assertTrue(ws)
     # test indexof
 
     # test contains
+
 
 class WorksheetRowTestCase(unittest.TestCase):
     def test_wsr_init(self):

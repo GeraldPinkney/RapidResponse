@@ -2,29 +2,43 @@
 import json
 import requests
 import logging
-
+import re
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
 
 
 class Cell:
-    def __init__(self, value, datatype, columnId):
-        self.value = value
+    def __init__(self, value, datatype, columnId, header, isEditable):
+        self.value = str(value)
         self.datatype = datatype
         self.columnId = columnId
+        self.header = header
+        self.isEditable = isEditable
     pass
     # value, datatype, columnId
     # todo add date handling here
     @property
     def value(self):
         if self.datatype == 'Date':
-            return self.value # format needs to be '07-06-20'
+            if self._value == 'Undefined':
+                return None
+            elif self._value == 'Future':
+                return '31-12-99'
+            elif self._value == 'Past':
+                return '01-01-70'
+            else:
+                pattern = r"\b(19\d\d|20\d\d)[-/](0[1-9]|1[0-2])[-/](0[1-9]|[12]\d|3[01])\b"  # YYYY-MM-DD
+                dates = re.findall(pattern, self._value)
+                return f"{dates[0][2]}-{dates[0][1]}-{dates[0][0][2:]}"  # '07-06-20'
+
+            #return self.value # format needs to be '07-06-20'
         else:
-            return self.value
+            return self._value
 
     @value.setter
     def value(self, value):
-        self._value = value
+        self._value = str(value)
+
 
 
 class Worksheet:
@@ -344,9 +358,9 @@ class Worksheet:
             self._create_export(s)
         except TypeError:
             raise RequestsError(None, msg='likely due to invalid worksheetname')
-        except:
-            self._logger.error("bail, its a scam!")
-            raise RequestsError(None, msg='Error during create export')
+        #except:
+        #    self._logger.error("bail, its a scam!")
+        #    raise RequestsError(None, msg='Error during create export')
         else:
             self.rows.clear()
             for i in range(0, self.total_row_count, data_range):
@@ -392,7 +406,7 @@ class Worksheet:
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            self._logger.error(payload)
+            #self._logger.error(payload)
             raise RequestsError(response,
                                 f"failure during workbook-worksheet upload, POST to: {url}", payload)
 
@@ -609,9 +623,12 @@ class WorksheetRow(list):
             raise DataError(str(iterable), 'mismatch in length of worksheet columns ' + str(len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
 
         super().__init__(str(item) for item in iterable)
+        #to_init = []
         #for x in range(len(iterable)):
+        #    to_init.append(Cell(iterable[x], self._worksheet.columns[x]["DataType"], self._worksheet.columns[x]["Id"],self._worksheet.columns[x]["Header"],self._worksheet.columns[x]["IsEditable"]))
+        #super().__init__(to_init)
+        #super().__init__(Cell(item, ) for item in iterable) #value, datatype, columnId
 
-        #super().__init__(Cell(item, ) for item in iterable)
     def __getattr__(self, name):
         # method only called as fallback when no named attribute
         cls = type(self)
@@ -645,10 +662,18 @@ class WorksheetRow(list):
     def columns(self):
         return self._worksheet.columns
 
-    def __setitem__(self, index, item):
+    #def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
         # super().__setitem__(index, str(item))
-        raise NotImplementedError
+        #raise NotImplementedError
+    def __setitem__(self, index, item):
+        # assign a new value using the item’s index, like a_list[index] = item
+
+        # when something is updated it should be pushed back to RR, if datatable is sync
+        super().__setitem__(index, str(item))
+        if self._worksheet.sync:
+            self._worksheet.add_row(self)
+
 
     def insert(self, index, item):
         # allows you to insert a new item at a given position in the underlying list using the index.

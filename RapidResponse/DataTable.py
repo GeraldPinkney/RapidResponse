@@ -607,9 +607,10 @@ class DataRow(list):
         # assign a new value using the item’s index, like a_list[index] = item
 
         # when something is updated it should be pushed back to RR, if datatable is sync
+        super().__setitem__(index, str(item))
         if self._data_table.sync:
             self._data_table.add_row(self)
-        super().__setitem__(index, str(item))
+
 
     def __getattr__(self, name):
         # method only called as fallback when no named attribute
