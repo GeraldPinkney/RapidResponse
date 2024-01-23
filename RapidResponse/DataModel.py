@@ -255,8 +255,8 @@ class DataModel:
         else:
             print(payload)
             print(url)
-            raise RequestsError(response.text,
-                                " failure during workbook initialise_for_extract, status not 200")
+            raise RequestsError(response,
+                                " failure during workbook initialise_for_extract, status not 200", payload)
 
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
@@ -266,7 +266,7 @@ class DataModel:
                 # columns = ws.get('Columns')
                 # rows = ws.get('Rows')  # should be []
             else:
-                raise RequestsError('missing queryID')
+                raise RequestsError(response, 'missing queryID', payload)
         q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[
                                                                          1:] + "&workbookName=" + 'KXSHelperREST' + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Tables'
 
@@ -285,7 +285,7 @@ class DataModel:
 
             else:
 
-                raise RequestsError(response.text,
+                raise RequestsError(response,
                                     "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
 
             # response_rows = response_dict['Rows']
@@ -340,8 +340,7 @@ class DataModel:
         else:
             print(payload)
             print(url)
-            raise RequestsError(response.text,
-                                " failure during workbook initialise_for_extract, status not 200")
+            raise RequestsError(response,"failure during workbook initialise_for_extract", payload)
 
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
@@ -351,7 +350,7 @@ class DataModel:
                 # columns = ws.get('Columns')
                 # rows = ws.get('Rows')  # should be []
             else:
-                raise RequestsError('missing queryID')
+                raise RequestsError(response, 'missing queryID', payload)
         q_url = b_url + "/integration/V1/data/worksheet" + "?queryId=" + queryID[
                                                                          1:] + "&workbookName=" + workbook + "&Scope=" + 'Public' + "&worksheetName=" + 'DataModel_Fields'
 
@@ -370,8 +369,8 @@ class DataModel:
 
             else:
 
-                raise RequestsError(response.text,
-                                    "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
+                raise RequestsError(response,
+                                    "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url, payload)
 
             # response_rows = response_dict['Rows']
             # for r in response_rows:
