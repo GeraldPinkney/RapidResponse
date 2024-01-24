@@ -1,8 +1,5 @@
 import unittest
 
-
-import RapidResponse.Table as Table
-import RapidResponse.DataModel as DM
 from RapidResponse.DataTable import DataTable, DataRow
 from RapidResponse.Environment import Environment
 from samples import sample_configuration

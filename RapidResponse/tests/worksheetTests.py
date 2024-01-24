@@ -2,9 +2,7 @@ import unittest
 
 from RapidResponse.Environment import Environment
 from samples import sample_configuration
-from RapidResponse.Worksheet import Worksheet, Workbook, WorksheetRow
-
-
+from RapidResponse.Worksheet import Worksheet, Workbook, WorksheetRow, Cell
 
 
 class WorksheetTestCase(unittest.TestCase):
@@ -133,7 +131,7 @@ class WorksheetTestCase(unittest.TestCase):
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, refresh=False)
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
-        self.assertTrue(ws)
+        self.assertFalse(bool(ws))
     # test indexof
 
     # test contains
@@ -148,6 +146,16 @@ class WorksheetRowTestCase(unittest.TestCase):
         wsr = WorksheetRow(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'], ws)
         self.assertNotEqual(len(wsr), 0)
 
+    def test_wsr_init_get(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        print(ws[0])
+        print(ws[0][0])
+        print(ws[0][5])
+        #self.assertNotEqual(len(wsr), 0)
+
     def test_wsr_dynamic_attr_access(self):
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
         workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
@@ -155,6 +163,14 @@ class WorksheetRowTestCase(unittest.TestCase):
         Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
         wsr = WorksheetRow(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'], ws)
         self.assertEqual(wsr.OrderId, '102-CDMAc')
+
+    def test_wsr_set_item(self):
+        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+        wsr = WorksheetRow(['102-CDMAc', 'GP1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'], ws)
+        wsr[1] = 'GP1234567'
 
 class WorkbookTestCase(unittest.TestCase):
     pass

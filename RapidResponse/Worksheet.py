@@ -1,44 +1,184 @@
 # Worksheet.py
 import json
+from array import array
+
 import requests
 import logging
 import re
+from datetime import date
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
 
+class Workbook:
+    """
+    https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
+    :param environment: Required. contains the env details for worksheet.\n
+    :param Scenario: Optional \n
+    :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+    :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+    :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+    :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+    :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
 
-class Cell:
-    def __init__(self, value, datatype, columnId, header, isEditable):
-        self.value = str(value)
-        self.datatype = datatype
-        self.columnId = columnId
-        self.header = header
-        self.isEditable = isEditable
-    pass
-    # value, datatype, columnId
-    # todo add date handling here
-    @property
-    def value(self):
-        if self.datatype == 'Date':
-            if self._value == 'Undefined':
-                return None
-            elif self._value == 'Future':
-                return '31-12-99'
-            elif self._value == 'Past':
-                return '01-01-70'
-            else:
-                pattern = r"\b(19\d\d|20\d\d)[-/](0[1-9]|1[0-2])[-/](0[1-9]|[12]\d|3[01])\b"  # YYYY-MM-DD
-                dates = re.findall(pattern, self._value)
-                return f"{dates[0][2]}-{dates[0][1]}-{dates[0][0][2:]}"  # '07-06-20'
 
-            #return self.value # format needs to be '07-06-20'
+    """
+
+    def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
+                 Filter: dict = None, VariableValues: dict = None):
+        """
+        https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
+
+        :param environment: Required. contains the env details for worksheet.
+        :param Scenario:
+        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+
+
+        """
+        self.logger = logging.getLogger('RapidPy.wb')
+        if not isinstance(environment, Environment):
+            raise TypeError("The parameter environment type must be Environment.")
+        if not environment:
+            raise ValueError("The parameter environment must not be empty.")
+        self.environment = environment
+
+        if Scenario:
+            #if not isinstance(Scenario, dict):
+            #    raise TypeError("The parameter scenario type must be dict.")
+            scenario_keys = Scenario.keys()
+            #if len(scenario_keys) != 2:
+            #    raise ValueError("The parameter scenario must contain only Name and Scope.")
+            if 'Name' not in scenario_keys:
+                raise ValueError("The parameter scenario must contain Name.")
+            if 'Scope' not in scenario_keys:
+                raise ValueError("The parameter scenario must contain Scope.")
+            self._scenario = Scenario
         else:
-            return self._value
+            self._scenario = self.environment.scenarios[0]
 
-    @value.setter
-    def value(self, value):
-        self._value = str(value)
+        #if not isinstance(workbook, dict):
+        #    raise TypeError("The parameter workbook type must be dict.")
+        if not workbook:
+            raise ValueError("The parameter workbook must not be empty.")
 
+        wb_keys = workbook.keys()
+        #if len(wb_keys) != 2:
+        #    raise ValueError("The parameter workbook must contain only Name and Scope.")
+        if 'Name' not in wb_keys:
+            raise ValueError("The parameter workbook must contain Name.")
+        if 'Scope' not in wb_keys:
+            raise ValueError("The parameter workbook must contain Scope.")
+        self._workbook = workbook
+
+        if not isinstance(SiteGroup, str):
+            raise TypeError("The parameter SiteGroup type must be str.")
+        if not SiteGroup:
+            #raise ValueError("The parameter SiteGroup must not be empty.")
+            self._site_group = 'All Sites'
+        else:
+            self._site_group = SiteGroup
+
+        if not Filter:
+            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
+        else:
+            self._filter = Filter
+        self._variable_values = VariableValues
+
+        self.worksheets = []
+        for name in WorksheetNames:
+            self.worksheets.append(
+                Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
+                          self._variable_values))
+
+        # todo add __methods__
+
+    def __str__(self):
+        return f'Name: {self.name!r}, Scope: {self.workbook_scope!r} '
+
+    def refresh(self):
+        # populate all child worksheets with data
+        for ws in self.worksheets:
+            try:
+                ws.RefreshData()
+            except:
+                self.logger.error('something went wrong with ' + ws.name)
+
+    @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, new_filter):
+        if not isinstance(new_filter, dict):
+            raise TypeError("filter must be dict.")
+        if not new_filter:
+            raise ValueError("filter must not be empty.")
+
+        filt_keys = new_filter.keys()
+        if len(filt_keys) != 2:
+            raise ValueError("filter must contain only Name and Scope.")
+        if 'Name' not in filt_keys:
+            raise ValueError("filter must contain Name.")
+        if 'Scope' not in filt_keys:
+            raise ValueError("filter must contain Scope.")
+        self._filter = new_filter
+        # todo apply filter to all worksheets
+
+    @property
+    def name(self):
+        return self._workbook['Name']
+
+    @property
+    def workbook_scope(self):
+        return self._workbook['Scope']
+
+    @property
+    def scenario(self):
+        return self._scenario
+
+    @scenario.setter
+    def scenario(self, new_scenario):
+        #if not isinstance(new_scenario, dict):
+        #    raise TypeError("The parameter scenario type must be dict.")
+        scenario_keys = new_scenario.keys()
+        if len(scenario_keys) != 2:
+            raise ValueError("The parameter scenario must contain only Name and Scope.")
+        if 'Name' not in scenario_keys:
+            raise ValueError("The parameter scenario must contain Name.")
+        if 'Scope' not in scenario_keys:
+            raise ValueError("The parameter scenario must contain Scope.")
+        self._scenario = new_scenario
+        # todo apply scenario to all worksheets
+
+    @property
+    def site_group(self):
+        return self._site_group
+
+    @site_group.setter
+    def site_group(self, new_site_group):
+        self._site_group = str(new_site_group)
+        # todo apply value to all worksheets
+
+    def __len__(self):
+        return len(self.worksheets)
+
+    def __getitem__(self, position):
+        return self.worksheets[position]
+
+    # todo make sure these actually work
+
+    def indexof(self, rec):
+        return self.worksheets.index(rec)
+
+    def __contains__(self, item):
+        # get key fields for table. then check if that value is present
+        if item in self.worksheets:
+            return True
+        else:
+            return False
 
 
 class Worksheet:
@@ -437,180 +577,6 @@ class Worksheet:
         return results
 
 
-class Workbook:
-    """
-    https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
-    :param environment: Required. contains the env details for worksheet.\n
-    :param Scenario: Optional \n
-    :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
-    :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
-    :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
-    :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
-    :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
-
-
-    """
-
-    def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
-                 Filter: dict = None, VariableValues: dict = None):
-        """
-        https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
-
-        :param environment: Required. contains the env details for worksheet.
-        :param Scenario:
-        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
-        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
-        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
-        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
-        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
-
-
-        """
-        self.logger = logging.getLogger('RapidPy.wb')
-        if not isinstance(environment, Environment):
-            raise TypeError("The parameter environment type must be Environment.")
-        if not environment:
-            raise ValueError("The parameter environment must not be empty.")
-        self.environment = environment
-
-        if Scenario:
-            #if not isinstance(Scenario, dict):
-            #    raise TypeError("The parameter scenario type must be dict.")
-            scenario_keys = Scenario.keys()
-            #if len(scenario_keys) != 2:
-            #    raise ValueError("The parameter scenario must contain only Name and Scope.")
-            if 'Name' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Name.")
-            if 'Scope' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Scope.")
-            self._scenario = Scenario
-        else:
-            self._scenario = self.environment.scenarios[0]
-
-        #if not isinstance(workbook, dict):
-        #    raise TypeError("The parameter workbook type must be dict.")
-        if not workbook:
-            raise ValueError("The parameter workbook must not be empty.")
-
-        wb_keys = workbook.keys()
-        #if len(wb_keys) != 2:
-        #    raise ValueError("The parameter workbook must contain only Name and Scope.")
-        if 'Name' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Name.")
-        if 'Scope' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Scope.")
-        self._workbook = workbook
-
-        if not isinstance(SiteGroup, str):
-            raise TypeError("The parameter SiteGroup type must be str.")
-        if not SiteGroup:
-            #raise ValueError("The parameter SiteGroup must not be empty.")
-            self._site_group = 'All Sites'
-        else:
-            self._site_group = SiteGroup
-
-        if not Filter:
-            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
-        else:
-            self._filter = Filter
-        self._variable_values = VariableValues
-
-        self.worksheets = []
-        for name in WorksheetNames:
-            self.worksheets.append(
-                Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
-                          self._variable_values))
-
-        # todo add __methods__
-
-    def __str__(self):
-        return f'Name: {self.name!r}, Scope: {self.workbook_scope!r} '
-
-    def refresh(self):
-        # populate all child worksheets with data
-        for ws in self.worksheets:
-            try:
-                ws.RefreshData()
-            except:
-                self.logger.error('something went wrong with ' + ws.name)
-
-    @property
-    def filter(self):
-        return self._filter
-
-    @filter.setter
-    def filter(self, new_filter):
-        if not isinstance(new_filter, dict):
-            raise TypeError("filter must be dict.")
-        if not new_filter:
-            raise ValueError("filter must not be empty.")
-
-        filt_keys = new_filter.keys()
-        if len(filt_keys) != 2:
-            raise ValueError("filter must contain only Name and Scope.")
-        if 'Name' not in filt_keys:
-            raise ValueError("filter must contain Name.")
-        if 'Scope' not in filt_keys:
-            raise ValueError("filter must contain Scope.")
-        self._filter = new_filter
-        # todo apply filter to all worksheets
-
-    @property
-    def name(self):
-        return self._workbook['Name']
-
-    @property
-    def workbook_scope(self):
-        return self._workbook['Scope']
-
-    @property
-    def scenario(self):
-        return self._scenario
-
-    @scenario.setter
-    def scenario(self, new_scenario):
-        #if not isinstance(new_scenario, dict):
-        #    raise TypeError("The parameter scenario type must be dict.")
-        scenario_keys = new_scenario.keys()
-        if len(scenario_keys) != 2:
-            raise ValueError("The parameter scenario must contain only Name and Scope.")
-        if 'Name' not in scenario_keys:
-            raise ValueError("The parameter scenario must contain Name.")
-        if 'Scope' not in scenario_keys:
-            raise ValueError("The parameter scenario must contain Scope.")
-        self._scenario = new_scenario
-        # todo apply scenario to all worksheets
-
-    @property
-    def site_group(self):
-        return self._site_group
-
-    @site_group.setter
-    def site_group(self, new_site_group):
-        self._site_group = str(new_site_group)
-        # todo apply value to all worksheets
-
-    def __len__(self):
-        return len(self.worksheets)
-
-    def __getitem__(self, position):
-        return self.worksheets[position]
-
-    # todo make sure these actually work
-
-    def indexof(self, rec):
-        return self.worksheets.index(rec)
-
-    def __contains__(self, item):
-        # get key fields for table. then check if that value is present
-        if item in self.worksheets:
-            return True
-        else:
-            return False
-
-
-
-
 class WorksheetRow(list):
     def __init__(self, iterable, worksheet: Worksheet):
         # initialises a new instance WorksheetRow(['GP', '0', '7000vE', '2017-08-31'], WorksheetName)
@@ -623,11 +589,10 @@ class WorksheetRow(list):
             raise DataError(str(iterable), 'mismatch in length of worksheet columns ' + str(len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
 
         super().__init__(str(item) for item in iterable)
-        #to_init = []
-        #for x in range(len(iterable)):
-        #    to_init.append(Cell(iterable[x], self._worksheet.columns[x]["DataType"], self._worksheet.columns[x]["Id"],self._worksheet.columns[x]["Header"],self._worksheet.columns[x]["IsEditable"]))
-        #super().__init__(to_init)
-        #super().__init__(Cell(item, ) for item in iterable) #value, datatype, columnId
+        '''to_init = []
+        for x in range(len(iterable)):
+            to_init.append(Cell(iterable[x], self._worksheet.columns[x]["DataType"], self._worksheet.columns[x]["Id"],self._worksheet.columns[x]["Header"],self._worksheet.columns[x]["IsEditable"]))
+        super().__init__(to_init)'''
 
     def __getattr__(self, name):
         # method only called as fallback when no named attribute
@@ -658,6 +623,12 @@ class WorksheetRow(list):
             msg = error.format(cls_name=cls.__name__, attr_name=name)
             raise AttributeError(msg)'''
 
+    def __len__(self):
+        return super().__len__()
+
+    def __getitem__(self, position):
+        return super().__getitem__(position)
+
     @property
     def columns(self):
         return self._worksheet.columns
@@ -672,7 +643,26 @@ class WorksheetRow(list):
         # when something is updated it should be pushed back to RR, if datatable is sync
         super().__setitem__(index, str(item))
         if self._worksheet.sync:
-            self._worksheet.add_row(self)
+            to_send = list(self)
+            '''types = [item['DataType'] for item in self.columns]
+            for i in range(len(types)):
+                if types[i] == 'Date':
+                    if to_send[i] == 'Undefined':
+                        to_send[i] = ''
+                    elif to_send[i] == 'Future':
+                        to_send[i] = '31-12-99'
+                    elif to_send[i] == 'Past':
+                        to_send[i] = '01-01-70'
+                    elif to_send[i] == 'Today':
+                        today = date.today()
+                        formatted_today = today.strftime("%d-%m-%y")
+                        to_send[i] = formatted_today
+                    else:
+                        print(to_send[i])
+                        pattern = r"\b(19\d\d|20\d\d)[-/](0[1-9]|1[0-2])[-/](0[1-9]|[12]\d|3[01])\b"  # YYYY-MM-DD
+                        dates = re.findall(pattern, to_send[i])
+                        to_send[i] = f"{dates[0][2]}-{dates[0][1]}-{dates[0][0][2:]}"  # '07-06-20'''''
+            self._worksheet.add_row(to_send)
 
 
     def insert(self, index, item):
@@ -712,3 +702,52 @@ class WorksheetRow(list):
         # calls func() on every item in the underlying list to generate some side effect.
         for item in self:
             func(item)
+
+
+class Cell:
+    def __init__(self, value, datatype, columnId, header, isEditable):
+        self.value = str(value)
+        self.datatype = str(datatype)
+        self.columnId = str(columnId)
+        self.header = str(header)
+        self.isEditable = bool(isEditable)
+
+    def __bool__(self):
+        return bool(self._value)
+
+    def __repr__(self):
+        return f'Cell(value={self._value!r}, datatype={self.datatype!r}, columnId={self.columnId!r}, header={self.header!r}, isEditable={self.isEditable!r}) '
+
+    def __str__(self):
+        return self.value
+
+    # todo equality operator def __eq__(self, other):
+
+    @property
+    def value(self):
+        if self.datatype == 'Date':
+            if self._value == 'Undefined':
+                return ''
+            elif self._value == 'Future':
+                return '31-12-99'
+            elif self._value == 'Past':
+                return '01-01-70'
+            elif self._value == 'Today':
+                today = date.today()
+                formatted_today = today.strftime("%d-%m-%y")
+                return formatted_today
+            else:
+                pattern = r"\b(19\d\d|20\d\d)[-/](0[1-9]|1[0-2])[-/](0[1-9]|[12]\d|3[01])\b"  # YYYY-MM-DD
+                dates = re.findall(pattern, self._value)
+                return f"{dates[0][2]}-{dates[0][1]}-{dates[0][0][2:]}"  # '07-06-20'
+
+            #return self.value # format needs to be '07-06-20'
+        else:
+            return self._value
+
+    @value.setter
+    def value(self, value):
+        if self.isEditable:
+            self._value = str(value)
+        else:
+            pass

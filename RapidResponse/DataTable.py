@@ -2,8 +2,6 @@
 
 import json
 import logging
-import operator
-
 import requests
 import asyncio
 import httpx
@@ -113,6 +111,7 @@ class DataTable(Table):
         else:
             return False
 
+    # todo equality operator
     def __len__(self):
         return len(self._table_data)
 
@@ -129,7 +128,7 @@ class DataTable(Table):
 
     def __repr__(self):
 
-        return f'DataTable(environment={self.environment!r},name={self._table_namespace + "::" + self._table_name!r},' \
+        return f'DataTable(environment={self.environment!r},name={self._table_namespace!r}::{self._table_name!r},' \
                f'columns={[col.name for col in self.columns]!r}, filter={self._filter!r}, sync={self._sync!r}) '
 
     def __str__(self):
@@ -188,6 +187,7 @@ class DataTable(Table):
             self._table_data.append(DataRow(values, self))
         else:
             self._table_data.append(values)
+    # todo remove
 
     def extend(self, *args):
         # todo fix when doing insert messy refereence fields
@@ -610,6 +610,8 @@ class DataRow(list):
         super().__setitem__(index, str(item))
         if self._data_table.sync:
             self._data_table.add_row(self)
+
+    # todo equality operator def __eq__(self, other):
 
 
     def __getattr__(self, name):
