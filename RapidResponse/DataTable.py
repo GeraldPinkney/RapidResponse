@@ -339,7 +339,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, f"error during POST to: {url}", None)
+            raise RequestsError(response, f"error during GET to: {url}", None)
 
         # for rec in response_dict["Rows"]:
         #    returned = rec.split('\t')

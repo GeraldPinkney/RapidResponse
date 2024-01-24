@@ -1,7 +1,9 @@
 # Worksheet.py
+import asyncio
 import json
 from array import array
 
+import httpx
 import requests
 import logging
 import re
@@ -38,7 +40,7 @@ class Workbook:
 
 
         """
-        self.logger = logging.getLogger('RapidPy.wb')
+        self._logger = logging.getLogger('RapidPy.wb.wb')
         if not isinstance(environment, Environment):
             raise TypeError("The parameter environment type must be Environment.")
         if not environment:
@@ -46,7 +48,7 @@ class Workbook:
         self.environment = environment
 
         if Scenario:
-            #if not isinstance(Scenario, dict):
+            '''#if not isinstance(Scenario, dict):
             #    raise TypeError("The parameter scenario type must be dict.")
             scenario_keys = Scenario.keys()
             #if len(scenario_keys) != 2:
@@ -54,37 +56,36 @@ class Workbook:
             if 'Name' not in scenario_keys:
                 raise ValueError("The parameter scenario must contain Name.")
             if 'Scope' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Scope.")
-            self._scenario = Scenario
+                raise ValueError("The parameter scenario must contain Scope.")'''
+            self._scenario = dict(Name=Scenario['Name'], Scope=Scenario['Scope'])
         else:
             self._scenario = self.environment.scenarios[0]
 
         #if not isinstance(workbook, dict):
         #    raise TypeError("The parameter workbook type must be dict.")
-        if not workbook:
+        '''if not workbook:
             raise ValueError("The parameter workbook must not be empty.")
-
         wb_keys = workbook.keys()
-        #if len(wb_keys) != 2:
-        #    raise ValueError("The parameter workbook must contain only Name and Scope.")
+        if len(wb_keys) != 2:
+            raise ValueError("The parameter workbook must contain only Name and Scope.")
         if 'Name' not in wb_keys:
             raise ValueError("The parameter workbook must contain Name.")
         if 'Scope' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Scope.")
-        self._workbook = workbook
+            raise ValueError("The parameter workbook must contain Scope.")'''
+        self._workbook = dict(Name=workbook['Name'], Scope=workbook['Scope'])
 
-        if not isinstance(SiteGroup, str):
-            raise TypeError("The parameter SiteGroup type must be str.")
+        '''if not isinstance(SiteGroup, str):
+            raise TypeError("The parameter SiteGroup type must be str.")'''
         if not SiteGroup:
             #raise ValueError("The parameter SiteGroup must not be empty.")
             self._site_group = 'All Sites'
         else:
-            self._site_group = SiteGroup
+            self._site_group = str(SiteGroup)
 
         if not Filter:
             self._filter = dict({"Name": "All Parts", "Scope": "Public"})
         else:
-            self._filter = Filter
+            self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
         self._variable_values = VariableValues
 
         self.worksheets = []
@@ -93,8 +94,6 @@ class Workbook:
                 Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
                           self._variable_values))
 
-        # todo add __methods__
-
     def __str__(self):
         return f'Name: {self.name!r}, Scope: {self.workbook_scope!r} '
 
@@ -102,9 +101,9 @@ class Workbook:
         # populate all child worksheets with data
         for ws in self.worksheets:
             try:
-                ws.RefreshData()
+                ws.RefreshData_async()
             except:
-                self.logger.error('something went wrong with ' + ws.name)
+                self._logger.error('something went wrong with ' + ws.name)
 
     @property
     def filter(self):
@@ -118,14 +117,15 @@ class Workbook:
             raise ValueError("filter must not be empty.")
 
         filt_keys = new_filter.keys()
-        if len(filt_keys) != 2:
-            raise ValueError("filter must contain only Name and Scope.")
+        '''if len(filt_keys) != 2:
+            raise ValueError("filter must contain only Name and Scope.")'''
         if 'Name' not in filt_keys:
             raise ValueError("filter must contain Name.")
         if 'Scope' not in filt_keys:
             raise ValueError("filter must contain Scope.")
         self._filter = new_filter
-        # todo apply filter to all worksheets
+        for ws in self.worksheets:
+            ws.filter = self.filter
 
     @property
     def name(self):
@@ -151,7 +151,8 @@ class Workbook:
         if 'Scope' not in scenario_keys:
             raise ValueError("The parameter scenario must contain Scope.")
         self._scenario = new_scenario
-        # todo apply scenario to all worksheets
+        for ws in self.worksheets:
+            ws.scenario = self.scenario
 
     @property
     def site_group(self):
@@ -160,15 +161,14 @@ class Workbook:
     @site_group.setter
     def site_group(self, new_site_group):
         self._site_group = str(new_site_group)
-        # todo apply value to all worksheets
+        for ws in self.worksheets:
+            ws.site_group = self.site_group
 
     def __len__(self):
         return len(self.worksheets)
 
     def __getitem__(self, position):
         return self.worksheets[position]
-
-    # todo make sure these actually work
 
     def indexof(self, rec):
         return self.worksheets.index(rec)
@@ -271,14 +271,14 @@ class Worksheet:
         self._variable_values = VariableValues
         # todo add support for hierarchies
 
-        self.columns = []
-        self.rows = []
+        self.columns = list()
+        self.rows = list()
 
         self._queryID = None
         self.total_row_count = None
 
         if self._refresh:
-            self.RefreshData()
+            self.RefreshData_async()
 
     @property
     def name(self):
@@ -486,10 +486,50 @@ class Worksheet:
             raise RequestsError(response,
                                 f"failure during GET workbook retrieve_worksheet_data to: {url}", None)
 
-        rows = []
+        '''rows = []
         for rec in response_dict["Rows"]:
-            rows.append(WorksheetRow(rec['Values'], self))
+            rows.append(WorksheetRow(rec['Values'], self))'''
+        rows = [WorksheetRow(rec['Values'], self) for rec in response_dict["Rows"]]
         return rows
+
+    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 500):
+        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
+        rows = []
+        headers = self.environment.global_headers
+
+        response = await client.get(url=url, headers=headers)
+        if response.status_code == 200:
+            response_dict = json.loads(response.text)
+        else:
+            raise RequestsError(response, f"error during GET to: {url}", None)
+        rows = [WorksheetRow(rec['Values'], self) for rec in response_dict["Rows"]]
+        return rows
+
+    async def _main_get_export_results_async(self, data_range):
+        tasks = []
+        client = httpx.AsyncClient()
+        for i in range(0, self.total_row_count - data_range, data_range):
+            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
+        # data = await asyncio.gather(*tasks)
+        # self._table_data = list(data)
+        for coroutine in asyncio.as_completed(tasks):
+            self.rows.extend(await coroutine)
+
+        remaining_records = self.total_row_count % data_range
+        if remaining_records > 0:
+            self.rows.extend(
+                await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
+        await client.aclose()
+
+    def RefreshData_async(self, data_range: int = 5000):
+        self.rows.clear()
+        self.environment.refresh_auth()
+        # initialise_for_extract query
+        s = requests.Session()
+        self._create_export(s)
+        s.close()
+        asyncio.run(self._main_get_export_results_async(data_range))
+        self._queryID = None
 
     def RefreshData(self, data_range: int = 50000):
         s = requests.Session()
@@ -580,13 +620,14 @@ class Worksheet:
 class WorksheetRow(list):
     def __init__(self, iterable, worksheet: Worksheet):
         # initialises a new instance WorksheetRow(['GP', '0', '7000vE', '2017-08-31'], WorksheetName)
+        self._logger = logging.getLogger('RapidPy.wb.wsr')
         if not isinstance(worksheet, Worksheet):
             raise TypeError("The parameter worksheet type must be Worksheet.")
         # grab the necessary info from owning table
         self._worksheet = worksheet
 
         if len(iterable) != len(self._worksheet.columns):
-            raise DataError(str(iterable), 'mismatch in length of worksheet columns ' + str(len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
+            raise DataError(str(iterable), 'mismatch in length of worksheet columns: ' + str(len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
 
         super().__init__(str(item) for item in iterable)
         '''to_init = []
@@ -720,8 +761,6 @@ class Cell:
 
     def __str__(self):
         return self.value
-
-    # todo equality operator def __eq__(self, other):
 
     @property
     def value(self):
