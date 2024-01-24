@@ -185,7 +185,7 @@ class DataRowTestCase(unittest.TestCase):
         rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'],IndependentDemand)
         self.assertEqual(rec.Order_Type, 'DCActual')
 
-# todo test the _sync attribute
+
 
 if __name__ == '__main__':
     unittest.main()

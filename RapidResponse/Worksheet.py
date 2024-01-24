@@ -269,7 +269,6 @@ class Worksheet:
         else:
             self._filter = Filter
         self._variable_values = VariableValues
-        # todo add support for hierarchies
 
         self.columns = list()
         self.rows = list()
@@ -349,7 +348,7 @@ class Worksheet:
         return len(self.rows)
 
     def __bool__(self):
-        if len(self) > 0:
+        if len(self.rows) > 0:
             return True
         else:
             return False
