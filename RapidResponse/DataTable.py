@@ -28,7 +28,7 @@ class DataTable(Table):
     :raises TypeError: environment, tablename is not correctly typed
     :raises DataError: key column not in column list. will log failure but not fail.
     """
-
+    BULK_URL = "/integration/V1/bulk/"
     def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None,
                  sync: bool = True, refresh: bool = True, scenario=None):
 
@@ -276,7 +276,7 @@ class DataTable(Table):
 
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/bulk/export"
+        url = self.environment.base_url + "/integration/V1/bulk/export"
 
         req = requests.Request("POST", url, headers=headers, data=payload)
         # response = requests.request("POST", url, headers=headers, data=payload)
@@ -296,7 +296,7 @@ class DataTable(Table):
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
-        url = self.environment._base_url + "/integration/V1/bulk/export/" + self._exportID[1:] + "?startRow=" + str(
+        url = self.environment.base_url + "/integration/V1/bulk/export/" + self._exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
 
@@ -326,7 +326,7 @@ class DataTable(Table):
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
-        url = self.environment._base_url + "/integration/V1/bulk/export/" + self._exportID[1:] + "?startRow=" + str(
+        url = self.environment.base_url + self.BULK_URL+"export/" + self._exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
         rows = []
@@ -412,17 +412,9 @@ class DataTable(Table):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
-        local_query_fields = []
-        # print(self._table_fields)
-        # for f in self.columns:
-        #    local_query_fields.append(f.name)
+
         local_query_fields = [f.name for f in self.columns]
 
-        rows = []
-        # for i in args:
-        #    values = {"Values": i}
-        #    # append to Rows
-        #    rows.append(values)
         rows = [{"Values": i} for i in args]
 
         payload = json.dumps({
@@ -434,7 +426,7 @@ class DataTable(Table):
 
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/bulk/"
+        url = self.environment.base_url + self.BULK_URL
         if operation == 'upsert':
             url = url + 'upload'
         elif operation == 'delete':
@@ -461,7 +453,7 @@ class DataTable(Table):
         operation = 'upsert'
         headers = self.environment.global_headers
         # headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/bulk/"
+        url = self.environment.base_url + self.BULK_URL
         if operation == 'upsert':
             url = url + "upload/" + self._uploadId[1:] + '/complete'
         elif operation == 'delete':
@@ -496,21 +488,9 @@ class DataTable(Table):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
-        local_query_fields = []
-        # print(self._table_fields)
-        # for f in self.columns:
-        #    local_query_fields.append(f.name)
+
         local_query_fields = [f.name for f in self.columns]
 
-        rows = []
-        # for i in args:
-        # create inner array (list)
-        # arr = [i]
-        # arr.append(i)
-        # create dict containing single element {"Values": []}
-        #    values = {"Values": i}
-        # append to Rows
-        #    rows.append(values)
         rows = [{"Values": i} for i in args]
 
         payload = json.dumps({
@@ -522,7 +502,7 @@ class DataTable(Table):
 
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/bulk/"
+        url = self.environment.base_url + self.BULK_URL
         if operation == 'upsert':
             url = url + 'upload'
         elif operation == 'delete':
@@ -549,7 +529,7 @@ class DataTable(Table):
         operation = 'delete'
         headers = self.environment.global_headers
         # headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/bulk/"
+        url = self.environment.base_url + self.BULK_URL
         if operation == 'upsert':
             url = url + "upload/" + self._uploadId[1:] + '/complete'
         elif operation == 'delete':

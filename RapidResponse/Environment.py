@@ -145,11 +145,11 @@ class Environment:
         for arg in args:
             scenarios.append(arg)
         return scenarios
-    # todo create scenario via script
-    # todo delete scenario via script
-    # todo commit scenario via script
+    #todo create scenario via script
+    #todo delete scenario via script
+    #todo commit scenario via script
 
-    # todo scenario property
+    #todo scenario property
 
 
     def get_table(self, table: str, namespace: str):
@@ -186,3 +186,7 @@ class Environment:
     @data_model.setter
     def data_model(self, dm):
         self._data_model = dm
+
+    @property
+    def base_url(self):
+        return self._base_url
