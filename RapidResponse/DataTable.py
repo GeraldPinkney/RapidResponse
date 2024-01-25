@@ -314,54 +314,9 @@ class DataTable(Table):
         else:
             raise RequestsError(response, f"error during POST to: {url}", None)
 
-        # for rec in response_dict["Rows"]:
-        #    returned = rec.split('\t')
-        #    self._table_data.append(DataRow(returned, self))
-        # rows = []
-        # for rec in response_dict["Rows"]:
-        #    returned = rec.split('\t')
-        #    rows.append(DataRow(returned, self))
+        # data returned with tab delimiter %09. split results.
         rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
         return rows
-
-    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
-        # using slicing on the query handle to strip off the #
-        url = self.environment.base_url + self.BULK_URL+"export/" + self._exportID[1:] + "?startRow=" + str(
-            startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
-        # print(url)
-        rows = []
-        headers = self.environment.global_headers
-        # print(url)
-        # print(headers)
-        response = await client.get(url=url, headers=headers)
-
-        # check on response = 200 or whatever
-        if response.status_code == 200:
-            response_dict = json.loads(response.text)
-        else:
-            raise RequestsError(response, f"error during GET to: {url}", None)
-
-        # for rec in response_dict["Rows"]:
-        #    returned = rec.split('\t')
-        #    rows.append(DataRow(returned, self))
-        rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
-        return rows
-
-    async def _main_get_export_results_async(self, data_range):
-        tasks = []
-        client = httpx.AsyncClient()
-        for i in range(0, self.total_row_count - data_range, data_range):
-            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
-        # data = await asyncio.gather(*tasks)
-        # self._table_data = list(data)
-        for coroutine in asyncio.as_completed(tasks):
-            self._table_data.extend(await coroutine)
-
-        remaining_records = self.total_row_count % data_range
-        if remaining_records > 0:
-            self._table_data.extend(
-                await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
-        await client.aclose()
 
     def RefreshData(self, data_range: int = 5000):
         # check tablename is set, check fields are set
@@ -374,6 +329,34 @@ class DataTable(Table):
             self._table_data.extend(self._get_export_results(s, i, data_range))
         self._exportID = None
         s.close()
+
+    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
+        url = self.environment.base_url + self.BULK_URL+"export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
+        headers = self.environment.global_headers
+        response = await client.get(url=url, headers=headers)
+
+        if response.status_code == 200:
+            response_dict = json.loads(response.text)
+        else:
+            raise RequestsError(response, f"error during GET to: {url}", None)
+
+        # data returned with tab delimiter %09. split results.
+        rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
+        return rows
+
+    async def _main_get_export_results_async(self, data_range):
+        tasks = []
+        client = httpx.AsyncClient()
+        for i in range(0, self.total_row_count - data_range, data_range):
+            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
+        for coroutine in asyncio.as_completed(tasks):
+            self._table_data.extend(await coroutine)
+
+        remaining_records = self.total_row_count % data_range
+        if remaining_records > 0:
+            self._table_data.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
+        await client.aclose()
+
 
     def RefreshData_async(self, data_range: int = 5000):
         self._table_data.clear()

@@ -111,7 +111,7 @@ class WorksheetTestCase(unittest.TestCase):
                        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
         rec = ws[0]
-        rec[1] = '12345'
+        rec[5] = '07-06-20'
 
     def test_ws_change(self):
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",

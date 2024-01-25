@@ -7,7 +7,7 @@ import httpx
 import requests
 import logging
 import re
-from datetime import date
+from datetime import date, datetime
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
 
@@ -277,7 +277,7 @@ class Worksheet:
         self.total_row_count = None
 
         if self._refresh:
-            self.RefreshData_async()
+            self.RefreshData()
 
     @property
     def name(self):
@@ -385,7 +385,7 @@ class Worksheet:
             self.upload(self.rows[key])
 
     def add_row(self, rec):
-        s = requests.Session()
+        #s = requests.Session()
         self.environment.refresh_auth()
         self.upload(rec)
 
@@ -403,6 +403,7 @@ class Worksheet:
             self.rows.append(WorksheetRow(values, self))
         else:
             self.rows.append(values)
+        self.total_row_count = len(self.rows)
 
     def extend(self, *args):
         if self._sync:
@@ -412,6 +413,7 @@ class Worksheet:
             self.rows.extend(*args)
         else:
             self.rows.extend([WorksheetRow(item, self) for item in args[0]])
+        self.total_row_count = len(self.rows)
 
     def _create_export(self, session):
         """
@@ -420,7 +422,7 @@ class Worksheet:
         """
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/data/workbook"
+        url = self.environment.base_url + "/integration/V1/data/workbook"
 
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
@@ -458,10 +460,10 @@ class Worksheet:
                 self._queryID = ws['QueryHandle']['QueryID']
                 self.total_row_count = ws.get('TotalRowCount')
                 self.columns = ws.get('Columns')
-                self.rows = ws.get('Rows')  # should be []
+                #self.rows = ws.get('Rows')  # should be []
         return response_dict
 
-    def _get_export_results(self, session, startRow: int = 0, pageSize: int = 500):
+    def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # add some checking for not null, blah. check pagesize is not insane
         """
 
@@ -470,9 +472,10 @@ class Worksheet:
         :param pageSize:
         :return: rows[]
         """
+        #print(f'start: {startRow}, pagesize: {pageSize}')
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&','%26') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
+        url = self.environment.base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
 
         req = requests.Request("GET", url, headers=headers)
         prepped = req.prepare()
@@ -485,15 +488,27 @@ class Worksheet:
             raise RequestsError(response,
                                 f"failure during GET workbook retrieve_worksheet_data to: {url}", None)
 
-        '''rows = []
-        for rec in response_dict["Rows"]:
-            rows.append(WorksheetRow(rec['Values'], self))'''
         rows = [WorksheetRow(rec['Values'], self) for rec in response_dict["Rows"]]
         return rows
 
-    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 500):
-        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
-        rows = []
+    def RefreshData(self, data_range: int = 5000):
+        s = requests.Session()
+        self.environment.refresh_auth()
+        try:
+            self._create_export(s)
+        except TypeError:
+            raise RequestsError(None, msg='likely due to invalid worksheetname')
+        else:
+            self.rows.clear()
+            for i in range(0, self.total_row_count, data_range):
+                self.rows.extend(self._get_export_results(s, i, data_range))
+        finally:
+            self._queryID = None
+            s.close()
+
+    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
+        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
+        #print(f'start: {startRow}, pagesize: {pageSize}')
         headers = self.environment.global_headers
 
         response = await client.get(url=url, headers=headers)
@@ -507,46 +522,35 @@ class Worksheet:
     async def _main_get_export_results_async(self, data_range):
         tasks = []
         client = httpx.AsyncClient()
-        for i in range(0, self.total_row_count - data_range, data_range):
-            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
-        # data = await asyncio.gather(*tasks)
-        # self._table_data = list(data)
+        #for i in range(0, self.total_row_count - data_range, data_range):
+        #    print(f'i: {i}, range: {data_range}, time: {datetime.now()}')
+        #    tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
+        tasks = [asyncio.Task(self._get_export_results_async(client, i, data_range)) for i in range(0, self.total_row_count - data_range, data_range)]
         for coroutine in asyncio.as_completed(tasks):
             self.rows.extend(await coroutine)
 
         remaining_records = self.total_row_count % data_range
         if remaining_records > 0:
-            self.rows.extend(
-                await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
+            await asyncio.sleep(1)
+            self.rows.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
         await client.aclose()
 
     def RefreshData_async(self, data_range: int = 5000):
-        self.rows.clear()
+
         self.environment.refresh_auth()
         # initialise_for_extract query
         s = requests.Session()
-        self._create_export(s)
-        s.close()
-        asyncio.run(self._main_get_export_results_async(data_range))
-        self._queryID = None
-
-    def RefreshData(self, data_range: int = 50000):
-        s = requests.Session()
-        self.environment.refresh_auth()
         try:
             self._create_export(s)
+            s.close()
         except TypeError:
             raise RequestsError(None, msg='likely due to invalid worksheetname')
-        #except:
-        #    self._logger.error("bail, its a scam!")
-        #    raise RequestsError(None, msg='Error during create export')
         else:
             self.rows.clear()
-            for i in range(0, self.total_row_count, data_range):
-                self.rows.extend(self._get_export_results(s, i, data_range))
+            asyncio.run(self._main_get_export_results_async(data_range))
         finally:
             self._queryID = None
-            s.close()
+            #s.close()
 
     def upload(self, *args):
         """
