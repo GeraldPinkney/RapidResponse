@@ -192,6 +192,8 @@ class Worksheet:
     :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
     :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
     :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+    :param sync: boolean control whether any updates are pushed back to RR
+    :param refresh: boolean refresh row data on initialisation
     """
 
     def __init__(self, environment, worksheet: str, workbook: dict, scenario=None, SiteGroup: str = None,

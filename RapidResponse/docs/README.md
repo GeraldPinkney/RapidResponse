@@ -161,8 +161,19 @@ When initialised it takes a deep copy of the Table from the data model and then 
 
 ## Data Table - Usage Instructions
 
-view all rows in the table
+initialise a data table
+This will be initialised with all columns of the table, and any key columns on referenced tables. 
 ```
+>>> env = Environment(sample_configuration)
+>>> part = DataTable(env,'Mfg::Part')
+```
+print table to see the environment information, columns and first few rows of data
+```
+>>> part
+DataTable(environment=Environment(url='http://localhost/rapidresponse', data_model_directory='C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data', auth_type='basic'),name='Mfg'::'Part',columns=['Name', 'Site.Value', 'AfterForecastInterval', 'AllocationMultiple', 'AverageQty', 'AverageSellingPrice', 'BeforeForecastInterval', 'CarryingCost', 'ConstraintShareFence', 'DemandTimeFence', 'Description', 'ExcessFence', 'IntermediateSpreadForecastInterval', 'InventoryHoldingRate', 'LeadTimeAdjust', 'MaterialCost', 'MinimumShelfLife', 'MinimumSpreadQuantity', 'NextUnit', 'NumberOfDaysSupply', 'PercentSafetyIntervalCount', 'PercentSafetyPercent', 'PickPackTime', 'PrimarySubstitutionSequence', 'ProductGroup1', 'ProductGroup2', 'RangeOfCoverageBuffer', 'SafetyLeadTime', 'SafetyStockQty', 'SpreadForecastInterval', 'StdUnitCost', 'SubstitutionTolerance', 'SupplyShareFence', 'UnsatisfiedDemandTolerance'], filter=None, sync=True) 
+# or if you want to see data in a specific scenario
+>>> part = DataTable(env,'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"})
+# view all rows in the table
 >>> for p in part:
 ...     print(p)
 ... 
@@ -217,6 +228,12 @@ use slicing to only view a subset of records
 ```
 print(IndependentDemand[0:11])
 ```
+for those who love pandas, you may want this
+```
+df = pd.DataFrame([p for p in part])
+df.columns = [c.name for c in part.columns]
+df
+```
 ## Worksheet - Overview
 
 Subclass of Table that contains row data & can be used to push updates to RR. 
@@ -230,40 +247,36 @@ When initialised it takes a deep copy of the Table from the data model and then 
 - _SiteGroup_: Required, the site or site filter to use with the workbook Example, "All Sites" 
 - _Filter_: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"} 
 - _VariableValues_: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+- _sync_: boolean value. controls whether updates performed within Python are pushed back to RR. 
+- _refresh_: boolean value. refresh row data on initialisation. 
 
 ## Worksheet - Usage Instructions
 
 Create a worksheet and print records
 ```
-variable_values = {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All", "DataModel_IsIncludeDataTypeSet": "N","FilterType": "All"}
-
-wb = Workbook(environment=Environment(sample_configuration),
-              Scenario={"Name": 'Enterprise Data', "Scope": "Public"},
-              workbook={"Name": 'KXSHelperREST', "Scope": 'Public'},
-              SiteGroup="All Sites",
-              Filter={"Name": "All Parts", "Scope": "Public"},
-              VariableValues=variable_values,
-              WorksheetNames=["DataModel_Summary"]
-              )
-wb.refresh()
-for x in wb.worksheets:
-    print(x)
-    xRows = x.RefreshData()
-    print(xRows)
+>>> ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",Filter={"Name": "All Parts", "Scope": "Public"}, refresh=True)
+>>> ws
+Worksheet(environment=Environment(url='http://localhost/rapidresponse', data_model_directory='C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data', auth_type='basic'),worksheet='OnHand',workbook={'Name': '.Input Tables', 'Scope': 'Public'},SiteGroup='All Sites',Filter={'Name': 'All Parts', 'Scope': 'Public'},VariableValues=None)
+>>> for x in ws:
+...     print(x)
+...     
+['521-HOAcA', 'SAProd', '', '', 'SA_Bins1', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '0', '2017-03-02', 'Undefined', '2500', '-1', '0']
+['521-HOAcA', 'SAProd', '', '', 'SA_Bins2', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '0', '2017-03-02', 'Undefined', '500', '-1', '0']
+['521-HOAcE', 'SAProd', '', '', 'SA_Bins1', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '20000', '2016-11-03', 'Undefined', '20000', '-1', '0']
+['521-HOAcE', 'SAProd', '', '', 'SA_Bins2', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '20000', '2017-02-02', 'Undefined', '20000', '-1', '0']
 ```
 Create workbook and upload to that workbook
 ```
-wb_ords = Workbook(environment=Environment(sample_configuration),
-                   Scenario={"Name": "Integration", "Scope": "Public"},
-                   workbook={"Name": 'Orders by Customer', "Scope": 'Public'},
-                   SiteGroup="All Sites",
-                   Filter={"Name": "All Parts", "Scope": "Public"},
-                   VariableValues={"customer": "PCW"},
-                   WorksheetNames=["Actual Orders"]
-                   )
-ws = wb_ords.worksheets[0]
-ws.upload(["ordnum0", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"],
-          ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
+>>> ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",workbook={'Name': 'Orders by Customer', "Scope": 'Public'},scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+# and be aware of whether a column is editable
+>>> print([col['IsEditable'] for col in ws.columns])
+[True, True, True, True, True, True, True, True, True, True, True, False, True, True, True, True, True]
+>>> ws.append(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'])
+# Or use upload
+>>> ws.upload(["ordnum0", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"],
+...              ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
 ```
 ## Aaaand now the caveats
-
+watch out for date formatting when uploading via workbook
+be aware of the implicit logic built in for tolerances for datatable, and table upload ordering. 
+also, currently no support built in for creating scenario, transacting, then rolling back or committing based on result.
