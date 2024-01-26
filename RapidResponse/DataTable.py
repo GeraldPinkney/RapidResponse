@@ -296,7 +296,7 @@ class DataTable(Table):
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
-        url = self.environment.base_url + "/integration/V1/bulk/export/" + self._exportID[1:] + "?startRow=" + str(
+        url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(
             startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
 
@@ -568,8 +568,8 @@ class DataRow(list):
 
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
-
         # when something is updated it should be pushed back to RR, if datatable is sync
+        # todo check if its a reference field or calculated . then don't allow
         super().__setitem__(index, str(item))
         if self._data_table.sync:
             self._data_table.add_row(self)
