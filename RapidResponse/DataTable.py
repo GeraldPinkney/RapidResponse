@@ -2,6 +2,8 @@
 
 import json
 import logging
+from collections import UserList
+
 import requests
 import asyncio
 import httpx
@@ -549,7 +551,7 @@ class DataTable(Table):
         return self._sync
 
 
-class DataRow(list):
+class DataRow(UserList):
     # Can only be initialised from DataTable, therefore no need to validate its a good record on creation.
     def __init__(self, iterable, data_table: DataTable):
         # initialises a new instance DataRow(['GP', '0', '7000vE', '2017-08-31'], IndependentDemand)
@@ -563,8 +565,7 @@ class DataRow(list):
         if len(iterable) == len(self._data_table.columns):
             super().__init__(str(item) for item in iterable)
         else:
-            raise DataError(str(iterable), 'mismatch in length of data table columns ' + str(
-                len(self._data_table.columns)) + ' and row: ' + str(len(iterable)))
+            raise DataError(str(iterable), f'mismatch in length of data table columns {str(len(self._data_table.columns))} and row: {str(len(iterable))} ')
 
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item

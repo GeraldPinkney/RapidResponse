@@ -2,6 +2,7 @@
 import asyncio
 import json
 from array import array
+from collections import UserList
 
 import httpx
 import requests
@@ -622,7 +623,7 @@ class Worksheet:
         return results
 
 
-class WorksheetRow(list):
+class WorksheetRow(UserList):
     def __init__(self, iterable, worksheet: Worksheet):
         # initialises a new instance WorksheetRow(['GP', '0', '7000vE', '2017-08-31'], WorksheetName)
         self._logger = logging.getLogger('RapidPy.wb.wsr')
