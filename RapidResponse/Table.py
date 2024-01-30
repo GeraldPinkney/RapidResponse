@@ -1,5 +1,5 @@
 # Table.py
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, Dict
 import logging
 from RapidResponse.Err import DataError
 
@@ -27,6 +27,24 @@ class Column(NamedTuple):
         else:
             return False
 
+    def to_dict(self) -> Dict:
+        """
+        Convert the instance of Column to a dictionary.
+
+        Returns:
+            dict: Dictionary representation of the Column.
+        """
+        column_dict = {
+            "name": self.name,
+            "datatype": self.datatype,
+            "key": self.key,
+            "referencedTable": self.referencedTable,
+            "referencedTableNamespace": self.referencedTableNamespace,
+            "identification_fields": self.identification_fields,
+            "correspondingField": self.correspondingField,
+            "correspondingFieldNamespace": self.correspondingFieldNamespace,
+        }
+        return column_dict
 
 class Table:
     TABLE_TYPE = Literal['Input', 'Calculated']

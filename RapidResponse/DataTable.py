@@ -182,25 +182,27 @@ class DataTable(Table):
 
     def append(self, values):
         # adds a single new item at the end of the underlying list
+        if not isinstance(values, DataRow):
+            values = DataRow(values, self)
         if self._sync:
             self.add_row(values)
 
-        if not isinstance(values, DataRow):
-            self._table_data.append(DataRow(values, self))
-        else:
-            self._table_data.append(values)
+        self._table_data.append(values)
+
     # todo remove
 
-    def extend(self, *args):
-        # todo fix when doing insert messy refereence fields
+    def extend(self, args):
+        # todo fix when doing insert messy reference fields
+        to_send = []
+        for rec in args:
+            if isinstance(rec, type(DataRow)):
+                to_send.append(rec)
+            else:
+                to_send.append(DataRow(rec, self))
+        self._table_data.extend(to_send)
         if self._sync:
-            self.add_rows(*args)
-        # self._table_data.extend(*args)
+            self.add_rows(to_send)
 
-        if isinstance(*args, type(DataRow)):
-            self._table_data.extend(*args)
-        else:
-            self._table_data.extend([DataRow(item, self) for item in args[0]])
 
     def set_columns(self, columns: list = None):
         # if columns = None, then set columns to all fields on table
@@ -388,7 +390,7 @@ class DataTable(Table):
     def add_rows(self, rows: list):
         self.environment.refresh_auth()
         for i in range(0, len(rows), 500_000):
-            self._create_upload(*rows)
+            self._create_upload(*rows[i:i+500_000])
             self._complete_upload()
             self._uploadId = None
 
@@ -399,8 +401,7 @@ class DataTable(Table):
                  'Name': self._table_name}
 
         local_query_fields = [f.name for f in self.columns]
-
-        rows = [{"Values": i} for i in args]
+        rows = [{"Values": i.data} for i in args]
 
         payload = json.dumps({
             'Scenario': self.scenario,
@@ -476,7 +477,10 @@ class DataTable(Table):
 
         local_query_fields = [f.name for f in self.columns]
 
-        rows = [{"Values": i} for i in args]
+        #print(f'len(args): {len(args)}')
+        rows = [{"Values": i.data} for i in args]
+        #print(f'len(rows): {len(rows)}')
+        #print(rows)
 
         payload = json.dumps({
             'Scenario': self.scenario,
@@ -670,3 +674,57 @@ class DataRow(UserList):
         # calls func() on every item in the underlying list to generate some side effect.
         for item in self:
             func(item)
+
+    def to_dict(self):
+        """
+        Convert the instance of DataRow to a dictionary.
+
+        Returns:
+            dict: Dictionary representation of the DataRow.
+        """
+        return {
+            "_data_table": self._data_table,
+            "data": [str(item) for item in self],
+            "columns": [col.to_dict() for col in self.columns]  # Assuming columns have a to_dict method
+        }
+
+    def to_json(self):
+        """
+        Convert the instance of DataRow to a JSON string.
+
+        Returns:
+            str: JSON representation of the DataRow.
+        """
+        return json.dumps(self.to_dict(), default=lambda o: o.__dict__, indent=2)
+
+    @classmethod
+    def from_dict(cls, data_dict, data_table):
+        """
+        Create a DataRow instance from a dictionary.
+
+        Args:
+            data_dict (dict): Dictionary representation of the DataRow.
+            data_table (DataTable): The owning DataTable instance.
+
+        Returns:
+            DataRow: The DataRow instance.
+        """
+        instance = cls([], data_table)
+        instance._data_table = data_dict["_data_table"]
+        instance.data = data_dict["data"]
+        return instance
+
+    @classmethod
+    def from_json(cls, json_str, data_table):
+        """
+        Create a DataRow instance from a JSON string.
+
+        Args:
+            json_str (str): JSON representation of the DataRow.
+            data_table (DataTable): The owning DataTable instance.
+
+        Returns:
+            DataRow: The DataRow instance.
+        """
+        data_dict = json.loads(json_str)
+        return cls.from_dict(data_dict, data_table)

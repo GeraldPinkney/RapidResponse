@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from RapidResponse.DataTable import DataTable, DataRow
@@ -46,7 +47,7 @@ class DataTableTestCase(unittest.TestCase):
         self.assertEqual(len(part), 0)
 
     # test extend
-    def test_data_table_extend(self):
+    def test_data_table_extend_with_rows(self):
         # setup
         env = Environment(sample_configuration)
         cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
@@ -61,6 +62,20 @@ class DataTableTestCase(unittest.TestCase):
         IndependentDemand.del_row(rows[0])
         IndependentDemand.del_row(rows[1])
 
+    def test_data_table_extend_with_data_table_rows(self):
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
+
+        # execute
+        rows = [['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'],
+                ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '100', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500']]
+        IndependentDemand.extend(rows)
+
+        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', '7000vE','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(rows[0])
+        IndependentDemand.del_row(rows[1])
     # test append
     def test_data_table_append(self):
         # setup
@@ -185,7 +200,24 @@ class DataRowTestCase(unittest.TestCase):
         rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'],IndependentDemand)
         self.assertEqual(rec.Order_Type, 'DCActual')
 
-
+    def test_datarow_json_serialisable(self):
+        env = Environment(sample_configuration)
+        cols = ['Order.Id', 'Order.Site', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
+                'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
+        # execute
+        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'],IndependentDemand)
+        #data = [{"Values": i} for i in rec]
+        payload = json.dumps({
+            'Scenario': {"Name": "Enterprise Data", "Scope": "Public"},
+            'Table': {'Namespace': IndependentDemand._table_namespace,'Name': IndependentDemand._table_name},
+            'Fields': [f.name for f in IndependentDemand.columns],
+            'Rows': [{"Values": rec.data}, {"Values": rec.data}]
+        })
+        #print(data)
+        out = json.loads(payload)
+        print(out)
+        #self.assertEqual(rec.Order_Type, 'DCActual')
 
 if __name__ == '__main__':
     unittest.main()
