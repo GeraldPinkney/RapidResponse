@@ -212,7 +212,7 @@ class DataRowTestCase(unittest.TestCase):
             'Scenario': {"Name": "Enterprise Data", "Scope": "Public"},
             'Table': {'Namespace': IndependentDemand._table_namespace,'Name': IndependentDemand._table_name},
             'Fields': [f.name for f in IndependentDemand.columns],
-            'Rows': [{"Values": rec.data}, {"Values": rec.data}]
+            'Rows': [{"Values": rec.data}]
         })
         #print(data)
         out = json.loads(payload)

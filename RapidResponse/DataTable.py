@@ -361,7 +361,6 @@ class DataTable(Table):
             self._table_data.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
         await client.aclose()
 
-
     def RefreshData_async(self, data_range: int = 5000):
         self._table_data.clear()
         self.environment.refresh_auth()
@@ -395,7 +394,6 @@ class DataTable(Table):
             self._uploadId = None
 
     def _create_upload(self, *args):
-        operation = 'upsert'
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
@@ -412,14 +410,7 @@ class DataTable(Table):
 
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + self.BULK_URL
-        if operation == 'upsert':
-            url = url + 'upload'
-        elif operation == 'delete':
-            url = url + 'remove'
-        else:
-            raise ValueError('invalid operation')
-
+        url = self.environment.base_url + self.BULK_URL + 'upload'
         response = requests.request("POST", url, headers=headers, data=payload)
 
         # check valid response
@@ -427,26 +418,11 @@ class DataTable(Table):
             response_dict = json.loads(response.text)
         else:
             raise RequestsError(response, f"error during POST to: {url}", payload)
-        # print(response)
-        if operation == 'upsert':
-            self._uploadId = response_dict["UploadId"]
-        elif operation == 'delete':
-            self._uploadId = response_dict["RemovalId"]
-        else:
-            raise ValueError('invalid operation')
+        self._uploadId = response_dict["UploadId"]
 
     def _complete_upload(self):
-        operation = 'upsert'
         headers = self.environment.global_headers
-        # headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + self.BULK_URL
-        if operation == 'upsert':
-            url = url + "upload/" + self._uploadId[1:] + '/complete'
-        elif operation == 'delete':
-            url = url + "remove/" + self._uploadId[1:] + '/complete'
-        else:
-            raise ValueError('invalid operation')
-
+        url = self.environment.base_url + self.BULK_URL + "upload/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=headers)
 
         # check valid response
@@ -470,17 +446,12 @@ class DataTable(Table):
             self._logger.info(response_dict)
 
     def _create_deletion(self, *args):
-        operation = 'delete'
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
 
         local_query_fields = [f.name for f in self.columns]
-
-        #print(f'len(args): {len(args)}')
         rows = [{"Values": i.data} for i in args]
-        #print(f'len(rows): {len(rows)}')
-        #print(rows)
 
         payload = json.dumps({
             'Scenario': self.scenario,
@@ -491,14 +462,7 @@ class DataTable(Table):
 
         headers = self.environment.global_headers
         headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + self.BULK_URL
-        if operation == 'upsert':
-            url = url + 'upload'
-        elif operation == 'delete':
-            url = url + 'remove'
-        else:
-            raise ValueError('invalid operation')
-
+        url = self.environment.base_url + self.BULK_URL + 'remove'
         response = requests.request("POST", url, headers=headers, data=payload)
 
         # check valid response
@@ -506,26 +470,11 @@ class DataTable(Table):
             response_dict = json.loads(response.text)
         else:
             raise RequestsError(response, f"Failure during bulk//deletion create. Error during POST to: {url}", payload)
-        # print(response)
-        if operation == 'upsert':
-            self._uploadId = response_dict["UploadId"]
-        elif operation == 'delete':
-            self._uploadId = response_dict["RemovalId"]
-        else:
-            raise ValueError('invalid operation')
+        self._uploadId = response_dict["RemovalId"]
 
     def _complete_deletion(self):
-        operation = 'delete'
         headers = self.environment.global_headers
-        # headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + self.BULK_URL
-        if operation == 'upsert':
-            url = url + "upload/" + self._uploadId[1:] + '/complete'
-        elif operation == 'delete':
-            url = url + "remove/" + self._uploadId[1:] + '/complete'
-        else:
-            raise ValueError('invalid operation')
-
+        url = self.environment.base_url + self.BULK_URL+ "remove/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=headers)
 
         # check valid response
