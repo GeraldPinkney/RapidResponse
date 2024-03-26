@@ -3,7 +3,7 @@
 import json
 import logging
 from collections import UserList
-
+import math
 import requests
 import asyncio
 import httpx
@@ -31,10 +31,11 @@ class DataTable(Table):
     :raises DataError: key column not in column list. will log failure but not fail.
     """
     BULK_URL = "/integration/V1/bulk/"
+
     def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None,
                  sync: bool = True, refresh: bool = True, scenario=None):
 
-        #logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+        # logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
         self._logger = logging.getLogger('RapidPy.dt')
 
         # validations
@@ -103,7 +104,7 @@ class DataTable(Table):
             # columns.extend(self._key_fields)
             # print(columns)
             self.set_columns(columns)
-
+        self._maxconnections = 8
         if refresh:
             self.RefreshData_async()
 
@@ -116,6 +117,9 @@ class DataTable(Table):
     # todo equality operator
     def __len__(self):
         return len(self._table_data)
+
+    def __eq__(self, other):
+        return False
 
     def __getitem__(self, position):
         return self._table_data[position]
@@ -171,9 +175,9 @@ class DataTable(Table):
         # yields new items that result from applying an action() callable to each item in the underlying list
         return type(self)(action(item) for item in self._table_data)
 
-    def filter(self, predicate):
-        # yields all the items that return True when calling predicate() on them
-        return type(self)(item for item in self._table_data if predicate(item))
+    # def filter(self, predicate):
+    #    # yields all the items that return True when calling predicate() on them
+    #    return type(self)(item for item in self._table_data if predicate(item))
 
     def for_each(self, func):
         # calls func() on every item in the underlying list to generate some side effect.
@@ -202,7 +206,6 @@ class DataTable(Table):
         self._table_data.extend(to_send)
         if self._sync:
             self.add_rows(to_send)
-
 
     def set_columns(self, columns: list = None):
         # if columns = None, then set columns to all fields on table
@@ -243,9 +246,30 @@ class DataTable(Table):
                         self.columns.append(col)
             # add fields to columns
 
-    def set_filter(self, value: str):
-        # check filter is valid for table
-        self._filter = value
+    @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, new_filter):
+        self._filter = dict({"Name": new_filter['Name'], "Scope": new_filter['Scope']})
+
+    @property
+    def scenario(self):
+        return self._scenario
+
+    @scenario.setter
+    def scenario(self, new_scenario):
+        # if not isinstance(new_scenario, dict):
+        #    raise TypeError("The parameter scenario type must be dict.")
+        # scenario_keys = new_scenario.keys()
+        # if len(scenario_keys) != 2:
+        #    raise ValueError("The parameter scenario must contain only Name and Scope.")
+        # if 'Name' not in scenario_keys:
+        #    raise ValueError("The parameter scenario must contain Name.")
+        # if 'Scope' not in scenario_keys:
+        #    raise ValueError("The parameter scenario must contain Scope.")
+        self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
 
     def indexof(self, rec):
         return self._table_data.index(rec)
@@ -258,7 +282,7 @@ class DataTable(Table):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
         local_query_fields = []
         if self._filter:
-            query_filter = self._filter
+            query_filter = self.filter
         else:
             query_filter = ''
         # print(self._table_fields)
@@ -300,8 +324,7 @@ class DataTable(Table):
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
-        url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(
-            startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
+        url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
 
         headers = self.environment.global_headers
@@ -322,22 +345,29 @@ class DataTable(Table):
         rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
         return rows
 
-    def RefreshData(self, data_range: int = 5000):
+    def RefreshData(self, data_range: int = 100_000):
         # check tablename is set, check fields are set
         s = requests.Session()
         self.environment.refresh_auth()
-
+        calc_data_range = self._calc_optimal_pagesize(data_range)
         self._table_data.clear()
         self._create_export(s)
-        for i in range(0, self.total_row_count, data_range):
-            self._table_data.extend(self._get_export_results(s, i, data_range))
+        for i in range(0, self.total_row_count, calc_data_range):
+            self._table_data.extend(self._get_export_results(s, i, calc_data_range))
         self._exportID = None
         s.close()
 
-    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
-        url = self.environment.base_url + self.BULK_URL+"export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
+    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000, limit: asyncio.Semaphore = None):
+        url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         headers = self.environment.global_headers
-        response = await client.get(url=url, headers=headers)
+        if limit:
+            async with limit:
+                response = await client.get(url=url, headers=headers)
+                if limit.locked():
+                    self._logger.info("Concurrency limit reached, waiting ...")
+                    await asyncio.sleep(1)
+        else:
+            response = await client.get(url=url, headers=headers)
 
         if response.status_code == 200:
             response_dict = json.loads(response.text)
@@ -351,24 +381,32 @@ class DataTable(Table):
     async def _main_get_export_results_async(self, data_range):
         tasks = []
         client = httpx.AsyncClient()
+        limit = asyncio.Semaphore(self.max_connections)
         for i in range(0, self.total_row_count - data_range, data_range):
-            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
+            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range, limit)))
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
         remaining_records = self.total_row_count % data_range
         if remaining_records > 0:
-            self._table_data.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
+            self._table_data.extend(
+                await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range,limit))
         await client.aclose()
 
-    def RefreshData_async(self, data_range: int = 5000):
+    def RefreshData_async(self, data_range: int = None):
+        # calc or assign the pagesize
+        if data_range is None:
+            calc_data_range = self._calc_optimal_pagesize(100_000)
+        else:
+            calc_data_range = data_range
+        #prepare for data refresh
         self._table_data.clear()
         self.environment.refresh_auth()
         # initialise_for_extract query
         s = requests.Session()
         self._create_export(s)
         s.close()
-        asyncio.run(self._main_get_export_results_async(data_range))
+        asyncio.run(self._main_get_export_results_async(calc_data_range))
         self._exportID = None
 
         '''remaining_records = self.total_row_count % data_range
@@ -378,6 +416,34 @@ class DataTable(Table):
             self._table_data.extend(
                 self._get_export_results(s, self.total_row_count - remaining_records, data_range))
             self._exportID = None'''
+
+    def _calc_optimal_pagesize(self, PageSizeSuggested=100_000):
+        # todo account for rows returned
+        # starting point is 100,000
+        PageSize = PageSizeSuggested
+        pageSizeFactor = 1000
+        for c in self.columns:
+            if c.datatype == 'String':
+                pageSizeFactor = pageSizeFactor - 90
+            elif c.datatype == 'DateTime':
+                pageSizeFactor = pageSizeFactor - 75
+            elif c.datatype == 'Date' or c.datatype == 'Time':
+                pageSizeFactor = pageSizeFactor - 50
+            elif c.datatype == 'Money' or c.datatype == 'Quantity' or c.datatype == 'Integer':
+                pageSizeFactor = pageSizeFactor - 45
+            elif c.datatype == 'Enum':
+                pageSizeFactor = pageSizeFactor - 5
+            else:
+                self._logger.warning(f"datatype: {c.datatype} not expected. reduce factor by 50 & find out what this is")
+                pageSizeFactor = pageSizeFactor - 50
+
+        if pageSizeFactor < 1:
+            PageSize = 900
+        else:
+            pageSizeFactor = pageSizeFactor / 1000
+            PageSize = PageSizeSuggested * pageSizeFactor
+        self._logger.info(f'pageSizeFactor: {pageSizeFactor}, PageSize: {PageSize}')
+        return round(PageSize)
 
     def add_row(self, rec):
         s = requests.Session()
@@ -389,7 +455,7 @@ class DataTable(Table):
     def add_rows(self, rows: list):
         self.environment.refresh_auth()
         for i in range(0, len(rows), 500_000):
-            self._create_upload(*rows[i:i+500_000])
+            self._create_upload(*rows[i:i + 500_000])
             self._complete_upload()
             self._uploadId = None
 
@@ -440,7 +506,8 @@ class DataTable(Table):
         if results['Status'] == 'Failure':
             raise RequestsError(response, f"error during POST to: {url}", None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
-            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(results['ErrorRowCount']))
+            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(
+                results['ErrorRowCount']))
         else:
             self._logger.info(response_readable)
             self._logger.info(response_dict)
@@ -474,7 +541,7 @@ class DataTable(Table):
 
     def _complete_deletion(self):
         headers = self.environment.global_headers
-        url = self.environment.base_url + self.BULK_URL+ "remove/" + self._uploadId[1:] + '/complete'
+        url = self.environment.base_url + self.BULK_URL + "remove/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=headers)
 
         # check valid response
@@ -503,6 +570,10 @@ class DataTable(Table):
     def sync(self):
         return self._sync
 
+    @property
+    def max_connections(self):
+        return self._maxconnections
+
 
 class DataRow(UserList):
     # Can only be initialised from DataTable, therefore no need to validate its a good record on creation.
@@ -518,7 +589,8 @@ class DataRow(UserList):
         if len(iterable) == len(self._data_table.columns):
             super().__init__(str(item) for item in iterable)
         else:
-            raise DataError(str(iterable), f'mismatch in length of data table columns {str(len(self._data_table.columns))} and row: {str(len(iterable))} ')
+            raise DataError(str(iterable),
+                            f'mismatch in length of data table columns {str(len(self._data_table.columns))} and row: {str(len(iterable))} ')
 
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
@@ -529,7 +601,6 @@ class DataRow(UserList):
             self._data_table.add_row(self)
 
     # todo equality operator def __eq__(self, other):
-
 
     def __getattr__(self, name):
         # method only called as fallback when no named attribute

@@ -12,6 +12,9 @@ from RapidResponse.Err import DataError
 
 class EnvironmentTestCase(unittest.TestCase):
     pass
+# test basic auth
+# test oAuth2
+# test refresh auth
 
 if __name__ == '__main__':
     unittest.main()
