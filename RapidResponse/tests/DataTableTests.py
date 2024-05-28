@@ -1,7 +1,7 @@
 import json
 import unittest
-
-from RapidResponse.DataTable import DataTable, DataRow
+from unittest.mock import patch, AsyncMock
+from RapidResponse.DataTable import DataTable, DataRow, Column
 from RapidResponse.Environment import Environment
 from samples import sample_configuration
 from RapidResponse.Err import DataError
@@ -148,6 +148,73 @@ class DataTableTestCase(unittest.TestCase):
     # test indexof
 
     # test contains
+
+class TestCalcOptimalPagesize(unittest.TestCase):
+    def setUp(self):
+        # Create a mock DataTable object with some columns for testing
+        env = Environment(sample_configuration)
+        self.data_table = DataTable(env,'Mfg::Part', refresh=False)
+        self.data_table.columns = [
+            Column('Column1', 'String', 'N', None),
+            Column('Column2', 'DateTime', 'N', None),
+            Column('Column3', 'Integer', 'N', None),
+            Column('Column4', 'String', 'N', None)
+        ]
+
+    def test_calc_optimal_pagesize_with_string_columns(self):
+        # Test the calculation of optimal page size with string columns
+        #self.data_table.columns[0].datatype = 'String'
+        #self.data_table.columns[3].datatype = 'String'
+        pagesize = self.data_table._calc_optimal_pagesize()
+        self.assertEqual(pagesize, 350000)  # Expected page size based on string columns
+
+    def test_calc_optimal_pagesize_with_datetime_column(self):
+        # Test the calculation of optimal page size with a datetime column
+        self.data_table.columns[1].datatype = 'DateTime'
+        pagesize = self.data_table._calc_optimal_pagesize()
+        self.assertEqual(pagesize, 4925)  # Expected page size based on datetime column
+
+    def test_calc_optimal_pagesize_with_integer_column(self):
+        # Test the calculation of optimal page size with an integer column
+        self.data_table.columns[2].datatype = 'Integer'
+        pagesize = self.data_table._calc_optimal_pagesize()
+        self.assertEqual(pagesize, 4955)  # Expected page size based on integer column
+
+    def test_calc_optimal_pagesize_with_unknown_datatype(self):
+        # Test the calculation of optimal page size with an unknown datatype
+        self.data_table.columns[0].datatype = 'Unknown'
+        pagesize = self.data_table._calc_optimal_pagesize()
+        self.assertEqual(pagesize, 5000)  # Default page size when datatype is unknown
+
+
+class TestRefreshDataAsync(unittest.IsolatedAsyncioTestCase):
+    async def test_refresh_data_async_with_no_data_range(self):
+        # Test refreshing data asynchronously without specifying a data range
+        mock_environment = Environment()
+        mock_data_table = DataTable(mock_environment)
+        mock_data_table._create_export = AsyncMock()
+        mock_data_table._get_export_results_async = AsyncMock(return_value=[])
+
+        await mock_data_table.RefreshData_async()
+
+        mock_data_table._create_export.assert_called_once()
+        mock_data_table._get_export_results_async.assert_called_once_with(
+            mock_data_table.client, 0, 5000, mock_environment.limit
+        )
+
+    async def test_refresh_data_async_with_data_range(self):
+        # Test refreshing data asynchronously with a specified data range
+        mock_environment = Environment()
+        mock_data_table = DataTable(mock_environment)
+        mock_data_table._create_export = AsyncMock()
+        mock_data_table._get_export_results_async = AsyncMock(return_value=[])
+
+        await mock_data_table.RefreshData_async(data_range=10000)
+
+        mock_data_table._create_export.assert_called_once()
+        mock_data_table._get_export_results_async.assert_called_once_with(
+            mock_data_table.client, 0, 10000, mock_environment.limit
+        )
 
 
 class DataRowTestCase(unittest.TestCase):

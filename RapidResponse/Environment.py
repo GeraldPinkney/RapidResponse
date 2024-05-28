@@ -1,7 +1,10 @@
+import asyncio
 import base64
 import json
 import logging
 import os
+
+import httpx
 import requests
 from RapidResponse.DataModel import DataModel
 from RapidResponse.Err import SetupError, RequestsError
@@ -70,6 +73,10 @@ class Environment:
             self.data_model = DataModel(data_model_directory=None, url=self._base_url, headers=self.global_headers, workbook=bootstrap_wbk)
 
         self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
+
+        self._maxconnections = 8
+
+        self.limit = asyncio.Semaphore(self.max_connections)
 
     def __repr__(self):
         return f'Environment(url={self._base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
@@ -190,3 +197,7 @@ class Environment:
     @property
     def base_url(self):
         return self._base_url
+
+    @property
+    def max_connections(self):
+        return self._maxconnections

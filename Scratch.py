@@ -1,3 +1,7 @@
+import json
+
+import requests
+
 from RapidResponse.DataTable import DataTable
 from RapidResponse.Environment import Environment
 from samples import sample_configuration
@@ -94,13 +98,10 @@ if __name__ == '__main__':
               ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
 
 
-mea_configuration = {'url': 'https://na1.kinaxis.net/mrad02_dev01',
-                        'data_model_bootstrap': 'KXSHelperREST',
-                        'auth_type': 'basic',
-                        'username': 'RestAPI',
-                        'password': 'WebAccess2021#'
-                        }
-mea_env = Environment(mea_configuration)
+mea_dev = {'url': 'https://na1.kinaxis.net/mrad02_dev01','data_model_bootstrap': 'KXSHelperREST','auth_type': 'basic','username': 'RestAPI','password': 'WebAccess2021#'}
+mea_qa = {'url': 'https://na1.kinaxis.net/MRAT04_QA001','data_model_bootstrap': 'KXSHelperREST','auth_type': 'basic','username': 'RestAPI','password': 'WebAccess2021#'}
+
+mea_env = Environment(mea_dev)
 int_wb = {"Name": "[EU] Integration", "Scope": 'Public'}
 integration_workbook = Workbook(environment=mea_env, Scenario={'Name': 'Enterprise Data', 'Scope': 'Public'}, workbook=int_wb, SiteGroup="All Sites", WorksheetNames=['RRSite'],Filter={"Name": "All Parts", "Scope": "Public"})
 RRSite = integration_workbook.worksheets[0]

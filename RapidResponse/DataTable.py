@@ -3,7 +3,6 @@
 import json
 import logging
 from collections import UserList
-import math
 import requests
 import asyncio
 import httpx
@@ -104,7 +103,10 @@ class DataTable(Table):
             # columns.extend(self._key_fields)
             # print(columns)
             self.set_columns(columns)
-        self._maxconnections = 8
+
+        #self._maxconnections = 8
+        timeout = httpx.Timeout(10.0, connect=60.0)
+        self.client = httpx.AsyncClient(timeout=timeout)
         if refresh:
             self.RefreshData_async()
 
@@ -349,9 +351,9 @@ class DataTable(Table):
         # check tablename is set, check fields are set
         s = requests.Session()
         self.environment.refresh_auth()
-        calc_data_range = self._calc_optimal_pagesize(data_range)
         self._table_data.clear()
         self._create_export(s)
+        calc_data_range = self._calc_optimal_pagesize(data_range)
         for i in range(0, self.total_row_count, calc_data_range):
             self._table_data.extend(self._get_export_results(s, i, calc_data_range))
         self._exportID = None
@@ -380,23 +382,24 @@ class DataTable(Table):
 
     async def _main_get_export_results_async(self, data_range):
         tasks = []
-        client = httpx.AsyncClient()
-        limit = asyncio.Semaphore(self.max_connections)
+
+        #limit = asyncio.Semaphore(self.max_connections)
         for i in range(0, self.total_row_count - data_range, data_range):
-            tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range, limit)))
+            tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
         remaining_records = self.total_row_count % data_range
         if remaining_records > 0:
             self._table_data.extend(
-                await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range,limit))
-        await client.aclose()
+                await self._get_export_results_async(self.client, self.total_row_count - remaining_records, data_range, self.environment.limit))
+        await self.client.aclose()
 
     def RefreshData_async(self, data_range: int = None):
         # calc or assign the pagesize
+        # todo implement this as a queue with retries https://github.com/rednafi/think-async/blob/master/patterns/limit_concurrency_on_queue.py
         if data_range is None:
-            calc_data_range = self._calc_optimal_pagesize(100_000)
+            calc_data_range = self._calc_optimal_pagesize(500_000)
         else:
             calc_data_range = data_range
         #prepare for data refresh
@@ -417,10 +420,10 @@ class DataTable(Table):
                 self._get_export_results(s, self.total_row_count - remaining_records, data_range))
             self._exportID = None'''
 
-    def _calc_optimal_pagesize(self, PageSizeSuggested=100_000):
+    def _calc_optimal_pagesize(self, PageSizeSuggested=500_000):
         # todo account for rows returned
+        # todo cache response to be able to use stats on string sizes
         # starting point is 100,000
-        PageSize = PageSizeSuggested
         pageSizeFactor = 1000
         for c in self.columns:
             if c.datatype == 'String':
@@ -438,7 +441,7 @@ class DataTable(Table):
                 pageSizeFactor = pageSizeFactor - 50
 
         if pageSizeFactor < 1:
-            PageSize = 900
+            PageSize = 5000
         else:
             pageSizeFactor = pageSizeFactor / 1000
             PageSize = PageSizeSuggested * pageSizeFactor
@@ -454,8 +457,9 @@ class DataTable(Table):
 
     def add_rows(self, rows: list):
         self.environment.refresh_auth()
-        for i in range(0, len(rows), 500_000):
-            self._create_upload(*rows[i:i + 500_000])
+        pagesize = self._calc_optimal_pagesize(100_000)
+        for i in range(0, len(rows), pagesize):
+            self._create_upload(*rows[i:i + pagesize])
             self._complete_upload()
             self._uploadId = None
 
