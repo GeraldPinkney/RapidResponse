@@ -282,7 +282,7 @@ class DataTable(Table):
 
     def _create_export(self, session):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
-        local_query_fields = []
+        #local_query_fields = []
         if self._filter:
             query_filter = self.filter
         else:
@@ -576,7 +576,7 @@ class DataTable(Table):
 
     @property
     def max_connections(self):
-        return self._maxconnections
+        return self.environment.max_connections
 
 
 class DataRow(UserList):
