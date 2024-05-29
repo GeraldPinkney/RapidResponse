@@ -424,8 +424,8 @@ class Worksheet:
         :param session:
         :return: response_dict
         """
-        headers = self.environment.global_headers
-        headers['Content-Type'] = 'application/json'
+        #headers = self.environment.global_headers
+        #headers['Content-Type'] = 'application/json'
         url = self.environment.base_url + "/integration/V1/data/workbook"
 
         workbook_parameters = {
@@ -444,7 +444,7 @@ class Worksheet:
             'WorkbookParameters': workbook_parameters
         })
 
-        req = requests.Request("POST", url, headers=headers, data=payload)
+        req = requests.Request("POST", url, headers=self.environment.global_headers, data=payload)
         prepped = req.prepare()
         response = session.send(prepped)
 
@@ -477,11 +477,11 @@ class Worksheet:
         :return: rows[]
         """
         #print(f'start: {startRow}, pagesize: {pageSize}')
-        headers = self.environment.global_headers
-        headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
+        #headers = self.environment.global_headers
+        #headers['Content-Type'] = 'application/json'
+        url = self.environment.base_url + self.WORKSHEET_URL + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
 
-        req = requests.Request("GET", url, headers=headers)
+        req = requests.Request("GET", url, headers=self.environment.global_headers)
         prepped = req.prepare()
         response = session.send(prepped)
 
@@ -511,11 +511,11 @@ class Worksheet:
             s.close()
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
-        url = self.environment._base_url + "/integration/V1/data/worksheet" + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
+        url = self.environment.base_url + self.WORKSHEET_URL + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
         #print(f'start: {startRow}, pagesize: {pageSize}')
-        headers = self.environment.global_headers
+        #headers = self.environment.global_headers
 
-        response = await client.get(url=url, headers=headers)
+        response = await client.get(url=url, headers=self.environment.global_headers)
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
@@ -563,9 +563,9 @@ class Worksheet:
         :param args: list [] of records you want to send. don't just send a single record!! i.e. [0,0]
         :return: results from request
         """
-        headers = self.environment.global_headers
-        headers['Content-Type'] = 'application/json'
-        url = self.environment._base_url + "/integration/V1/data/workbook/import"
+        #headers = self.environment.global_headers
+        #headers['Content-Type'] = 'application/json'
+        url = self.environment.base_url + "/integration/V1/data/workbook/import"
 
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
@@ -588,7 +588,7 @@ class Worksheet:
             'Rows': rows
         })
 
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", url, headers=self.environment.global_headers, data=payload)
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)

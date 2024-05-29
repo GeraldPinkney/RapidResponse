@@ -16,6 +16,9 @@ class Environment:
     :param configuration: dictionary containing necessary information for initialising environment
     :raises SetupError: Data Model directory not valid
     """
+    WORKBOOK_URL = "/integration/V1/data/workbook"
+    BULK_URL = "/integration/V1/bulk"
+    WORKSHEET_URL = "/integration/V1/data/worksheet"
 
     def __init__(self, configuration: dict):
         logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -70,7 +73,7 @@ class Environment:
         except KeyError:
             self.data_model = DataModel(self._data_model_dir, None, None, None)
         else:
-            self.data_model = DataModel(data_model_directory=None, url=self._base_url, headers=self.global_headers, workbook=bootstrap_wbk)
+            self.data_model = DataModel(data_model_directory=None, url=self.base_url, headers=self.global_headers, workbook=bootstrap_wbk)
 
         self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 
@@ -79,10 +82,10 @@ class Environment:
         self.limit = asyncio.Semaphore(self.max_connections)
 
     def __repr__(self):
-        return f'Environment(url={self._base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
+        return f'Environment(url={self.base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
 
     def __str__(self):
-        return f'Environment(url={self._base_url!r})'
+        return f'Environment(url={self.base_url!r})'
 
     def __contains__(self, item):
         return item in self.data_model
@@ -199,6 +202,24 @@ class Environment:
     def base_url(self):
         return self._base_url
 
+    @property
+    def bulk_export_url(self):
+        return self.base_url + self.BULK_URL + '/export'
+
+    @property
+    def bulk_upload_url(self):
+        return self.base_url + self.BULK_URL + '/upload'
+
+    def bulk_remove_url(self):
+        return self.base_url + self.BULK_URL + '/remove'
+
+    @property
+    def workbook_url(self):
+        return self.base_url + self.WORKBOOK_URL
+
+    @property
+    def workbook_import(self):
+        return self.base_url + self.WORKBOOK_URL + '/import'
     @property
     def max_connections(self):
         return self._maxconnections

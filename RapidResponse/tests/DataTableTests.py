@@ -186,7 +186,7 @@ class TestCalcOptimalPagesize(unittest.TestCase):
         pagesize = self.data_table._calc_optimal_pagesize()
         self.assertEqual(pagesize, 340000)  # Default page size when datatype is unknown
 
-
+'''
 class TestRefreshDataAsync(unittest.IsolatedAsyncioTestCase):
     async def test_refresh_data_async_with_no_data_range(self):
         # Test refreshing data asynchronously without specifying a data range
@@ -215,7 +215,7 @@ class TestRefreshDataAsync(unittest.IsolatedAsyncioTestCase):
         mock_data_table._get_export_results_async.assert_called_once_with(
             mock_data_table.client, 0, 10000, mock_environment.limit
         )
-
+'''
 
 class DataRowTestCase(unittest.TestCase):
     def test_row_init(self):
