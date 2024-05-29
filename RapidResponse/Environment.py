@@ -185,6 +185,7 @@ class Environment:
     def refresh_auth(self):
         auth = self._getAuth(self.auth_type)
         self.global_headers['Authorization'] = str(auth)
+        self.global_headers['Content-Type'] = 'application/json'
 
     @property
     def data_model(self):

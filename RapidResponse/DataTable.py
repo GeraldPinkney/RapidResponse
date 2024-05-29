@@ -304,11 +304,11 @@ class DataTable(Table):
             "Filter": query_filter
         })
 
-        headers = self.environment.global_headers
-        headers['Content-Type'] = 'application/json'
+        #headers = self.environment.global_headers
+        #headers['Content-Type'] = 'application/json'
         url = self.environment.base_url + "/integration/V1/bulk/export"
 
-        req = requests.Request("POST", url, headers=headers, data=payload)
+        req = requests.Request("POST", url, headers=self.environment.global_headers, data=payload)
         # response = requests.request("POST", url, headers=headers, data=payload)
         prepped = req.prepare()
         response = session.send(prepped)
@@ -329,10 +329,10 @@ class DataTable(Table):
         url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
 
-        headers = self.environment.global_headers
+        #headers = self.environment.global_headers
         # print(url)
         # print(headers)
-        req = requests.Request("GET", url, headers=headers)
+        req = requests.Request("GET", url, headers=self.environment.global_headers)
         prepped = req.prepare()
         response = session.send(prepped)
         # response = requests.request("GET", url, headers=headers)
@@ -361,15 +361,15 @@ class DataTable(Table):
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000, limit: asyncio.Semaphore = None):
         url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
-        headers = self.environment.global_headers
+        #headers = self.environment.global_headers
         if limit:
             async with limit:
-                response = await client.get(url=url, headers=headers)
+                response = await client.get(url=url, headers=self.environment.global_headers)
                 if limit.locked():
                     self._logger.info("Concurrency limit reached, waiting ...")
                     await asyncio.sleep(1)
         else:
-            response = await client.get(url=url, headers=headers)
+            response = await client.get(url=url, headers=self.environment.global_headers)
 
         if response.status_code == 200:
             response_dict = json.loads(response.text)
@@ -449,7 +449,7 @@ class DataTable(Table):
         return round(PageSize)
 
     def add_row(self, rec):
-        s = requests.Session()
+        #s = requests.Session()
         self.environment.refresh_auth()
         self._create_upload(rec)
         self._complete_upload()
@@ -478,10 +478,10 @@ class DataTable(Table):
             'Rows': rows
         })
 
-        headers = self.environment.global_headers
-        headers['Content-Type'] = 'application/json'
+        #headers = self.environment.global_headers
+        #headers['Content-Type'] = 'application/json'
         url = self.environment.base_url + self.BULK_URL + 'upload'
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
         if response.status_code == 200:
@@ -491,9 +491,9 @@ class DataTable(Table):
         self._uploadId = response_dict["UploadId"]
 
     def _complete_upload(self):
-        headers = self.environment.global_headers
+        #headers = self.environment.global_headers
         url = self.environment.base_url + self.BULK_URL + "upload/" + self._uploadId[1:] + '/complete'
-        response = requests.request("POST", url, headers=headers)
+        response = requests.request("POST", url, headers=self.environment.global_headers)
 
         # check valid response
         if response.status_code == 200:
@@ -531,10 +531,10 @@ class DataTable(Table):
             'Rows': rows
         })
 
-        headers = self.environment.global_headers
-        headers['Content-Type'] = 'application/json'
+        #headers = self.environment.global_headers
+        #headers['Content-Type'] = 'application/json'
         url = self.environment.base_url + self.BULK_URL + 'remove'
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
         if response.status_code == 200:
@@ -544,9 +544,9 @@ class DataTable(Table):
         self._uploadId = response_dict["RemovalId"]
 
     def _complete_deletion(self):
-        headers = self.environment.global_headers
+        #headers = self.environment.global_headers
         url = self.environment.base_url + self.BULK_URL + "remove/" + self._uploadId[1:] + '/complete'
-        response = requests.request("POST", url, headers=headers)
+        response = requests.request("POST", url, headers=self.environment.global_headers)
 
         # check valid response
         if response.status_code == 200:
