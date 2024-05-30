@@ -29,7 +29,7 @@ class DataTable(Table):
     :raises TypeError: environment, tablename is not correctly typed
     :raises DataError: key column not in column list. will log failure but not fail.
     """
-    BULK_URL = "/integration/V1/bulk/"
+    #BULK_URL = "/integration/V1/bulk/"
 
     def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None,
                  sync: bool = True, refresh: bool = True, scenario=None):
@@ -97,14 +97,12 @@ class DataTable(Table):
             self.set_columns(columns)
         except DataError:
             # allow this to silently error and write it to log
+            # make sure all key columns are in there. non-negotiable.
             for k in self._key_fields:
                 if k not in columns:
                     columns.append(k)
-            # columns.extend(self._key_fields)
-            # print(columns)
             self.set_columns(columns)
 
-        #self._maxconnections = 8
         timeout = httpx.Timeout(10.0, connect=60.0)
         self.client = httpx.AsyncClient(timeout=timeout)
         if refresh:
@@ -163,14 +161,11 @@ class DataTable(Table):
 
         if self._sync:
             # delete from RR
-            # self.environment.refresh_auth()
             self._create_deletion(self._table_data[key])
             self._complete_deletion()
             self._uploadId = None
 
-            del self._table_data[key]
-        else:
-            del self._table_data[key]
+        del self._table_data[key]
         self.total_row_count -= 1
 
     def map(self, action):
@@ -282,18 +277,12 @@ class DataTable(Table):
 
     def _create_export(self, session):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
-        #local_query_fields = []
         if self._filter:
             query_filter = self.filter
         else:
             query_filter = ''
-        # print(self._table_fields)
-        # for f in self.columns:
-        #    local_query_fields.append(f.name)
         local_query_fields = [f.name for f in self.columns]
 
-        # print(type(local_query_string))
-        # print(local_query_string)
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
 
@@ -304,12 +293,7 @@ class DataTable(Table):
             "Filter": query_filter
         })
 
-        #headers = self.environment.global_headers
-        #headers['Content-Type'] = 'application/json'
-        #url = self.environment.bulk_export_url  #self.environment.base_url + "/integration/V1/bulk/export"
-
         req = requests.Request("POST", self.environment.bulk_export_url , headers=self.environment.global_headers, data=payload)
-        # response = requests.request("POST", url, headers=headers, data=payload)
         prepped = req.prepare()
         response = session.send(prepped)
 
@@ -317,9 +301,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            # print(payload)
             raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
-        # print(response)
 
         self._exportID = response_dict["ExportId"]
         self.total_row_count = response_dict["TotalRows"]
@@ -361,7 +343,6 @@ class DataTable(Table):
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000, limit: asyncio.Semaphore = None):
         url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
-        #headers = self.environment.global_headers
         if limit:
             async with limit:
                 response = await client.get(url=url, headers=self.environment.global_headers)
@@ -383,7 +364,6 @@ class DataTable(Table):
     async def _main_get_export_results_async(self, data_range):
         tasks = []
 
-        #limit = asyncio.Semaphore(self.max_connections)
         for i in range(0, self.total_row_count - data_range, data_range):
             tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
         for coroutine in asyncio.as_completed(tasks):
@@ -412,13 +392,6 @@ class DataTable(Table):
         asyncio.run(self._main_get_export_results_async(calc_data_range))
         self._exportID = None
 
-        '''remaining_records = self.total_row_count % data_range
-        if remaining_records > 0:
-            s = requests.Session()
-            self._create_export(s)
-            self._table_data.extend(
-                self._get_export_results(s, self.total_row_count - remaining_records, data_range))
-            self._exportID = None'''
 
     def _calc_optimal_pagesize(self, PageSizeSuggested=500_000):
         # todo account for rows returned
@@ -449,7 +422,6 @@ class DataTable(Table):
         return round(PageSize)
 
     def add_row(self, rec):
-        #s = requests.Session()
         self.environment.refresh_auth()
         self._create_upload(rec)
         self._complete_upload()
@@ -478,9 +450,6 @@ class DataTable(Table):
             'Rows': rows
         })
 
-        #headers = self.environment.global_headers
-        #headers['Content-Type'] = 'application/json'
-        url = self.environment.bulk_upload_url #+ self.BULK_URL + 'upload'
         response = requests.request("POST", self.environment.bulk_upload_url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
@@ -491,7 +460,6 @@ class DataTable(Table):
         self._uploadId = response_dict["UploadId"]
 
     def _complete_upload(self):
-        #headers = self.environment.global_headers
         url = self.environment.bulk_upload_url + "/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=self.environment.global_headers)
 
@@ -531,9 +499,6 @@ class DataTable(Table):
             'Rows': rows
         })
 
-        #headers = self.environment.global_headers
-        #headers['Content-Type'] = 'application/json'
-        url = self.environment.bulk_remove_url
         response = requests.request("POST", self.environment.bulk_remove_url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
@@ -544,7 +509,7 @@ class DataTable(Table):
         self._uploadId = response_dict["RemovalId"]
 
     def _complete_deletion(self):
-        #headers = self.environment.global_headers
+
         url = self.environment.bulk_remove_url + "/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=self.environment.global_headers)
 
@@ -671,15 +636,12 @@ class DataRow(UserList):
         # write this back to RR?
 
     def __add__(self, other):
-
         raise NotImplementedError
 
     def __radd__(self, other):
-
         raise NotImplementedError
 
     def __iadd__(self, other):
-
         raise NotImplementedError
 
     def join(self, separator=" "):

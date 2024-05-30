@@ -220,13 +220,28 @@ or use the del command
 ```
 view IndependentDemand table, with a subset of columns
 ```
->>> cols = ['Order','Line','Part','DueDate','Quantity']
+>>> cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate', 'Quantity']
 >>> IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
 >>> print(IndependentDemand)
 ```
-use slicing to only view a subset of records
+Use slicing to only view a subset of records
 ```
 print(IndependentDemand[0:11])
+```
+Attribute access for data tables can be done either via the column index, or via the column name, however in the case of reference fields (i.e. columns that refer to an attribute that is on another table) its is necessary to use the underscore '_' instead of dot '.' delimiter
+```
+# view the columns for IndependentDemand
+>>> print(IndependentDemand[0].columns)
+show rec
+# here are all the values for this record
+>>> print(IndependentDemand[0])
+show rec
+# here is the order site value accessed dynamically with underscore notation
+>>> print(IndependentDemand[0].Order_Site_Value)
+show rec
+# here is the order site value accessed via the column index
+>>> print(IndependentDemand[0][1]])
+show rec
 ```
 for those who love pandas, you may want this
 ```
@@ -277,6 +292,10 @@ Create workbook and upload to that workbook
 ...              ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
 ```
 ## Aaaand now the caveats
-watch out for date formatting when uploading via workbook
-be aware of the implicit logic built in for tolerances for datatable, and table upload ordering. 
-also, currently no support built in for creating scenario, transacting, then rolling back or committing based on result.
+watch out for date formatting when uploading via workbook.
+
+Keep in mind that when using DataTable for upload/delete use cases you're circumventing lots of the controls built into RR.
+Be aware of the implicit logic built in for tolerances for datatable, and table upload ordering. 
+When using DataTable for upload, make sure you're only loading the data you want. remove references. 
+
+Also, currently no support built in for creating scenario, transacting, then rolling back or committing based on result.
