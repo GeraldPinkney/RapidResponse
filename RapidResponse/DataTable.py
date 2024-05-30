@@ -306,9 +306,9 @@ class DataTable(Table):
 
         #headers = self.environment.global_headers
         #headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + "/integration/V1/bulk/export"
+        #url = self.environment.bulk_export_url  #self.environment.base_url + "/integration/V1/bulk/export"
 
-        req = requests.Request("POST", url, headers=self.environment.global_headers, data=payload)
+        req = requests.Request("POST", self.environment.bulk_export_url , headers=self.environment.global_headers, data=payload)
         # response = requests.request("POST", url, headers=headers, data=payload)
         prepped = req.prepare()
         response = session.send(prepped)
@@ -318,7 +318,7 @@ class DataTable(Table):
             response_dict = json.loads(response.text)
         else:
             # print(payload)
-            raise RequestsError(response, f"error during POST to: {url}", payload)
+            raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
         # print(response)
 
         self._exportID = response_dict["ExportId"]
@@ -326,7 +326,7 @@ class DataTable(Table):
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
-        url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
+        url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         # print(url)
 
         #headers = self.environment.global_headers
@@ -360,7 +360,7 @@ class DataTable(Table):
         s.close()
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000, limit: asyncio.Semaphore = None):
-        url = self.environment.base_url + self.BULK_URL + "export/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
+        url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
         #headers = self.environment.global_headers
         if limit:
             async with limit:
@@ -480,19 +480,19 @@ class DataTable(Table):
 
         #headers = self.environment.global_headers
         #headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + self.BULK_URL + 'upload'
-        response = requests.request("POST", url, headers=self.environment.global_headers, data=payload)
+        url = self.environment.bulk_upload_url #+ self.BULK_URL + 'upload'
+        response = requests.request("POST", self.environment.bulk_upload_url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, f"error during POST to: {url}", payload)
+            raise RequestsError(response, f"error during POST to: {self.environment.bulk_upload_url}", payload)
         self._uploadId = response_dict["UploadId"]
 
     def _complete_upload(self):
         #headers = self.environment.global_headers
-        url = self.environment.base_url + self.BULK_URL + "upload/" + self._uploadId[1:] + '/complete'
+        url = self.environment.bulk_upload_url + "/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=self.environment.global_headers)
 
         # check valid response
@@ -533,19 +533,19 @@ class DataTable(Table):
 
         #headers = self.environment.global_headers
         #headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + self.BULK_URL + 'remove'
-        response = requests.request("POST", url, headers=self.environment.global_headers, data=payload)
+        url = self.environment.bulk_remove_url
+        response = requests.request("POST", self.environment.bulk_remove_url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, f"Failure during bulk//deletion create. Error during POST to: {url}", payload)
+            raise RequestsError(response, f"Failure during bulk//deletion create. Error during POST to: {self.environment.bulk_remove_url}", payload)
         self._uploadId = response_dict["RemovalId"]
 
     def _complete_deletion(self):
         #headers = self.environment.global_headers
-        url = self.environment.base_url + self.BULK_URL + "remove/" + self._uploadId[1:] + '/complete'
+        url = self.environment.bulk_remove_url + "/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=self.environment.global_headers)
 
         # check valid response

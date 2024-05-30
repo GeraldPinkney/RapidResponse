@@ -25,7 +25,7 @@ class Workbook:
 
 
     """
-    WORKBOOK_URL = "/integration/V1/data/workbook"
+    #WORKBOOK_URL = "/integration/V1/data/workbook"
     def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
                  Filter: dict = None, VariableValues: dict = None):
         """
@@ -196,7 +196,7 @@ class Worksheet:
     :param sync: boolean control whether any updates are pushed back to RR
     :param refresh: boolean refresh row data on initialisation
     """
-    WORKSHEET_URL = "/integration/V1/data/worksheet"
+    #WORKSHEET_URL = "/integration/V1/data/worksheet"
     
     def __init__(self, environment, worksheet: str, workbook: dict, scenario=None, SiteGroup: str = None,
                  Filter: dict = None, VariableValues: dict = None, sync: bool = True, refresh: bool = True):
@@ -426,7 +426,7 @@ class Worksheet:
         """
         #headers = self.environment.global_headers
         #headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + "/integration/V1/data/workbook"
+        #url = self.environment.workbook_url
 
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
@@ -444,7 +444,7 @@ class Worksheet:
             'WorkbookParameters': workbook_parameters
         })
 
-        req = requests.Request("POST", url, headers=self.environment.global_headers, data=payload)
+        req = requests.Request("POST", self.environment.workbook_url, headers=self.environment.global_headers, data=payload)
         prepped = req.prepare()
         response = session.send(prepped)
 
@@ -454,9 +454,9 @@ class Worksheet:
             response_dict = json.loads(response.text)
         else:
             self._logger.error(payload)
-            self._logger.error(url)
+            self._logger.error(self.environment.workbook_url)
             raise RequestsError(response,
-                                f"failure during POST workbook initialise_for_extract to: {url}", payload)
+                                f"failure during POST workbook initialise_for_extract to: {self.environment.global_headers}", payload)
 
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
@@ -479,7 +479,7 @@ class Worksheet:
         #print(f'start: {startRow}, pagesize: {pageSize}')
         #headers = self.environment.global_headers
         #headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + self.WORKSHEET_URL + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
+        url = self.environment.worksheet_url + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
 
         req = requests.Request("GET", url, headers=self.environment.global_headers)
         prepped = req.prepare()
@@ -511,7 +511,7 @@ class Worksheet:
             s.close()
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
-        url = self.environment.base_url + self.WORKSHEET_URL + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
+        url = self.environment.worksheet_url + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
         #print(f'start: {startRow}, pagesize: {pageSize}')
         #headers = self.environment.global_headers
 
@@ -565,7 +565,7 @@ class Worksheet:
         """
         #headers = self.environment.global_headers
         #headers['Content-Type'] = 'application/json'
-        url = self.environment.base_url + "/integration/V1/data/workbook/import"
+        #url = self.environment.workbook_import
 
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
@@ -588,16 +588,16 @@ class Worksheet:
             'Rows': rows
         })
 
-        response = requests.request("POST", url, headers=self.environment.global_headers, data=payload)
+        response = requests.request("POST", self.environment.workbook_import, headers=self.environment.global_headers, data=payload)
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
             #self._logger.error(payload)
             raise RequestsError(response,
-                                f"failure during workbook-worksheet upload, POST to: {url}", payload)
+                                f"failure during workbook-worksheet upload, POST to: {self.environment.global_headers}", payload)
 
-        results = response_dict['Worksheets'][0]  # this only supports single worksheet, so no idea why its an array.
+        results = response_dict['Worksheets'][0]  # this only supports single worksheet, so no idea why it's an array.
         response_readable = 'status: ' + str(response_dict['Success']) + \
                             '\nWorksheetName: ' + str(results['WorksheetName']) + \
                             '\nImportedRowCount: ' + str(results['ImportedRowCount']) + \
@@ -615,7 +615,7 @@ class Worksheet:
             self._logger.warning(response_dict)
             self._logger.warning(payload)
             raise RequestsError(response,
-                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {url}", payload)
+                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {self.environment.workbook_import}", payload)
         else:
             self._logger.error(response_readable)
             self._logger.error(response_dict)
@@ -648,7 +648,7 @@ class WorksheetRow(UserList):
         try:
             Ids = [i['Id'] for i in self.columns]
             pos = Ids.index(name)
-        except ValueError: # thrown if could not find name
+        except ValueError: # this is thrown if you could not find name
             pos = -1
         if 0 <= pos < len(self.columns):
             return self[pos]

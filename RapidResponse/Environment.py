@@ -210,6 +210,7 @@ class Environment:
     def bulk_upload_url(self):
         return self.base_url + self.BULK_URL + '/upload'
 
+    @property
     def bulk_remove_url(self):
         return self.base_url + self.BULK_URL + '/remove'
 
@@ -219,7 +220,10 @@ class Environment:
 
     @property
     def workbook_import(self):
-        return self.base_url + self.WORKBOOK_URL + '/import'
+        return self.workbook_url + '/import'
+    @property
+    def worksheet_url(self):
+        return self.base_url + self.WORKSHEET_URL
     @property
     def max_connections(self):
         return self._maxconnections
