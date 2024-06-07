@@ -134,4 +134,15 @@ def create_scenario(name, parent):
     print(response.text)
 
 
+def execute_script():
+
+    url = "{{url}}/integration/V1/script/Public/Ignite_Create_Scenario"
+
+    payload = "{\r\n    \"newScenario\": \"Good2Great2\",\r\n    \"userGroup\": \"Sales\"\r\n}"
+    headers = {}
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)
+
 

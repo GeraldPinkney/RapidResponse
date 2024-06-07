@@ -9,7 +9,17 @@ class Error(Exception):
     #    logging.info(f'Error: exception arguments stored in .args {self.args}.')
     #    logging.info(f'Error: exception str() {self}.')
 
-
+class ScriptError(Error):
+    def __init__(self, code, message, console, scriptname, scriptscope, line, character):
+        self.code = code         # JavascriptException,
+        self.message = message
+        self.console = console
+        self.script =  {"Name": scriptname, "Scope": scriptscope}
+        self.error_location = f'line {line}, character {character}'
+        self.logger = logging.getLogger('RapidPy')
+        self.logger.info(f'Error: exception instance {type(self)}.')
+        self.logger.info(f'Error: exception arguments stored in .args {self.args}.')
+        self.logger.info(f'Error: exception str() {self}.')
 class DirectoryError(Error):
     def __init__(self, msg, directory):
         # Error message thrown is saved in msg

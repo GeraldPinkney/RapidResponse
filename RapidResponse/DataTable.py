@@ -332,6 +332,7 @@ class DataTable(Table):
     def RefreshData(self, data_range: int = 100_000):
         # check tablename is set, check fields are set
         s = requests.Session()
+        s.headers=self.environment.global_headers
         self.environment.refresh_auth()
         self._table_data.clear()
         self._create_export(s)

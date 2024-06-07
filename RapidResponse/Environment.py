@@ -19,6 +19,8 @@ class Environment:
     WORKBOOK_URL = "/integration/V1/data/workbook"
     BULK_URL = "/integration/V1/bulk"
     WORKSHEET_URL = "/integration/V1/data/worksheet"
+    SCRIPT_URL = "/integration/V1/script"
+    #SCOPE_TYPE = Literal['Public', 'Private']
 
     def __init__(self, configuration: dict):
         logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -193,37 +195,33 @@ class Environment:
     @property
     def data_model(self):
         return self._data_model
-
     @data_model.setter
     def data_model(self, dm):
         self._data_model = dm
-
     @property
     def base_url(self):
         return self._base_url
-
     @property
     def bulk_export_url(self):
         return self.base_url + self.BULK_URL + '/export'
-
     @property
     def bulk_upload_url(self):
         return self.base_url + self.BULK_URL + '/upload'
-
     @property
     def bulk_remove_url(self):
         return self.base_url + self.BULK_URL + '/remove'
-
     @property
     def workbook_url(self):
         return self.base_url + self.WORKBOOK_URL
-
     @property
     def workbook_import(self):
         return self.workbook_url + '/import'
     @property
     def worksheet_url(self):
         return self.base_url + self.WORKSHEET_URL
+    @property
+    def script_url(self):
+        return self.base_url + self.SCRIPT_URL
     @property
     def max_connections(self):
         return self._maxconnections

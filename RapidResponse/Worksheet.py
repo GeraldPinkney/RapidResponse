@@ -112,19 +112,20 @@ class Workbook:
 
     @filter.setter
     def filter(self, new_filter):
-        if not isinstance(new_filter, dict):
+        '''if not isinstance(new_filter, dict):
             raise TypeError("filter must be dict.")
         if not new_filter:
             raise ValueError("filter must not be empty.")
 
         filt_keys = new_filter.keys()
-        '''if len(filt_keys) != 2:
-            raise ValueError("filter must contain only Name and Scope.")'''
+        if len(filt_keys) != 2:
+            raise ValueError("filter must contain only Name and Scope.")
         if 'Name' not in filt_keys:
             raise ValueError("filter must contain Name.")
         if 'Scope' not in filt_keys:
             raise ValueError("filter must contain Scope.")
-        self._filter = new_filter
+        self._filter = new_filter'''
+        self._filter = dict(Name=new_filter['Name'], Scope=new_filter['Scope'])
         for ws in self.worksheets:
             ws.filter = self.filter
 
@@ -144,14 +145,14 @@ class Workbook:
     def scenario(self, new_scenario):
         #if not isinstance(new_scenario, dict):
         #    raise TypeError("The parameter scenario type must be dict.")
-        scenario_keys = new_scenario.keys()
+        '''scenario_keys = new_scenario.keys()
         if len(scenario_keys) != 2:
             raise ValueError("The parameter scenario must contain only Name and Scope.")
         if 'Name' not in scenario_keys:
             raise ValueError("The parameter scenario must contain Name.")
         if 'Scope' not in scenario_keys:
-            raise ValueError("The parameter scenario must contain Scope.")
-        self._scenario = new_scenario
+            raise ValueError("The parameter scenario must contain Scope.")'''
+        self._scenario =  dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
         for ws in self.worksheets:
             ws.scenario = self.scenario
 
@@ -524,7 +525,7 @@ class Worksheet:
         return rows
 
     async def _main_get_export_results_async(self, data_range):
-        tasks = []
+
         client = httpx.AsyncClient()
         #for i in range(0, self.total_row_count - data_range, data_range):
         #    print(f'i: {i}, range: {data_range}, time: {datetime.now()}')

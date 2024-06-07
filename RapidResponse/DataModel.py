@@ -125,7 +125,7 @@ class DataModel:
         :return: list of tables
         """
         for f in self._fields:
-            cols = []
+            cols = list()
             tab = Table(f['Table'], f['Namespace'])
 
             if f['Type'] != 'Reference':
