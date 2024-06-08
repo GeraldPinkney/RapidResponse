@@ -313,7 +313,7 @@ Success
 >>> print(Ignite_Create_Scenario.console)
 "Success: Good2Great08062024_2"
 
-# execute it again without updating the parameters. The script executes, but returns an error. 
+# execute it again without updating the parameters. The script executes, but returns an error. This is important. You will need to check the status to see details. 
 >>> Ignite_Create_Scenario.execute()
 >>> print(Ignite_Create_Scenario.status)
 Error: errorcode JavascriptException
