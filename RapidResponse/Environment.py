@@ -82,6 +82,7 @@ class Environment:
         self._maxconnections = 8
 
         self.limit = asyncio.Semaphore(self.max_connections)
+        self._session = requests.Session()
 
     def __repr__(self):
         return f'Environment(url={self.base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
@@ -92,6 +93,14 @@ class Environment:
     def __contains__(self, item):
         return item in self.data_model
 
+    def __enter__(self):
+        return self
+
+    def close(self):
+        self._session.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
     def _getOauth2(self):
         """return the access token from RR instance based on clientID and client secret"""
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/token_rest.htm?

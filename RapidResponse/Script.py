@@ -1,12 +1,10 @@
 # Script.py
 import json
-import requests
 import logging
-
-from requests import Request
-
+from requests import Request, Session, HTTPError
+from http import HTTPStatus
 from RapidResponse.Environment import Environment
-from RapidResponse.Err import RequestsError, DataError, ScriptError
+from RapidResponse.Err import RequestsError, ScriptError
 
 class Script:
     '''
@@ -51,7 +49,10 @@ class Script:
         else:
             self._parameters = dict(parameters)
 
-        self._response = dict(console='', value='')
+        self._response = dict(console='', value='', error='')
+        self._session = Session()
+        self._session.headers = self.environment.global_headers
+        self._internal_status = 0 # 0=not run, -1=error, 1=success
     @property
     def environment(self):
         return self._environment
@@ -76,9 +77,25 @@ class Script:
     @property
     def value(self) -> str:
         return self._response['value']
+    @property
+    def status(self):
+        if len(self._response['error']) > 0:
+            return f"Error: errorcode {self._response['error']['Code']}\nmessage {self._response['error']['Message']}\n\nSee log for details"
+        elif self._internal_status == 0:
+            return f"Not Run"
+        elif self._internal_status == 1:
+            return f"Success"
+        else:
+            return f"Unknown"
+    @property
+    def parameters(self):
+        return self._parameters
+    @parameters.setter
+    def parameters(self, new_params):
+        self._parameters = dict(new_params)
 
     def __str__(self) -> str:
-        return f"Script(name={self._name}, scope={self._scope}, parameters={self._parameters})"
+        return f"Script(name={self._name}, scope={self._scope}, status={self.status}, parameters={self._parameters}) "
 
     def __repr__(self) -> str:
         return (f"Script(environment={repr(self._environment)}, name={self._name}, "
@@ -95,6 +112,13 @@ class Script:
     def __hash__(self) :
         return hash((self._environment, self._name, self._scope, frozenset(self._parameters.items())))
 
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+    def close(self):
+        self._session.close()
+
     def execute(self, sync = True):
         '''
         Executes the script. Currently supports only synchronous execution.
@@ -104,23 +128,40 @@ class Script:
         :raises RequestsError: If there is an error with the HTTP request.
         '''
 
-        session = requests.Session()
-        session.headers = self.environment.global_headers
+        response_dict = self._send_execute_script(self._session)
 
+        try:
+            self._process_execute_response(response_dict)
+        except ScriptError:
+            self._internal_status = -1
+        else:
+            self._internal_status = 1
+
+    def _send_execute_script(self, session):
+        # clear state
+        self._internal_status = -1
+        self._response.update({'console': ''})
+        self._response.update({'value': ''})
+        self._response.update({'error': ''})
+
+        s = session
         payload = json.dumps(self._parameters)
-        req = Request('POST', f'{self.environment.script_url}/{self.scope}/{self._sanitized_name}',headers = self.environment.global_headers, data=payload)
+        url = f'{self.environment.script_url}/{self.scope}/{self._sanitized_name}'
+        req = Request('POST',url , headers=s.headers, data=payload)
         prepped = req.prepare()
-        response = session.send(prepped)
-
+        response = s.send(prepped)
         if response.status_code == 200: # will get this if its executed, regardless of whether its successful or not.
             response_dict = json.loads(response.text)
         else:
-            raise RequestsError(response, f"error during POST to: {self.environment.script_url}/{self.scope}/{self._sanitized_name}", payload)
-        if 'ScriptError' in response_dict:
-            error = response_dict['ScriptError']
+            raise RequestsError(response, f"error during POST to: {url}", payload)
+        return response_dict
+
+    def _process_execute_response(self, response_dict):
+        rd = response_dict
+        self._response.update({'console':rd['Console']})
+        self._response.update({'value': rd['Value']})
+        if 'ScriptError' in rd:
+            error = rd['ScriptError']
+            self._response.update({'error': error})
             raise ScriptError(error['Code'], error['Message'], error['Console'], error['ScriptName'],
                               error['ScriptScope'], error['Line'], error['Character'])
-
-        self._response.update({'console':response_dict['Console']})
-        self._response.update({'value': response_dict['Value']})
-

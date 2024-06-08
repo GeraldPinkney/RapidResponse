@@ -291,6 +291,46 @@ Create workbook and upload to that workbook
 >>> ws.upload(["ordnum0", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"],
 ...              ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
 ```
+
+## Script
+
+```
+# create a script
+>>> Ignite_Create_Scenario = Script(env,'Ignite_Create_Scenario',scope='Public',parameters={"newScenario": "Good2Great08062024_2","userGroup": "Sales"} )
+>>> print(Ignite_Create_Scenario)
+Script(name=Ignite_Create_Scenario, scope=Public, parameters={'newScenario': 'Good2Great08062024_2', 'userGroup': 'Sales'})
+
+# show its initial status
+>>> print(Ignite_Create_Scenario.status)
+Not Run
+
+# execute the script, as you are happy with the parameters initialised
+>>> Ignite_Create_Scenario.execute()
+>>> print(Ignite_Create_Scenario.status)
+Success
+
+# print the result
+>>> print(Ignite_Create_Scenario.console)
+"Success: Good2Great08062024_2"
+
+# execute it again without updating the parameters. The script executes, but returns an error. 
+>>> Ignite_Create_Scenario.execute()
+>>> print(Ignite_Create_Scenario.status)
+Error: errorcode JavascriptException
+message Uncaught "Error: Shared Scenario already exists - Good2Great08062024_2"
+See log for details
+
+# view the console output
+>>> print(Ignite_Create_Scenario.console)
+"Error: Shared Scenario already exists - Good2Great08062024_2"
+
+# update a parameter & re-execute
+>>> Ignite_Create_Scenario.parameters.update({'newScenario': 'Good2GreatZZZ'})
+>>> Ignite_Create_Scenario.execute()
+>>> print(Ignite_Create_Scenario.status)
+Success
+
+```
 ## Aaaand now the caveats
 watch out for date formatting when uploading via workbook.
 
