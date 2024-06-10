@@ -26,6 +26,10 @@ class Workbook:
 
     """
     #WORKBOOK_URL = "/integration/V1/data/workbook"
+    SCOPE_PUBLIC = 'Public'
+    SCOPE_PRIVATE = 'Private'
+    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
+
     def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
                  Filter: dict = None, VariableValues: dict = None):
         """
@@ -198,7 +202,10 @@ class Worksheet:
     :param refresh: boolean refresh row data on initialisation
     """
     #WORKSHEET_URL = "/integration/V1/data/worksheet"
-    
+    SCOPE_PUBLIC = 'Public'
+    SCOPE_PRIVATE = 'Private'
+    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
+
     def __init__(self, environment, worksheet: str, workbook: dict, scenario=None, SiteGroup: str = None,
                  Filter: dict = None, VariableValues: dict = None, sync: bool = True, refresh: bool = True):
         """
