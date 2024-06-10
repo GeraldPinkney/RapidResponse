@@ -9,27 +9,115 @@ import requests
 from RapidResponse.DataModel import DataModel
 from RapidResponse.Err import SetupError, RequestsError
 
-
-class Environment:
+class GenericEnvironment:
     """
-    this is the python representation of your enviornment. It contains authentication details, data model data (tables, fields, etc) and provides the scoping for working with RR.\n
-    :param configuration: dictionary containing necessary information for initialising environment
-    :raises SetupError: Data Model directory not valid
-    """
+        this is the python representation of your enviornment. It contains authentication details, data model data (tables, fields, etc) and provides the scoping for working with RR.\n
+        :param configuration: dictionary containing necessary information for initialising environment
+        :raises SetupError: Data Model directory not valid
+        """
     WORKBOOK_URL = "/integration/V1/data/workbook"
     BULK_URL = "/integration/V1/bulk"
     WORKSHEET_URL = "/integration/V1/data/worksheet"
     SCRIPT_URL = "/integration/V1/script"
-    #SCOPE_TYPE = Literal['Public', 'Private']
+
+    # SCOPE_TYPE = Literal['Public', 'Private']
 
     def __init__(self, configuration: dict):
-        logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+        logging.basicConfig(filename='logging.log', filemode='w',
+                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
         self._logger = logging.getLogger('RapidPy.env')
+
+        self._base_url = None
+        self.auth_type = None
+        self.authentication = dict()
+        self.global_headers = dict()
+        self._data_model_dir = None
+        self.data_model = None
+        self.scenarios = None
+        self._maxconnections = None
 
         if not isinstance(configuration, dict):
             raise TypeError('The parameter configuration type must be dict')
         if not configuration:
             raise ValueError('The parameter configuration must be provided')
+
+    def __repr__(self):
+        return f'Environment(url={self.base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
+
+    def __str__(self):
+        return f'Environment(url={self.base_url!r})'
+
+    def __contains__(self, item):
+        return item in self.data_model
+
+    def __enter__(self):
+        return self
+
+    def close(self):
+        self._session.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def set_scenarios(self, *args):
+
+        scenarios = []
+        # scenarios.append({"Name": "Enterprise Data", "Scope": "Public"})
+        for arg in args:
+            scenarios.append(arg)
+        return scenarios
+
+    def refresh_auth(self):
+        pass
+
+    @property
+    def data_model(self):
+        return self._data_model
+
+    @data_model.setter
+    def data_model(self, dm):
+        self._data_model = dm
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    @property
+    def bulk_export_url(self):
+        return self.base_url + self.BULK_URL + '/export'
+
+    @property
+    def bulk_upload_url(self):
+        return self.base_url + self.BULK_URL + '/upload'
+
+    @property
+    def bulk_remove_url(self):
+        return self.base_url + self.BULK_URL + '/remove'
+
+    @property
+    def workbook_url(self):
+        return self.base_url + self.WORKBOOK_URL
+
+    @property
+    def workbook_import(self):
+        return self.workbook_url + '/import'
+
+    @property
+    def worksheet_url(self):
+        return self.base_url + self.WORKSHEET_URL
+
+    @property
+    def script_url(self):
+        return self.base_url + self.SCRIPT_URL
+
+    @property
+    def max_connections(self):
+        return self._maxconnections
+
+class Environment(GenericEnvironment):
+    def __init__(self, configuration: dict):
+        super().__init__(configuration)
 
         # base url on which stuff is appended for requests
         try:
@@ -44,7 +132,6 @@ class Environment:
             raise ValueError('auth_type not provided in configuration dict')
 
         # todo refactor to make private and do property decorator
-        self.authentication = {}
         if self.auth_type == 'basic':
             self.authentication['username'] = configuration['username']
             self.authentication['password'] = configuration['password']
@@ -55,7 +142,6 @@ class Environment:
             raise ValueError('invalid authentication type')
 
         # set global headers and populate with auth details
-        self.global_headers = {}
         self.refresh_auth()
 
         try:
@@ -75,7 +161,8 @@ class Environment:
         except KeyError:
             self.data_model = DataModel(self._data_model_dir, None, None, None)
         else:
-            self.data_model = DataModel(data_model_directory=None, url=self.base_url, headers=self.global_headers, workbook=bootstrap_wbk)
+            self.data_model = DataModel(data_model_directory=None, url=self.base_url, headers=self.global_headers,
+                                        workbook=bootstrap_wbk)
 
         self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
 
@@ -84,23 +171,11 @@ class Environment:
         self.limit = asyncio.Semaphore(self.max_connections)
         self._session = requests.Session()
 
-    def __repr__(self):
-        return f'Environment(url={self.base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
+    def refresh_auth(self):
+        auth = self._getAuth(self.auth_type)
+        self.global_headers['Authorization'] = str(auth)
+        self.global_headers['Content-Type'] = 'application/json'
 
-    def __str__(self):
-        return f'Environment(url={self.base_url!r})'
-
-    def __contains__(self, item):
-        return item in self.data_model
-
-    def __enter__(self):
-        return self
-
-    def close(self):
-        self._session.close()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
     def _getOauth2(self):
         """return the access token from RR instance based on clientID and client secret"""
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/token_rest.htm?
@@ -159,20 +234,6 @@ class Environment:
             raise SetupError("invalid auth type")
         return b64_authentication
 
-    def set_scenarios(self, *args):
-
-        scenarios = []
-        # scenarios.append({"Name": "Enterprise Data", "Scope": "Public"})
-        for arg in args:
-            scenarios.append(arg)
-        return scenarios
-    # todo create scenario via script
-    # todo delete scenario via script
-    # todo commit scenario via script
-
-    # todo scenario property
-
-
     def get_table(self, table: str, namespace: str):
         """
         take as input the table name and return a Table object from the data dictionary.
@@ -195,42 +256,3 @@ class Environment:
         # get the Table from the data model and return it.
         tab = self.data_model.get_table(table, namespace)
         return tab
-
-    def refresh_auth(self):
-        auth = self._getAuth(self.auth_type)
-        self.global_headers['Authorization'] = str(auth)
-        self.global_headers['Content-Type'] = 'application/json'
-
-    @property
-    def data_model(self):
-        return self._data_model
-    @data_model.setter
-    def data_model(self, dm):
-        self._data_model = dm
-    @property
-    def base_url(self):
-        return self._base_url
-    @property
-    def bulk_export_url(self):
-        return self.base_url + self.BULK_URL + '/export'
-    @property
-    def bulk_upload_url(self):
-        return self.base_url + self.BULK_URL + '/upload'
-    @property
-    def bulk_remove_url(self):
-        return self.base_url + self.BULK_URL + '/remove'
-    @property
-    def workbook_url(self):
-        return self.base_url + self.WORKBOOK_URL
-    @property
-    def workbook_import(self):
-        return self.workbook_url + '/import'
-    @property
-    def worksheet_url(self):
-        return self.base_url + self.WORKSHEET_URL
-    @property
-    def script_url(self):
-        return self.base_url + self.SCRIPT_URL
-    @property
-    def max_connections(self):
-        return self._maxconnections

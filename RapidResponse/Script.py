@@ -5,7 +5,6 @@ from http import HTTPStatus
 from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, ScriptError
 
-
 class GenericScript:
     '''
     A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
@@ -36,6 +35,8 @@ class GenericScript:
 
         self._response = {'console': '', 'value': '', 'error': ''}
         self._internal_status = 0  # 0=not run, -1=error, 1=success
+
+        self._session = Session()
 
     def _validate_parameters(self, environment, name):
         if not isinstance(environment, Environment):
@@ -126,10 +127,11 @@ class GenericScript:
         self.close()
 
     def close(self):
-        pass
+        self._session.close()
 
     def execute(self):
         pass
+
 
 
 class Script(GenericScript):
@@ -148,7 +150,7 @@ class Script(GenericScript):
 
     def __init__(self, environment: Environment, name: str, scope: str = None, parameters: dict = None):
         super().__init__(environment, name, scope, parameters)
-        self._session = Session()
+
         self._session.headers.update(self.environment.global_headers)
 
     def execute(self, sync=True):

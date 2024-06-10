@@ -4,14 +4,23 @@ from samples import sample_configuration
 from RapidResponse.Script import Script
 import random
 
-class StatusTestCase(unittest.TestCase):
+class BasicTestCase(unittest.TestCase):
     def test_basic(self):
         env = Environment(sample_configuration)
         param = {"newScenario": "Good2Great2","userGroup": "Sales"}
 
         Ignite_Create_Scenario = Script(env,'Ignite_Create_Scenario',scope='Public',parameters=param )
         Ignite_Create_Scenario.execute()
-        Ignite_Create_Scenario.close()
+
+        print(Ignite_Create_Scenario.status)
+
+    def test_multi_execution(self):
+        env = Environment(sample_configuration)
+        param = {"newScenario": "Good2Great9","userGroup": "Sales"}
+
+        Ignite_Create_Scenario = Script(env,'Ignite_Create_Scenario',scope='Public',parameters=param )
+        Ignite_Create_Scenario.execute()
+        Ignite_Create_Scenario.execute()
         print(Ignite_Create_Scenario.status)
 
 class StatusScriptTest(unittest.TestCase):
