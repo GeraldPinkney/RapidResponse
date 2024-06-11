@@ -24,7 +24,7 @@ class WorksheetTestCase(unittest.TestCase):
         #ws._create_export()
         self.assertEqual(ws.name, 'DataModel_Summary')
         #self.assertIsNotNone(ws._queryID,"QueryID not set correctly")
-        self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
+        self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
 
     def test_worksheet_retrieve(self):
@@ -61,7 +61,7 @@ class WorksheetTestCase(unittest.TestCase):
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"})
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
-        self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
+        self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
 
     def test_ws_refresh_False(self):
@@ -76,7 +76,7 @@ class WorksheetTestCase(unittest.TestCase):
                        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
-        self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
+        self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
         rec = ['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
                'DC-NorthAmerica']
@@ -88,7 +88,7 @@ class WorksheetTestCase(unittest.TestCase):
         scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
         Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
 
-        self.assertIsNotNone(ws.total_row_count, "total_row_count not set correctly")
+        self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
         recs = [['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
                'DC-NorthAmerica'],['102-CDMAc', '12345', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
