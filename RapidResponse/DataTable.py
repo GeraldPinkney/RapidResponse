@@ -42,34 +42,31 @@ class DataTable(Table):
             raise TypeError("The parameter environment type must be Environment.")
         if not environment:
             raise ValueError("The parameter environment must not be empty.")
-
         if not isinstance(tablename, str):
             raise TypeError("The parameter tablename type must be str.")
         if not tablename:
             raise ValueError("The parameter tablename must not be empty.")
-
         if not isinstance(sync, bool):
             raise TypeError("The parameter sync type must be bool.")
 
         tabarray = tablename.split('::')
-
         try:
             super().__init__(tabarray[1], tabarray[0])
         except IndexError:
             raise ValueError('table name parameter must be in format namespace::tablename')
 
+        # set values from parameters
+        self.environment = environment
+        self._filter = table_filter
+        self._sync = bool(sync)
+        self._total_row_count = 0 # _total_row_count used during export data gathering
+
+        # initialise internal variables to be used later
         self._uploadId = None
         self._exportID = None
-        self.environment = environment
-        self._table_data = []
-        self.columns = []
-        self._filter = table_filter
+        self._table_data = list()
+        self.columns = list()
 
-        # total_row_count used during export data gathering
-        self.total_row_count = 0
-
-        # sync attribute to control whether updates are pushed back to RR
-        self._sync = sync
 
         # copy data from data model table
         temp_tab = self.environment.get_table(tabarray[1], tabarray[0])
@@ -140,7 +137,7 @@ class DataTable(Table):
     def __str__(self):
         # return self and first 5 rows
         response = self.__repr__() + '\n'
-        if self.total_row_count > 5:
+        if self._total_row_count > 5:
             for i in range(0, 5):
                 response = response + 'rownum: ' + str(i) + ' ' + str(self._table_data[i]) + '\n'
             response = response + '...'
@@ -166,15 +163,11 @@ class DataTable(Table):
             self._uploadId = None
 
         del self._table_data[key]
-        self.total_row_count -= 1
+        self._total_row_count -= 1
 
     def map(self, action):
         # yields new items that result from applying an action() callable to each item in the underlying list
         return type(self)(action(item) for item in self._table_data)
-
-    # def filter(self, predicate):
-    #    # yields all the items that return True when calling predicate() on them
-    #    return type(self)(item for item in self._table_data if predicate(item))
 
     def for_each(self, func):
         # calls func() on every item in the underlying list to generate some side effect.
@@ -189,8 +182,6 @@ class DataTable(Table):
             self.add_row(values)
 
         self._table_data.append(values)
-
-    # todo remove
 
     def extend(self, args):
         # todo fix when doing insert messy reference fields
@@ -249,7 +240,7 @@ class DataTable(Table):
 
     @filter.setter
     def filter(self, new_filter):
-        self._filter = dict({"Name": new_filter['Name'], "Scope": new_filter['Scope']})
+        self._filter = str(new_filter)
 
     @property
     def scenario(self):
@@ -257,16 +248,14 @@ class DataTable(Table):
 
     @scenario.setter
     def scenario(self, new_scenario):
-        # if not isinstance(new_scenario, dict):
-        #    raise TypeError("The parameter scenario type must be dict.")
-        # scenario_keys = new_scenario.keys()
-        # if len(scenario_keys) != 2:
-        #    raise ValueError("The parameter scenario must contain only Name and Scope.")
-        # if 'Name' not in scenario_keys:
-        #    raise ValueError("The parameter scenario must contain Name.")
-        # if 'Scope' not in scenario_keys:
-        #    raise ValueError("The parameter scenario must contain Scope.")
-        self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
+        #self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
+        try:
+            #if ['Name', 'Scope'] in list(new_scenario.keys()):
+            self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
+            #else:
+            #    raise ValueError(f"scenario not valid:  {new_scenario}. provide Name, Scope")
+        except AttributeError:
+            raise ValueError(f"scenario not valid:  {new_scenario}. provide Name, Scope")
 
     def indexof(self, rec):
         return self._table_data.index(rec)
@@ -304,22 +293,16 @@ class DataTable(Table):
             raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
 
         self._exportID = response_dict["ExportId"]
-        self.total_row_count = response_dict["TotalRows"]
+        self._total_row_count = response_dict["TotalRows"]
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         # using slicing on the query handle to strip off the #
         url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
-        # print(url)
 
-        #headers = self.environment.global_headers
-        # print(url)
-        # print(headers)
         req = requests.Request("GET", url, headers=self.environment.global_headers)
         prepped = req.prepare()
         response = session.send(prepped)
-        # response = requests.request("GET", url, headers=headers)
 
-        # check on response = 200 or whatever
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
@@ -337,7 +320,7 @@ class DataTable(Table):
         self._table_data.clear()
         self._create_export(s)
         calc_data_range = self._calc_optimal_pagesize(data_range)
-        for i in range(0, self.total_row_count, calc_data_range):
+        for i in range(0, self._total_row_count, calc_data_range):
             self._table_data.extend(self._get_export_results(s, i, calc_data_range))
         self._exportID = None
         s.close()
@@ -365,15 +348,15 @@ class DataTable(Table):
     async def _main_get_export_results_async(self, data_range):
         tasks = []
 
-        for i in range(0, self.total_row_count - data_range, data_range):
+        for i in range(0, self._total_row_count - data_range, data_range):
             tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
-        remaining_records = self.total_row_count % data_range
+        remaining_records = self._total_row_count % data_range
         if remaining_records > 0:
             self._table_data.extend(
-                await self._get_export_results_async(self.client, self.total_row_count - remaining_records, data_range, self.environment.limit))
+                await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range, self.environment.limit))
         await self.client.aclose()
 
     def RefreshData_async(self, data_range: int = None):

@@ -534,7 +534,7 @@ class Worksheet:
     async def _main_get_export_results_async(self, data_range):
 
         client = httpx.AsyncClient()
-        #for i in range(0, self.total_row_count - data_range, data_range):
+        #for i in range(0, self._total_row_count - data_range, data_range):
         #    print(f'i: {i}, range: {data_range}, time: {datetime.now()}')
         #    tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
         tasks = [asyncio.Task(self._get_export_results_async(client, i, data_range)) for i in range(0, self.total_row_count - data_range, data_range)]
