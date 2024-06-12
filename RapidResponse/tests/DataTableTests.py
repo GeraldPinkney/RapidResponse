@@ -46,6 +46,16 @@ class DataTableTestCase(unittest.TestCase):
         # test
         self.assertEqual(len(part), 0)
 
+    def test_data_table_no_refresh_properties(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env,'Mfg::Part', refresh=False)
+
+        # test
+        self.assertEqual(len(part), 0)
+        part._create_export()
+        self.assertNotEqual(part._total_row_count, 0)
+
     # test extend
     def test_data_table_extend_with_rows(self):
         # setup

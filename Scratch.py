@@ -1,3 +1,4 @@
+import base64
 import json
 
 import requests
@@ -146,3 +147,22 @@ def execute_script():
     print(response.text)
 
 
+def export_pkg():
+    import requests
+    import base64
+    url = "http://localhost/rapidresponse/integration/V1/applications/test_20240611/export"
+
+    concat_user_pass = 'gpinkney_ws_migration' + ":" + '1L0veR@pidResponse'
+    user_pass_bytes = concat_user_pass.encode('ascii')
+    base64_bytes = base64.b64encode(user_pass_bytes)
+    b64_authentication = base64_bytes.decode('ascii')
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Basic ' + str(b64_authentication)
+    }
+
+    response = requests.request("GET", url, headers=headers)
+
+    file = open("app.kpk", "wb")
+    file.write(response.content)
+    file.close() # yes, I could have done this with a context manager... whatevs

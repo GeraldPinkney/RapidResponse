@@ -102,6 +102,11 @@ class DataTable(Table):
 
         timeout = httpx.Timeout(10.0, connect=60.0)
         self.client = httpx.AsyncClient(timeout=timeout)
+
+        self._session = requests.Session()
+        self.environment.refresh_auth()
+        self._session.headers = self.environment.global_headers
+
         if refresh:
             self.RefreshData_async()
 
@@ -264,8 +269,11 @@ class DataTable(Table):
         index = self.indexof(rec)
         self.__delitem__(index)
 
-    def _create_export(self, session):
+    def _create_export(self, session=None):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
+        if session is None:
+            session = self._session
+
         if self._filter:
             query_filter = self.filter
         else:
@@ -296,6 +304,8 @@ class DataTable(Table):
         self._total_row_count = response_dict["TotalRows"]
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
+        if session is None:
+            session = self._session
         # using slicing on the query handle to strip off the #
         url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
 
@@ -314,11 +324,13 @@ class DataTable(Table):
 
     def RefreshData(self, data_range: int = 100_000):
         # check tablename is set, check fields are set
-        s = requests.Session()
-        s.headers=self.environment.global_headers
+
+        s = self._session
         self.environment.refresh_auth()
-        self._table_data.clear()
+        s.headers=self.environment.global_headers
+
         self._create_export(s)
+        self._table_data.clear()
         calc_data_range = self._calc_optimal_pagesize(data_range)
         for i in range(0, self._total_row_count, calc_data_range):
             self._table_data.extend(self._get_export_results(s, i, calc_data_range))
