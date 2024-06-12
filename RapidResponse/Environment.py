@@ -24,6 +24,7 @@ class GenericEnvironment:
 
     def __init__(self, configuration: dict):
 
+
         logging.basicConfig(filename='logging.log', filemode='w',
                             format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
         self._logger = logging.getLogger('RapidPy.env')
@@ -36,11 +37,14 @@ class GenericEnvironment:
         self.data_model = None
         self.scenarios = None
         self._maxconnections = None
+        self._session = None
 
         if not isinstance(configuration, dict):
             raise TypeError('The parameter configuration type must be dict')
         if not configuration:
             raise ValueError('The parameter configuration must be provided')
+
+        self.global_headers['Content-Type'] = 'application/json'
 
     def __repr__(self):
         return f'Environment(url={self.base_url!r}, data_model_directory={self._data_model_dir!r}, auth_type={self.auth_type!r})'
@@ -118,14 +122,28 @@ class GenericEnvironment:
 class Environment(GenericEnvironment):
     def __init__(self, configuration: dict):
         super().__init__(configuration)
+        self._session = requests.Session()
+        self._maxconnections = 8
+        self.limit = asyncio.Semaphore(self.max_connections)
 
-        # base url on which stuff is appended for requests
+        self._configure_url(configuration)
+        # authentication
+        self._configure_auth(configuration)
+        self._session.headers = self.global_headers
+        # Data Model
+        self._configure_data_model(configuration)
+        # Scenarios
+        self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
+
+
+    def _configure_url(self, configuration):
         try:
             self._base_url = configuration['url']
         except KeyError:
             raise ValueError('url not provided in configuration dict')
 
-        # authentication
+    def _configure_auth(self, configuration):
+
         try:
             self.auth_type = configuration['auth_type']
         except KeyError:
@@ -140,10 +158,9 @@ class Environment(GenericEnvironment):
             self.authentication['client_secret'] = configuration['client_secret']
         else:
             raise ValueError('invalid authentication type')
-
-        # set global headers and populate with auth details
         self.refresh_auth()
 
+    def _configure_data_model(self, configuration):
         try:
             self._data_model_dir = configuration['data_model_directory']
         except KeyError:
@@ -164,17 +181,9 @@ class Environment(GenericEnvironment):
             self.data_model = DataModel(data_model_directory=None, url=self.base_url, headers=self.global_headers,
                                         workbook=bootstrap_wbk)
 
-        self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
-
-        self._maxconnections = 8
-
-        self.limit = asyncio.Semaphore(self.max_connections)
-        self._session = requests.Session()
-
     def refresh_auth(self):
         auth = self._getAuth(self.auth_type)
         self.global_headers['Authorization'] = str(auth)
-        self.global_headers['Content-Type'] = 'application/json'
 
     def _getOauth2(self):
         """return the access token from RR instance based on clientID and client secret"""
