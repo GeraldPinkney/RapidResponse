@@ -155,7 +155,7 @@ class Script(AbstractScript):
 
     def execute(self, sync=True):
         '''
-        Executes the script. Currently supports only synchronous execution.
+        Executes the script. Currently, supports only synchronous execution.
 
         :param sync: Boolean flag indicating synchronous execution. Default is True.
         :raises ScriptError: If there is an error in the script execution.

@@ -541,7 +541,7 @@ class DataTable(Table):
 
 
 class DataRow(UserList):
-    # Can only be initialised from DataTable, therefore no need to validate its a good record on creation.
+    # Can only be initialised from DataTable, therefore no need to validate it's a good record on creation.
     def __init__(self, iterable, data_table: DataTable):
         # initialises a new instance DataRow(['GP', '0', '7000vE', '2017-08-31'], IndependentDemand)
 
@@ -573,7 +573,7 @@ class DataRow(UserList):
         try:
             Ids = [i.name for i in self.columns]
             pos = Ids.index(name.replace('_', '.'))
-        except ValueError:  # thrown if could not find name
+        except ValueError:  # exception thrown if could not find name
             pos = -1
         if 0 <= pos < len(self.columns):
             return self[pos]

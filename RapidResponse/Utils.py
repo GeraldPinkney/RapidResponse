@@ -1,5 +1,5 @@
 #Utils.py
-
+from typing import Literal
 
 SCOPE_PUBLIC = 'Public'
 SCOPE_PRIVATE = 'Private'

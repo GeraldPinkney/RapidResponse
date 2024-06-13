@@ -14,12 +14,12 @@ long_description = (here / "RapidResponse/docs/README.md").read_text(encoding="u
 
 setup(
     name="RapidResponse",
-    version="1.0.9",
+    version="1.0.10",
     description="RapidResponse library",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/GeraldPinkney/RapidResponse",
-    author="GP", # Heraldo Industries
+    author="Heraldo Industries",  # Heraldo Industries
     packages=find_packages(),  # Required include=['RapidResponse']
     #package_dir={"": "."},
     python_requires=">=3.10, <4",

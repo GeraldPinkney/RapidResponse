@@ -235,7 +235,6 @@ class Environment(AbstractEnvironment):
         :return: string of authentication
         :raises SetupError: invalid auth type if not basic or oauth2
         """
-        b64_authentication = None
         if auth_type == 'basic':
             b64_authentication = 'Basic ' + str(self._getBasicAuth())
         elif auth_type == 'oauth2':
