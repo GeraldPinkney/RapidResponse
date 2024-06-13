@@ -150,7 +150,7 @@ def execute_script():
 def export_pkg():
     import requests
     import base64
-    url = "http://localhost/rapidresponse/integration/V1/applications/test_20240611/export"
+    url = "http://localhost/rapidresponse/integration/V1/applications/test_20240612/export"
 
     concat_user_pass = 'gpinkney_ws_migration' + ":" + '1L0veR@pidResponse'
     user_pass_bytes = concat_user_pass.encode('ascii')
@@ -163,6 +163,6 @@ def export_pkg():
 
     response = requests.request("GET", url, headers=headers)
 
-    file = open("app.kpk", "wb")
+    file = open("test_20240612.kpk", "wb")
     file.write(response.content)
     file.close() # yes, I could have done this with a context manager... whatevs

@@ -19,30 +19,30 @@ It is also suggested that the RR documentation is reviewed https://help.kinaxis.
 
 ## Quickstart
 Import necessary classes (Environment & DataTable)
-```
->>> from RapidResponse.Environment import Environment
->>> from RapidResponse.DataTable import DataTable
+```python
+from RapidResponse.Environment import Environment
+from RapidResponse.DataTable import DataTable
 ```
 create configuration for use with your environment
-```
->>> sample_configuration = {'url': 'http://localhost/rapidresponse','auth_type': 'basic','username': 'gpinkney_ws','password': '1L0veR@pidResponse'}
->>> print(sample_configuration)
+```python
+sample_configuration = {'url': 'http://localhost/rapidresponse','auth_type': 'basic','username': 'gpinkney_ws','password': '1L0veR@pidResponse'}
+print(sample_configuration)
 {'url': 'http://localhost/rapidresponse', 'auth_type': 'basic', 'username': 'gpinkney_ws', 'password': '1L0veR@pidResponse'}
 ```
 create an environment within which your work is scoped
-```
->>> env = Environment(sample_configuration)
->>> print(env)
+```python
+env = Environment(sample_configuration)
+print(env)
 Environment(url='http://localhost/rapidresponse')
 ```
 initialise an individual DataTable, in this case Mfg::Part. This will provide a live view of the Part table, and can be acted on directly.
 Print the num of records & view some row data
-```
->>> part = DataTable(env, 'Mfg::Part')
->>> print(len(part))
+```python
+part = DataTable(env, 'Mfg::Part')
+print(len(part))
 8883
-...
->>> print(part)
+
+print(part)
 DataTable(environment=Environment(url='http://localhost/rapidresponse', data model directory='C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel', auth_type='basic'),name='Mfg::Part', columns=[Column(name='Name', datatype='String', key='Y'), Column(name='Site', datatype='Reference', key='Y'), Column(name='ABCCode', datatype='Reference', key='N'), Column(name='AfterForecastInterval', datatype='Quantity', key='N'), Column(name='AllocationMultiple', datatype='Quantity', key='N'), Column(name='AvailableRule', datatype='Reference', key='N'), Column(name='AverageQty', datatype='Quantity', key='N'), Column(name='AverageSellingPrice', datatype='Money', key='N'), Column(name='BeforeForecastInterval', datatype='Quantity', key='N'), Column(name='BuyerCode', datatype='Reference', key='N'), Column(name='CarryingCost', datatype='Money', key='N'), Column(name='ConstraintShareFence', datatype='Integer', key='N'), Column(name='DaysSupplyPolicy', datatype='Reference', key='N'), Column(name='DDMRPRule', datatype='Reference', key='N'), Column(name='DemandTimeFence', datatype='Quantity', key='N'), Column(name='Description', datatype='String', key='N'), Column(name='DistributionPlanningRule', datatype='Reference', key='N'), Column(name='ExcessFence', datatype='Integer', key='N'), Column(name='ExpiryType', datatype='Reference', key='N'), Column(name='IncrementalRule', datatype='Reference', key='N'), Column(name='IntermediateSpreadForecastInterval', datatype='Integer', key='N'), Column(name='InventoryHoldingRate', datatype='Quantity', key='N'), Column(name='LeadTimeAdjust', datatype='Quantity', key='N'), Column(name='MaterialCost', datatype='Money', key='N'), Column(name='MinimumShelfLife', datatype='Integer', key='N'), Column(name='MinimumSpreadQuantity', datatype='Quantity', key='N'), Column(name='MUEPoolNettingType', datatype='Reference', key='N'), Column(name='MultiEchelonSafetyStockRule', datatype='Reference', key='N'), Column(name='MultiLevelSearchRule', datatype='Reference', key='N'), Column(name='NextUnit', datatype='Integer', key='N'), Column(name='NumberOfDaysSupply', datatype='Quantity', key='N'), Column(name='OptimizationConfiguration', datatype='Reference', key='N'), Column(name='OptimizationObjectiveWeightOverride', datatype='Reference', key='N'), Column(name='PercentSafetyIntervalCount', datatype='Integer', key='N'), Column(name='PercentSafetyPercent', datatype='Quantity', key='N'), Column(name='PickPackTime', datatype='Quantity', key='N'), Column(name='PlannerCode', datatype='Reference', key='N'), Column(name='PlanningCalendars', datatype='Reference', key='N'), Column(name='PrimarySubstitutionSequence', datatype='Integer', key='N'), Column(name='ProductFamily', datatype='Reference', key='N'), Column(name='ProductGroup1', datatype='String', key='N'), Column(name='ProductGroup2', datatype='String', key='N'), Column(name='RangeOfCoverageBuffer', datatype='Quantity', key='N'), Column(name='ReferencePart', datatype='Reference', key='N'), Column(name='SafetyLeadTime', datatype='Quantity', key='N'), Column(name='SafetyLeadTimeProfile', datatype='Reference', key='N'), Column(name='SafetyStockPolicy', datatype='Reference', key='N'), Column(name='SafetyStockQty', datatype='Quantity', key='N'), Column(name='SourceRule', datatype='Reference', key='N'), Column(name='SpreadForecastInterval', datatype='Integer', key='N'), Column(name='StdUnitCost', datatype='Money', key='N'), Column(name='SubstitutionTolerance', datatype='Integer', key='N'), Column(name='SupplyShareFence', datatype='Integer', key='N'), Column(name='Type', datatype='Reference', key='N'), Column(name='UnitOfMeasure', datatype='Reference', key='N'), Column(name='UnsatisfiedDemandTolerance', datatype='Integer', key='N')], filter=None, sync=True)
 rownum: 0 ['0053H-8C3', 'Europe', 'B', '0', '1', '', '0', '0', '0', 'EU', '0', '-1', '', '', '0', 'AC Compressor', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'EU', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', '0053H-8C3', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
 rownum: 1 ['0053H-8C3', 'Japan', 'B', '0', '1', '', '0', '0', '0', 'JA', '0', '-1', '', '', '0', 'AC Compressor', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'JA', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', '0053H-8C3', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
@@ -61,16 +61,16 @@ this is the Python representation of your environment. It contains authenticatio
 ## Environment - Usage Instructions
 Create dictionary to initialise your environment with. See 2 examples below for basic and oauth2
 ### config dict for basic authentication
-```
->>> basic_conf = {'url': 'http://localhost/rapidresponse',
+```python
+basic_conf = {'url': 'http://localhost/rapidresponse',
                 'auth_type': 'basic',
                 'username': 'gpiknney_ws',
                 'password': '1L0veR@pidResponse',
                 }
 ```
 ### config dict for oauth2 authentication
-```
->>> oauth2_conf = {'url': 'http://localhost/rapidresponse',
+```python
+oauth2_conf = {'url': 'http://localhost/rapidresponse',
                 'auth_type': 'oauth2',
                 'clientID' : 'cf394926f315b5ff99e34f24c0a5349d',
                 'client_secret' : 'db71331ee1477a2e61ceedac7d786b39b1fd6fa29a124dd5339b7a481a4da71f',
@@ -78,8 +78,8 @@ Create dictionary to initialise your environment with. See 2 examples below for 
              }
 ```
 ### config dict for local DM
-```
->>> localDM_conf = {'url': 'http://localhost/rapidresponse',
+```python
+localDM_conf = {'url': 'http://localhost/rapidresponse',
                 'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\RapidResponse\\DataModel',
                 'auth_type': 'oauth2',
                 'clientID' : 'cf394926f315b5ff99e34f24c0a5349d',
@@ -87,8 +87,8 @@ Create dictionary to initialise your environment with. See 2 examples below for 
                 }
 ```
 ### config dict with helper workbook
-```
->>> localDM_conf = {'url': 'http://localhost/rapidresponse',
+```python
+localDM_conf = {'url': 'http://localhost/rapidresponse',
                 'data_model_bootstrap': 'KXSHelperREST',
                 'auth_type': 'oauth2',
                 'clientID' : 'cf394926f315b5ff99e34f24c0a5349d',
@@ -114,28 +114,28 @@ in https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/web%2520s
 
 
 ### Reviewing data model information on a table
-```
->>> from RapidResponse.Environment import Environment
+```python
+from RapidResponse.Environment import Environment
 # create an environment within which your work is scoped
 
->>> env = Environment(basic_conf)
->>> print(env)
+env = Environment(basic_conf)
+print(env)
 Environment(url='http://localhost/rapidresponse')
 
->>> print(env.get_table('Part', 'Mfg'))
+print(env.get_table('Part', 'Mfg'))
 Table(name='Mfg::Part', fields=[Column(name='ABCCode.Site', datatype='Reference', key='N', referencedTable='Site', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ABCCode.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='AfterForecastInterval', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='AllocationMultiple', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='AvailableRule.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='AvailableRule.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='AverageQty', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='AverageSellingPrice', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='BeforeForecastInterval', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='BuyerCode.Site', datatype='Reference', key='N', referencedTable='Site', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='BuyerCode.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='CarryingCost', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ConstraintShareFence', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='DaysSupplyPolicy.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='DaysSupplyPolicy.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='DDMRPRule.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='DemandTimeFence', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='Description', datatype='String', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='DistributionPlanningRule.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='DistributionPlanningRule.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ExcessFence', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ExpiryType.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ExpiryType.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='IncrementalRule.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='IncrementalRule.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='IntermediateSpreadForecastInterval', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='InventoryHoldingRate', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='LeadTimeAdjust', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MaterialCost', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MinimumShelfLife', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MinimumSpreadQuantity', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MUEPoolNettingType.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MUEPoolNettingType.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MultiEchelonSafetyStockRule.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MultiEchelonSafetyStockRule.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MultiLevelSearchRule.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='MultiLevelSearchRule.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='Name', datatype='String', key='Y', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='NextUnit', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='NumberOfDaysSupply', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='OptimizationConfiguration.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='OptimizationObjectiveWeightOverride.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PartClass.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PercentSafetyIntervalCount', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PercentSafetyPercent', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PickPackTime', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PlannerCode.Site', datatype='Reference', key='N', referencedTable='Site', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PlannerCode.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PlanningCalendars.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PlanningCalendars.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='PrimarySubstitutionSequence', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ProductFamily.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ProductGroup1', datatype='String', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ProductGroup2', datatype='String', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='RangeOfCoverageBuffer', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='ReferencePart.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SafetyLeadTime', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SafetyLeadTimeProfile.Site', datatype='Reference', key='N', referencedTable='Site', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SafetyLeadTimeProfile.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SafetyStockPolicy.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SafetyStockPolicy.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SafetyStockQty', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='Site.Value', datatype='String', key='Y', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SourceRule.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SourceRule.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SpreadForecastInterval', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='StdUnitCost', datatype='Quantity', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SubstitutionTolerance', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='SupplyShareFence', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='Type.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='Type.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='UnitOfMeasure.ControlSet', datatype='Reference', key='N', referencedTable='ControlSet', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='UnitOfMeasure.Value', datatype='String', key='N', referencedTable='', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None), Column(name='UnsatisfiedDemandTolerance', datatype='Integer', key='N', referencedTable=None, referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None)], type='Input', keyed='Y', identification fields='')
 
 ```
 review fields that a table has available
-```
->>> Indy = env.get_table('IndependentDemand', 'Mfg')
->>> for f in Indy.fields:
-...    print(f)
-...    
+```python
+Indy = env.get_table('IndependentDemand', 'Mfg')
+for f in Indy.fields:
+   print(f)
+   
 Column(name='Line', datatype='String', key='Y', referencedTable=None, referencedTableNamespace=None, correspondingField=None, correspondingFieldNamespace=None)
 Column(name='Order', datatype='Reference', key='Y', referencedTable=None, referencedTableNamespace=None, correspondingField=None, correspondingFieldNamespace=None)
 Column(name='AllotmentOverride', datatype='Reference', key='N', referencedTable=None, referencedTableNamespace=None, correspondingField=None, correspondingFieldNamespace=None)
-...
+
 ```
 ## Data Model - Overview
 
@@ -153,7 +153,7 @@ When initialised it takes a deep copy of the Table from the data model and then 
 **Parameters**
 - _environment_: Environment RapidResponse environment for which the table is scoped. 
 - _tablename_: Table that contains the data. Format 'Mfg::Part' 
-- _columns_: list of column names ['Name', 'Site', ...] that the table will return.
+- _columns_: list of column names ['Name', 'Site', ] that the table will return.
 - _table_filter_: string representation of any filter condition applied to the table
 - _sync_: boolean value. controls whether updates performed within Python are pushed back to RR. 
 - _refresh_: boolean value. refresh row data on initialisation. 
@@ -163,88 +163,88 @@ When initialised it takes a deep copy of the Table from the data model and then 
 
 initialise a data table
 This will be initialised with all columns of the table, and any key columns on referenced tables. 
-```
->>> env = Environment(sample_configuration)
->>> part = DataTable(env,'Mfg::Part')
+```python
+env = Environment(sample_configuration)
+part = DataTable(env,'Mfg::Part')
 ```
 print table to see the environment information, columns and first few rows of data
-```
->>> part
+```python
+part
 DataTable(environment=Environment(url='http://localhost/rapidresponse', data_model_directory='C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data', auth_type='basic'),name='Mfg'::'Part',columns=['Name', 'Site.Value', 'AfterForecastInterval', 'AllocationMultiple', 'AverageQty', 'AverageSellingPrice', 'BeforeForecastInterval', 'CarryingCost', 'ConstraintShareFence', 'DemandTimeFence', 'Description', 'ExcessFence', 'IntermediateSpreadForecastInterval', 'InventoryHoldingRate', 'LeadTimeAdjust', 'MaterialCost', 'MinimumShelfLife', 'MinimumSpreadQuantity', 'NextUnit', 'NumberOfDaysSupply', 'PercentSafetyIntervalCount', 'PercentSafetyPercent', 'PickPackTime', 'PrimarySubstitutionSequence', 'ProductGroup1', 'ProductGroup2', 'RangeOfCoverageBuffer', 'SafetyLeadTime', 'SafetyStockQty', 'SpreadForecastInterval', 'StdUnitCost', 'SubstitutionTolerance', 'SupplyShareFence', 'UnsatisfiedDemandTolerance'], filter=None, sync=True) 
 # or if you want to see data in a specific scenario
->>> part = DataTable(env,'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"})
+part = DataTable(env,'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"})
 # view all rows in the table
->>> for p in part:
-...     print(p)
-... 
+for p in part:
+    print(p)
+
 ['XATFT1034', 'Japan', 'C', '0', '1', '', '0', '0', '0', 'JA', '0', '-1', '', '', '0', 'Bumper  Round Head', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'JA', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', 'XATFT1034', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
 ['XATFT1034', 'Ohio', 'C', '0', '1', '', '0', '0', '0', 'OH', '0', '-1', '', '', '0', 'Bumper  Round Head', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'OH', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', 'XATFT1034', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
 ['XBTFT5334', 'Europe', 'C', '0', '1', '', '0', '0', '0', 'EU', '0', '-1', '', '', '0', 'Pin  Push Nylon', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'EU', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', 'XBTFT5334', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
 ['XBTFT5334', 'Japan', 'C', '0', '1', '', '0', '0', '0', 'JA', '0', '-1', '', '', '0', 'Pin  Push Nylon', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'JA', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', 'XBTFT5334', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
 ['XBTFT5334', 'Ohio', 'C', '0', '1', '', '0', '0', '0', 'OH', '0', '-1', '', '', '0', 'Pin  Push Nylon', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'OH', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', 'XBTFT5334', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
-...
+
 ```
 extend rows to the table & have this be pushed to RR
-```
->>> row0 = ['GP1-8C3', 'Europe', 'B', '0', '1', '', '0', '0', '0', 'EU', '0', '-1', '', '', '0', 'AC Compressor', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'EU', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', '0053H-8C3', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
->>> row1 = ['GP2-8C3', 'Europe', 'B', '0', '1', '', '0', '0', '0', 'EU', '0', '-1', '', '', '0', 'AC Compressor', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'EU', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', '0053H-8C3', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
->>> rows = [row0, row1]
->>> part.extend(rows)
->>> print(len(part)
+```python
+row0 = ['GP1-8C3', 'Europe', 'B', '0', '1', '', '0', '0', '0', 'EU', '0', '-1', '', '', '0', 'AC Compressor', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'EU', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', '0053H-8C3', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
+row1 = ['GP2-8C3', 'Europe', 'B', '0', '1', '', '0', '0', '0', 'EU', '0', '-1', '', '', '0', 'AC Compressor', '', '0', '', 'Off', '0', '0.2', '0', '0', '0', '0', 'Ignore', '', '', '-1', '0', '', '', '0', '0', '1', 'EU', 'DefaultMonth', '0', 'Automotive', 'Vehicle', 'Passenger', '0', '0053H-8C3', '0', '', 'FixedLeadTimeSoft', '0', 'Ongoing', '0', '0', '0', '-1', 'Buy', 'EA', '0']
+rows = [row0, row1]
+part.extend(rows)
+print(len(part)
 8885
 
->>> part.RefreshData()
->>> if row0 in part:
-...     print('it worked!')
->>> else:
-...     print('quick, raise a bug')
-...
->>> 
+part.RefreshData()
+if row0 in part:
+    print('it worked!')
+else:
+    print('quick, raise a bug')
+
+
 ```
 delete the new row0 from the part table
-```
->>> part.del_row(row1)
->>> part.RefreshData()
->>> if row1 in part:
-...     print('it failed!')
->>> else:
-...     print('it worked!')
-...
+```python
+part.del_row(row1)
+part.RefreshData()
+if row1 in part:
+    print('it failed!')
+else:
+    print('it worked!')
 ```
 or use the del command 
-```
->>> part.indexof(rec)
+```python
+part.indexof(rec)
 8882
 
->>> del part[8882]
+del part[8882]
 ```
 view IndependentDemand table, with a subset of columns
 ```
->>> cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate', 'Quantity']
->>> IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
->>> print(IndependentDemand)
+cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate', 'Quantity']
+IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols)
+print(IndependentDemand)
 ```
 Use slicing to only view a subset of records
-```
+```python
 print(IndependentDemand[0:11])
+#show rec
 ```
 Attribute access for data tables can be done either via the column index, or via the column name, however in the case of reference fields (i.e. columns that refer to an attribute that is on another table) its is necessary to use the underscore '_' instead of dot '.' delimiter
-```
+```python
 # view the columns for IndependentDemand
->>> print(IndependentDemand[0].columns)
-show rec
+print(IndependentDemand[0].columns)
+#show rec
 # here are all the values for this record
->>> print(IndependentDemand[0])
-show rec
+print(IndependentDemand[0])
+#show rec
 # here is the order site value accessed dynamically with underscore notation
->>> print(IndependentDemand[0].Order_Site_Value)
-show rec
+print(IndependentDemand[0].Order_Site_Value)
+#show rec
 # here is the order site value accessed via the column index
->>> print(IndependentDemand[0][1]])
-show rec
+print(IndependentDemand[0][1]])
+#show rec
 ```
 for those who love pandas, you may want this
-```
+```python
 df = pd.DataFrame([p for p in part])
 df.columns = [c.name for c in part.columns]
 df
@@ -268,67 +268,66 @@ When initialised it takes a deep copy of the Table from the data model and then 
 ## Worksheet - Usage Instructions
 
 Create a worksheet and print records
-```
->>> ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",Filter={"Name": "All Parts", "Scope": "Public"}, refresh=True)
->>> ws
-Worksheet(environment=Environment(url='http://localhost/rapidresponse', data_model_directory='C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data', auth_type='basic'),worksheet='OnHand',workbook={'Name': '.Input Tables', 'Scope': 'Public'},SiteGroup='All Sites',Filter={'Name': 'All Parts', 'Scope': 'Public'},VariableValues=None)
->>> for x in ws:
-...     print(x)
-...     
+```python
+ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",Filter={"Name": "All Parts", "Scope": "Public"}, refresh=True)
+print(ws)
+"Worksheet(environment=Environment(url='http://localhost/rapidresponse', data_model_directory='C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data', auth_type='basic'),worksheet='OnHand',workbook={'Name': '.Input Tables', 'Scope': 'Public'},SiteGroup='All Sites',Filter={'Name': 'All Parts', 'Scope': 'Public'},VariableValues=None)"
+for x in ws:
+    print(x)
+ 
 ['521-HOAcA', 'SAProd', '', '', 'SA_Bins1', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '0', '2017-03-02', 'Undefined', '2500', '-1', '0']
 ['521-HOAcA', 'SAProd', '', '', 'SA_Bins2', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '0', '2017-03-02', 'Undefined', '500', '-1', '0']
 ['521-HOAcE', 'SAProd', '', '', 'SA_Bins1', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '20000', '2016-11-03', 'Undefined', '20000', '-1', '0']
 ['521-HOAcE', 'SAProd', '', '', 'SA_Bins2', 'Prod', 'None', 'Unpooled', 'Unrestricted', 'Undefined', '', '20000', '2017-02-02', 'Undefined', '20000', '-1', '0']
 ```
 Create workbook and upload to that workbook
-```
->>> ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",workbook={'Name': 'Orders by Customer', "Scope": 'Public'},scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+```python
+ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",workbook={'Name': 'Orders by Customer', "Scope": 'Public'},scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
 # and be aware of whether a column is editable
->>> print([col['IsEditable'] for col in ws.columns])
+print([col['IsEditable'] for col in ws.columns])
 [True, True, True, True, True, True, True, True, True, True, True, False, True, True, True, True, True]
->>> ws.append(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'])
+ws.append(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'])
 # Or use upload
->>> ws.upload(["ordnum0", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"],
-...              ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
+ws.upload(["ordnum0", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"],["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
 ```
 
 ## Script
 
-```
+
+```python
 # create a script
->>> Ignite_Create_Scenario = Script(env,'Ignite_Create_Scenario',scope='Public',parameters={"newScenario": "Good2Great08062024_2","userGroup": "Sales"} )
->>> print(Ignite_Create_Scenario)
-Script(name=Ignite_Create_Scenario, scope=Public, parameters={'newScenario': 'Good2Great08062024_2', 'userGroup': 'Sales'})
+Ignite_Create_Scenario = Script(env,'Ignite_Create_Scenario',scope='Public',parameters={"newScenario": "Good2Great08062024_2","userGroup": "Sales"} )
+# print string representation
+print(Ignite_Create_Scenario)
+"Script(name=Ignite_Create_Scenario, scope=Public, parameters={'newScenario': 'Good2Great08062024_2', 'userGroup': 'Sales'})"
 
 # show its initial status
->>> print(Ignite_Create_Scenario.status)
-Not Run
+print(Ignite_Create_Scenario.status)
+"Not Run"
 
 # execute the script, as you are happy with the parameters initialised
->>> Ignite_Create_Scenario.execute()
->>> print(Ignite_Create_Scenario.status)
-Success
+Ignite_Create_Scenario.execute()
+print(Ignite_Create_Scenario.status)
+"Success"
 
 # print the result
->>> print(Ignite_Create_Scenario.console)
+print(Ignite_Create_Scenario.console)
 "Success: Good2Great08062024_2"
 
 # execute it again without updating the parameters. The script executes, but returns an error. This is important. You will need to check the status to see details. 
->>> Ignite_Create_Scenario.execute()
->>> print(Ignite_Create_Scenario.status)
-Error: errorcode JavascriptException
-message Uncaught "Error: Shared Scenario already exists - Good2Great08062024_2"
-See log for details
+Ignite_Create_Scenario.execute()
+print(Ignite_Create_Scenario.status)
+"Error: errorcode JavascriptException message Uncaught Error: Shared Scenario already exists - Good2Great08062024_2 See log for details"
 
 # view the console output
->>> print(Ignite_Create_Scenario.console)
+print(Ignite_Create_Scenario.console)
 "Error: Shared Scenario already exists - Good2Great08062024_2"
 
 # update a parameter & re-execute
->>> Ignite_Create_Scenario.parameters.update({'newScenario': 'Good2GreatZZZ'})
->>> Ignite_Create_Scenario.execute()
->>> print(Ignite_Create_Scenario.status)
-Success
+Ignite_Create_Scenario.parameters.update({'newScenario': 'Good2GreatZZZ'})
+Ignite_Create_Scenario.execute()
+print(Ignite_Create_Scenario.status)
+"Success"
 
 ```
 ## Aaaand now the caveats
@@ -338,4 +337,6 @@ Keep in mind that when using DataTable for upload/delete use cases you're circum
 Be aware of the implicit logic built in for tolerances for datatable, and table upload ordering. 
 When using DataTable for upload, make sure you're only loading the data you want. remove references. 
 
-Also, currently no support built in for creating scenario, transacting, then rolling back or committing based on result.
+Also, currently no support built in for creating scenario, transacting, then rolling back or committing based on result. 
+If you want to do this I would suggest creating scripts to manage the scenario (create, delete, commit), and add decorators. 
+I did not do this myself as I wanted this to work without adding any resources (like additional scripts) to client environment. 

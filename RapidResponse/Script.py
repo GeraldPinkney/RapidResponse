@@ -5,7 +5,7 @@ from http import HTTPStatus
 from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, ScriptError
 
-class GenericScript:
+class AbstractScript:
     '''
     A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
 
@@ -110,7 +110,7 @@ class GenericScript:
                 f"scope={self._scope}, parameters={self._parameters})")
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, GenericScript):
+        if not isinstance(other, AbstractScript):
             return NotImplemented
         return (self._environment == other._environment and
                 self._name == other._name and
@@ -134,7 +134,7 @@ class GenericScript:
 
 
 
-class Script(GenericScript):
+class Script(AbstractScript):
     '''
     A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
 

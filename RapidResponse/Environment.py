@@ -9,7 +9,7 @@ import requests
 from RapidResponse.DataModel import DataModel
 from RapidResponse.Err import SetupError, RequestsError
 
-class GenericEnvironment:
+class AbstractEnvironment:
     """
         this is the python representation of your enviornment. It contains authentication details, data model data (tables, fields, etc) and provides the scoping for working with RR.\n
         :param configuration: dictionary containing necessary information for initialising environment
@@ -119,13 +119,14 @@ class GenericEnvironment:
     def max_connections(self):
         return self._maxconnections
 
-class Environment(GenericEnvironment):
+class Environment(AbstractEnvironment):
     def __init__(self, configuration: dict):
         super().__init__(configuration)
         self._session = requests.Session()
         self._maxconnections = 8
         self.limit = asyncio.Semaphore(self.max_connections)
 
+        # url
         self._configure_url(configuration)
         # authentication
         self._configure_auth(configuration)
@@ -176,7 +177,7 @@ class Environment(GenericEnvironment):
         try:
             bootstrap_wbk = configuration['data_model_bootstrap']
         except KeyError:
-            self.data_model = DataModel(self._data_model_dir, None, None, None)
+            self.data_model = DataModel(None, None, None, None)
         else:
             self.data_model = DataModel(data_model_directory=None, url=self.base_url, headers=self.global_headers,
                                         workbook=bootstrap_wbk)
