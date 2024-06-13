@@ -55,6 +55,7 @@ class DataTableTestCase(unittest.TestCase):
         self.assertEqual(len(part), 0)
         part._create_export()
         self.assertNotEqual(part._total_row_count, 0)
+        part._session.close()
 
     # test extend
     def test_data_table_extend_with_rows(self):

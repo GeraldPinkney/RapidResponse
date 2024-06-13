@@ -173,6 +173,8 @@ class Script(AbstractScript):
             self._internal_status = -1
             self._logger.error(f"Script execution failed: {e}")
             raise
+        finally:
+            self.close()
 
     def _send_execute_script(self, session):
         self._reset_response_state()
@@ -197,8 +199,8 @@ class Script(AbstractScript):
 
     def _process_execute_response(self, response_dict):
         self._response.update({
-            'console': response_dict.get('Console', ''),
-            'value': response_dict.get('Value', '')
+            'console': response_dict.get('Console'),
+            'value': response_dict.get('Value')
         })
 
         if 'ScriptError' in response_dict:

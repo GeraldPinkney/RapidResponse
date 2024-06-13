@@ -164,6 +164,7 @@ When initialised it takes a deep copy of the Table from the data model and then 
 initialise a data table
 This will be initialised with all columns of the table, and any key columns on referenced tables. 
 ```python
+from RapidResponse.DataTable import DataTable
 env = Environment(sample_configuration)
 part = DataTable(env,'Mfg::Part')
 ```

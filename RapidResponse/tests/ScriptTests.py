@@ -12,7 +12,7 @@ class BasicTestCase(unittest.TestCase):
         Ignite_Create_Scenario = Script(env,'Ignite_Create_Scenario',scope='Public',parameters=param )
         Ignite_Create_Scenario.execute()
 
-        print(Ignite_Create_Scenario.status)
+        # print(Ignite_Create_Scenario.status)
 
     def test_multi_execution(self):
         env = Environment(sample_configuration)
@@ -21,7 +21,7 @@ class BasicTestCase(unittest.TestCase):
         Ignite_Create_Scenario = Script(env,'Ignite_Create_Scenario',scope='Public',parameters=param )
         Ignite_Create_Scenario.execute()
         Ignite_Create_Scenario.execute()
-        print(Ignite_Create_Scenario.status)
+        #print(Ignite_Create_Scenario.status)
 
 class StatusScriptTest(unittest.TestCase):
 

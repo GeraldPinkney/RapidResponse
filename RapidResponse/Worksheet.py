@@ -12,20 +12,21 @@ from datetime import date, datetime
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
 
-class Workbook:
+
+class AbstractWorkBook:
     """
-    https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
-    :param environment: Required. contains the env details for worksheet.\n
-    :param Scenario: Optional \n
-    :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
-    :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
-    :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
-    :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
-    :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+           https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
+           :param environment: Required. contains the env details for worksheet.\n
+           :param Scenario: Optional \n
+           :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+           :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+           :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+           :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+           :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
 
 
-    """
-    #WORKBOOK_URL = "/integration/V1/data/workbook"
+           """
+    # WORKBOOK_URL = "/integration/V1/data/workbook"
     SCOPE_PUBLIC = 'Public'
     SCOPE_PRIVATE = 'Private'
     VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
@@ -46,69 +47,25 @@ class Workbook:
 
         """
         self._logger = logging.getLogger('RapidPy.wb.wb')
-        if not isinstance(environment, Environment):
-            raise TypeError("The parameter environment type must be Environment.")
-        if not environment:
-            raise ValueError("The parameter environment must not be empty.")
-        self.environment = environment
+        self.worksheets = list()
+        self._scenario = dict()
+        self._environment = None
+        self._workbook = dict()
+        self._site_group = None
+        self._filter = None
+        self._variable_values = None
 
-        if Scenario:
-            '''#if not isinstance(Scenario, dict):
-            #    raise TypeError("The parameter scenario type must be dict.")
-            scenario_keys = Scenario.keys()
-            #if len(scenario_keys) != 2:
-            #    raise ValueError("The parameter scenario must contain only Name and Scope.")
-            if 'Name' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Name.")
-            if 'Scope' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Scope.")'''
-            self._scenario = dict(Name=Scenario['Name'], Scope=Scenario['Scope'])
-        else:
-            self._scenario = self.environment.scenarios[0]
-
-        #if not isinstance(workbook, dict):
-        #    raise TypeError("The parameter workbook type must be dict.")
-        '''if not workbook:
-            raise ValueError("The parameter workbook must not be empty.")
-        wb_keys = workbook.keys()
-        if len(wb_keys) != 2:
-            raise ValueError("The parameter workbook must contain only Name and Scope.")
-        if 'Name' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Name.")
-        if 'Scope' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Scope.")'''
-        self._workbook = dict(Name=workbook['Name'], Scope=workbook['Scope'])
-
-        '''if not isinstance(SiteGroup, str):
-            raise TypeError("The parameter SiteGroup type must be str.")'''
-        if not SiteGroup:
-            #raise ValueError("The parameter SiteGroup must not be empty.")
-            self._site_group = 'All Sites'
-        else:
-            self._site_group = str(SiteGroup)
-
-        if not Filter:
-            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
-        else:
-            self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
-        self._variable_values = VariableValues
-
-        self.worksheets = []
-        for name in WorksheetNames:
-            self.worksheets.append(
-                Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
-                          self._variable_values))
 
     def __str__(self):
         return f'Name: {self.name!r}, Scope: {self.workbook_scope!r} '
 
     def refresh(self):
         # populate all child worksheets with data
-        for ws in self.worksheets:
-            try:
-                ws.RefreshData_async()
-            except:
-                self._logger.error('something went wrong with ' + ws.name)
+        pass
+
+    @property
+    def environment(self):
+        return self._environment
 
     @property
     def filter(self):
@@ -116,19 +73,6 @@ class Workbook:
 
     @filter.setter
     def filter(self, new_filter):
-        '''if not isinstance(new_filter, dict):
-            raise TypeError("filter must be dict.")
-        if not new_filter:
-            raise ValueError("filter must not be empty.")
-
-        filt_keys = new_filter.keys()
-        if len(filt_keys) != 2:
-            raise ValueError("filter must contain only Name and Scope.")
-        if 'Name' not in filt_keys:
-            raise ValueError("filter must contain Name.")
-        if 'Scope' not in filt_keys:
-            raise ValueError("filter must contain Scope.")
-        self._filter = new_filter'''
         self._filter = dict(Name=new_filter['Name'], Scope=new_filter['Scope'])
         for ws in self.worksheets:
             ws.filter = self.filter
@@ -147,16 +91,7 @@ class Workbook:
 
     @scenario.setter
     def scenario(self, new_scenario):
-        #if not isinstance(new_scenario, dict):
-        #    raise TypeError("The parameter scenario type must be dict.")
-        '''scenario_keys = new_scenario.keys()
-        if len(scenario_keys) != 2:
-            raise ValueError("The parameter scenario must contain only Name and Scope.")
-        if 'Name' not in scenario_keys:
-            raise ValueError("The parameter scenario must contain Name.")
-        if 'Scope' not in scenario_keys:
-            raise ValueError("The parameter scenario must contain Scope.")'''
-        self._scenario =  dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
+        self._scenario = dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
         for ws in self.worksheets:
             ws.scenario = self.scenario
 
@@ -185,6 +120,87 @@ class Workbook:
             return True
         else:
             return False
+
+
+class Workbook(AbstractWorkBook):
+    """
+        https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
+        :param environment: Required. contains the env details for worksheet.\n
+        :param Scenario: Optional \n
+        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+
+
+        """
+    # WORKBOOK_URL = "/integration/V1/data/workbook"
+    SCOPE_PUBLIC = 'Public'
+    SCOPE_PRIVATE = 'Private'
+    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
+
+    def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
+                 Filter: dict = None, VariableValues: dict = None):
+        """
+        https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
+
+        :param environment: Required. contains the env details for worksheet.
+        :param Scenario:
+        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+
+
+        """
+        super().__init__(environment, Scenario, workbook, SiteGroup, WorksheetNames, Filter, VariableValues)
+
+        # validations
+        if not isinstance(environment, Environment):
+            raise TypeError("The parameter environment type must be Environment.")
+        if not environment:
+            raise ValueError("The parameter environment must not be empty.")
+
+        # assign env
+        self._environment = environment
+
+        if Scenario:
+            self._scenario = dict(Name=Scenario['Name'], Scope=Scenario['Scope'])
+        else:
+            self._scenario = self.environment.scenarios[0]
+
+        self._workbook = dict(Name=workbook['Name'], Scope=workbook['Scope'])
+
+        if not SiteGroup:
+            self._site_group = 'All Sites'
+        else:
+            self._site_group = str(SiteGroup)
+
+        if not Filter:
+            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
+        else:
+            self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
+
+        self._variable_values = dict(VariableValues)
+
+        '''for name in WorksheetNames:
+            self.worksheets.append(
+                Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
+                          self._variable_values))'''
+        self.worksheets = [
+            Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
+                      self._variable_values) for name in WorksheetNames]
+
+    def refresh(self):
+        # populate all child worksheets with data
+        for ws in self.worksheets:
+            try:
+                ws.RefreshData_async()
+            except:
+                self._logger.error('something went wrong with ' + ws.name)
+                raise
 
 
 class Worksheet:
