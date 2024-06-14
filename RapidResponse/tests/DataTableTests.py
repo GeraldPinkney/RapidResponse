@@ -11,7 +11,7 @@ from RapidResponse.Err import DataError
 class DataTableTestCase(unittest.TestCase):
 
     # test various initialisations
-    def test_data_table_no_params(self):
+    def test_data_table_no_params_small(self):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env,'Mfg::Part')
@@ -294,7 +294,8 @@ class DataRowTestCase(unittest.TestCase):
         })
         #print(data)
         out = json.loads(payload)
-        print(out)
+        # print(out)
+        self.assertIsNotNone(out)
         #self.assertEqual(rec.Order_Type, 'DCActual')
 
 if __name__ == '__main__':

@@ -13,6 +13,7 @@ from RapidResponse.Table import Table, Column
 
 
 # todo add controls to not allow update of calculated fields or delete of rows from calculated table
+# todo add AbstractDataTable
 
 class DataTable(Table):
     """
@@ -359,16 +360,20 @@ class DataTable(Table):
 
     async def _main_get_export_results_async(self, data_range):
         tasks = []
-
+        # temporary fix due to not getting released
+        limit = asyncio.Semaphore(self.max_connections)
         for i in range(0, self._total_row_count - data_range, data_range):
-            tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
+            # tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
+            tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, limit)))
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
         remaining_records = self._total_row_count % data_range
         if remaining_records > 0:
             self._table_data.extend(
-                await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range, self.environment.limit))
+                await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range,
+                                                     limit))
+            #await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range, self.environment.limit))
         await self.client.aclose()
 
     def RefreshData_async(self, data_range: int = None):

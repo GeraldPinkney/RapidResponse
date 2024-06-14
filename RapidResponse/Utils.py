@@ -11,6 +11,8 @@ VALID_TABLE_TYPES = {TABLE_TYPE_INPUT, TABLE_TYPE_CALC}
 TABLE_TYPE = Literal['Input', 'Calculated']
 
 WORKBOOK_URL = "/integration/V1/data/workbook"
-BULK_URL = "/integration/V1/bulk"
 WORKSHEET_URL = "/integration/V1/data/worksheet"
+
+BULK_URL = "/integration/V1/bulk"
+
 SCRIPT_URL = "/integration/V1/script"

@@ -146,14 +146,14 @@ class WorksheetRowTestCase(unittest.TestCase):
         wsr = WorksheetRow(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'], ws)
         self.assertNotEqual(len(wsr), 0)
 
-    def test_wsr_init_get(self):
+    def test_wsr_init_get_index(self):
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
         workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
         scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
         Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
-        print(ws[0])
-        print(ws[0][0])
-        print(ws[0][5])
+        self.assertIsNotNone(ws[0])
+        self.assertIsNotNone(ws[0][0])
+        self.assertIsNotNone(ws[0][5])
         #self.assertNotEqual(len(wsr), 0)
 
     def test_wsr_dynamic_attr_access(self):

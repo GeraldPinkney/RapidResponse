@@ -18,6 +18,7 @@ class AbstractScript:
     :raises ValueError: If the environment or name parameters are invalid.
     :raises TypeError: If the type of the environment or name parameters are incorrect.
     '''
+    # todo take these from Utils.py
     SCOPE_PUBLIC = 'Public'
     SCOPE_PRIVATE = 'Private'
     VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}

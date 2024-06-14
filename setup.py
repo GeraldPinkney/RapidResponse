@@ -23,7 +23,8 @@ setup(
     packages=find_packages(),  # Required include=['RapidResponse']
     #package_dir={"": "."},
     python_requires=">=3.10, <4",
-    install_requires=["requests>=2.31.0", "httpx"],  #  "csv", "logging", "os". all the other stuff is from standard lib
+    install_requires=["requests>=2.31.0", "httpx", "setuptools>=70"],
+    # "csv", "logging", "os". all the other stuff is from standard lib
     include_package_data=True,
     package_data={  # Optional
         "": ["data/*.tab", "data/*.wwb", "docs/*.md"], # includes all tab files (i.e. those data model ones), and the wbb for data model bootstrapping

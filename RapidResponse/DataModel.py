@@ -39,18 +39,7 @@ class AbstractDataModel:
         self.Refresh()
 
     def Refresh(self):
-        # if we get a helper workbook, use that
-        if self._workbook:
-            self._load_from_workbook()
-        # otherwise, if we have the DM dir, then assume we load from that
-        elif self._data_model_dir:
-            self._load_from_directory()
-        # otherwise, if these are not provided, then load from package resources
-        else:
-            self._load_from_package_resources()
-
-        # then add fields to tables
-        self._add_fields_to_tables()
+        pass
 
     def _load_from_workbook(self):
         pass
@@ -175,6 +164,19 @@ class DataModel(AbstractDataModel):
 
         super().__init__(data_model_directory, url, headers, workbook)
 
+    def Refresh(self):
+        # if we get a helper workbook, use that
+        if self._workbook:
+            self._load_from_workbook()
+        # otherwise, if we have the DM dir, then assume we load from that
+        elif self._data_model_dir:
+            self._load_from_directory()
+        # otherwise, if these are not provided, then load from package resources
+        else:
+            self._load_from_package_resources()
+
+        # then add fields to tables
+        self._add_fields_to_tables()
 
     def _load_from_workbook(self):
         self._load_table_data_from_helper_wbk(self._url, self._headers, self._workbook)

@@ -11,6 +11,7 @@ import re
 from datetime import date, datetime
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
+from RapidResponse.Utils import SCOPE_PUBLIC, SCOPE_PRIVATE, VALID_SCOPES, WORKBOOK_URL, WORKSHEET_URL
 
 
 class AbstractWorkBook:
@@ -27,9 +28,10 @@ class AbstractWorkBook:
 
            """
     # WORKBOOK_URL = "/integration/V1/data/workbook"
-    SCOPE_PUBLIC = 'Public'
+    '''SCOPE_PUBLIC = 'Public'
     SCOPE_PRIVATE = 'Private'
-    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
+    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}'''
+    ALL_SITES = 'All Sites'
 
     def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
                  Filter: dict = None, VariableValues: dict = None):
@@ -73,7 +75,10 @@ class AbstractWorkBook:
 
     @filter.setter
     def filter(self, new_filter):
-        self._filter = dict(Name=new_filter['Name'], Scope=new_filter['Scope'])
+        s = new_filter['Scope'] if new_filter['Scope'] in VALID_SCOPES else SCOPE_PUBLIC
+        n = new_filter['Name']
+
+        self._filter = dict(Name=n, Scope=s)
         for ws in self.worksheets:
             ws.filter = self.filter
 
@@ -135,11 +140,6 @@ class Workbook(AbstractWorkBook):
 
 
         """
-    # WORKBOOK_URL = "/integration/V1/data/workbook"
-    SCOPE_PUBLIC = 'Public'
-    SCOPE_PRIVATE = 'Private'
-    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
-
     def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
                  Filter: dict = None, VariableValues: dict = None):
         """
@@ -174,21 +174,17 @@ class Workbook(AbstractWorkBook):
         self._workbook = dict(Name=workbook['Name'], Scope=workbook['Scope'])
 
         if not SiteGroup:
-            self._site_group = 'All Sites'
+            self._site_group = self.ALL_SITES
         else:
             self._site_group = str(SiteGroup)
 
         if not Filter:
-            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
+            self._filter = dict({"Name": "All Parts", "Scope": SCOPE_PUBLIC})
         else:
             self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
 
         self._variable_values = dict(VariableValues)
 
-        '''for name in WorksheetNames:
-            self.worksheets.append(
-                Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
-                          self._variable_values))'''
         self.worksheets = [
             Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
                       self._variable_values) for name in WorksheetNames]
@@ -218,9 +214,9 @@ class Worksheet:
     :param refresh: boolean refresh row data on initialisation
     """
     #WORKSHEET_URL = "/integration/V1/data/worksheet"
-    SCOPE_PUBLIC = 'Public'
+    '''SCOPE_PUBLIC = 'Public'
     SCOPE_PRIVATE = 'Private'
-    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
+    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}'''
 
     def __init__(self, environment, worksheet: str, workbook: dict, scenario=None, SiteGroup: str = None,
                  Filter: dict = None, VariableValues: dict = None, sync: bool = True, refresh: bool = True):
@@ -293,7 +289,7 @@ class Worksheet:
             self._site_group = str(SiteGroup)
 
         if not Filter:
-            self._filter = dict({"Name": "All Parts", "Scope": "Public"})
+            self._filter = dict({"Name": "All Parts", "Scope": SCOPE_PUBLIC})
         else:
             self._filter = Filter
         self._variable_values = VariableValues
@@ -302,7 +298,7 @@ class Worksheet:
         self.rows = list()
 
         self._queryID = None
-        self.total_row_count = None
+        self.total_row_count = 0
 
         if self._refresh:
             self.RefreshData()
