@@ -254,9 +254,13 @@ class DataModel(AbstractDataModel):
             else:
                 for ref in self._fields:
                     if ref['Table'] == f['referencedTable'] and f['Key'] == 'Y':  # and ref['Key'] == 'Y':
-                        cols.append(Column(f['Field'] + '.' + ref['Field'], ref['Type'], ref['Key'], ref['referencedTable']))
+                        cols.append(
+                            Column(f['Field'] + '.' + ref['Field'], ref['Type'], ref['Key'], ref['referencedTable'],
+                                   ref['Related Namespace']))
                     elif ref['Table'] == f['referencedTable'] and f['Key'] == 'N':
-                        cols.append(Column(f['Field'] + '.' + ref['Field'], ref['Type'], f['Key'], ref['referencedTable']))
+                        cols.append(
+                            Column(f['Field'] + '.' + ref['Field'], ref['Type'], f['Key'], ref['referencedTable'],
+                                   ref['Related Namespace']))
                     else:
                         pass
             if tab in self.tables:
@@ -438,7 +442,9 @@ class DataModel(AbstractDataModel):
                                      'Field': r['Values'][2],
                                      'Type': r['Values'][3],
                                      'Key': r['Values'][4],
-                                     'referencedTable': r['Values'][5]}
+                                     'referencedTable': r['Values'][5],
+                                     'referencedTableNamespace': r['Values'][7][0:r['Values'][7].find('::')]
+                                     }
                                     )
                 # self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
 

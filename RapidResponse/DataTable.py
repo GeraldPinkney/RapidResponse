@@ -30,7 +30,7 @@ class DataTable(Table):
     :raises TypeError: environment, tablename is not correctly typed
     :raises DataError: key column not in column list. will log failure but not fail.
     """
-    #BULK_URL = "/integration/V1/bulk/"
+
 
     def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None,
                  sync: bool = True, refresh: bool = True, scenario=None):
@@ -117,11 +117,11 @@ class DataTable(Table):
         else:
             return False
 
-    # todo equality operator
+
     def __len__(self):
         return len(self._table_data)
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # todo equality operator
         return False
 
     def __getitem__(self, position):
@@ -201,6 +201,20 @@ class DataTable(Table):
         if self._sync:
             self.add_rows(to_send)
 
+    def explode_reference_field(self, col: Column):
+        # input should look like Column(name='Order.Site', datatype='Reference', key='Y', referencedTable='Site', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None)
+        fully_qualified_fieldnames = list()
+        if col.datatype != 'Reference':
+            fully_qualified_fieldnames.append(col)
+            return fully_qualified_fieldnames
+        else:
+            tab = self.environment.get_table(col.referencedTable, col.referencedTableNamespace)
+            if tab._keyed == 'Y':
+                keys = [col.name + '.' + x for x in tab._key_fields]
+
+        # check each column passes the _validate_fully_qualified_field_name
+        return fully_qualified_fieldnames
+
     def set_columns(self, columns: list = None):
         # if columns = None, then set columns to all fields on table
         if columns is None:
@@ -213,6 +227,7 @@ class DataTable(Table):
                     self._logger.info(c.name + ' skipped as non key reference')
                 else:
                     self.columns.append(c)
+                    # todo if its a reference and key = N, then explode reference
 
         else:
             # check whether columns provided includes all key fields
@@ -235,6 +250,7 @@ class DataTable(Table):
                         self._logger.info(col.name + ' skipped due to type CompoundVector')
                         pass
                     elif col.datatype == 'Reference':
+                        # todo if its a reference, then explode reference
                         self.columns.append(col)
                     else:
                         self.columns.append(col)
@@ -570,7 +586,8 @@ class DataRow(UserList):
         if self._data_table.sync:
             self._data_table.add_row(self)
 
-    # todo equality operator def __eq__(self, other):
+    def __eq__(self, other):
+        return super().__eq__(other)  # and self._data_table == other._data_table
 
     def __getattr__(self, name):
         # method only called as fallback when no named attribute

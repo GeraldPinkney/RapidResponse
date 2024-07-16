@@ -1,12 +1,12 @@
 import json
 import logging
 from requests import Request, Session, HTTPError
-from http import HTTPStatus
 from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, ScriptError
+from RapidResponse.Utils import SCOPE_PUBLIC, VALID_SCOPES
 
 class AbstractScript:
-    '''
+    """
     A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
 
     :param environment: RapidResponse environment for which the script is scoped. Mandatory.
@@ -17,11 +17,7 @@ class AbstractScript:
     :raises RequestsError: If there is an error with the HTTP request.
     :raises ValueError: If the environment or name parameters are invalid.
     :raises TypeError: If the type of the environment or name parameters are incorrect.
-    '''
-    # todo take these from Utils.py
-    SCOPE_PUBLIC = 'Public'
-    SCOPE_PRIVATE = 'Private'
-    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}
+    """
 
     def __init__(self, environment: Environment, name: str, scope: str = None, parameters: dict = None):
         self._logger = logging.getLogger('RapidPy.spt')
@@ -30,16 +26,17 @@ class AbstractScript:
 
         self._environment = environment
         self._name = name
-        self._sanitized_name = self._sanitize_name(name)
-        self._scope = scope if scope in self.VALID_SCOPES else self.SCOPE_PUBLIC
-        self._parameters = parameters if dict(parameters) is not None else {}
+        self._sanitized_name = self._sanitize_input(name)
+        self._scope = scope if scope in VALID_SCOPES else SCOPE_PUBLIC
+        self._parameters = dict(parameters) if parameters is not None else {}
 
         self._response = {'console': '', 'value': '', 'error': ''}
         self._internal_status = 0  # 0=not run, -1=error, 1=success
 
         self._session = Session()
 
-    def _validate_parameters(self, environment, name):
+    @staticmethod
+    def _validate_parameters(environment, name):
         if not isinstance(environment, Environment):
             raise TypeError("The parameter environment type must be Environment.")
         if not environment:
@@ -50,8 +47,11 @@ class AbstractScript:
             raise ValueError("The parameter name must not be empty.")
 
     @staticmethod
-    def _sanitize_name(name):
-        return name.replace('&', '%26').replace(' ', '%20')
+    def _sanitize_input(to_sanitize: str):
+        if to_sanitize is None:
+            return ''
+        else:
+            return to_sanitize.replace('&', '%26').replace(' ', '%20')
 
     @property
     def environment(self):
@@ -64,7 +64,7 @@ class AbstractScript:
     @name.setter
     def name(self, new_name):
         self._name = new_name
-        self._sanitized_name = self._sanitize_name(new_name)
+        self._sanitized_name = self._sanitize_input(new_name)
 
     @property
     def scope(self):
@@ -72,7 +72,7 @@ class AbstractScript:
 
     @scope.setter
     def scope(self, new_scope: str) -> None:
-        if new_scope not in self.VALID_SCOPES:
+        if new_scope not in VALID_SCOPES:
             raise ValueError("The scope must be either 'Public' or 'Private'.")
         self._scope = new_scope
 
@@ -88,7 +88,7 @@ class AbstractScript:
     def status(self):
         if self._response['error']:
             error = self._response['error']
-            return f"Error: errorcode {error['Code']}\nmessage {error['Message']}\n\nSee log for details"
+            return f"Error: Code {error['Code']}\nMessage {error['Message']}\n\nSee log for details"
         if self._internal_status == 0:
             return "Not Run"
         if self._internal_status == 1:
@@ -136,7 +136,7 @@ class AbstractScript:
 
 
 class Script(AbstractScript):
-    '''
+    """
     A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
 
     :param environment: RapidResponse environment for which the script is scoped. Mandatory.
@@ -147,7 +147,7 @@ class Script(AbstractScript):
     :raises RequestsError: If there is an error with the HTTP request.
     :raises ValueError: If the environment or name parameters are invalid.
     :raises TypeError: If the type of the environment or name parameters are incorrect.
-    '''
+    """
 
     def __init__(self, environment: Environment, name: str, scope: str = None, parameters: dict = None):
         super().__init__(environment, name, scope, parameters)
@@ -155,13 +155,13 @@ class Script(AbstractScript):
         self._session.headers.update(self.environment.global_headers)
 
     def execute(self, sync=True):
-        '''
+        """
         Executes the script. Currently, supports only synchronous execution.
 
         :param sync: Boolean flag indicating synchronous execution. Default is True.
         :raises ScriptError: If there is an error in the script execution.
         :raises RequestsError: If there is an error with the HTTP request.
-        '''
+        """
         self._logger.debug(f"Executing script {self._name} with scope {self._scope} and parameters {self._parameters}")
         try:
             response_dict = self._send_execute_script(self._session)
@@ -178,6 +178,12 @@ class Script(AbstractScript):
             self.close()
 
     def _send_execute_script(self, session):
+        """
+
+        :rtype: JSON
+        :param session:
+        :raises RequestsError:
+        """
         self._reset_response_state()
 
         payload = json.dumps(self._parameters)
@@ -186,7 +192,7 @@ class Script(AbstractScript):
 
         req = Request('POST', url, headers=session.headers, data=payload)
         prepped = req.prepare()
-
+        response = None
         try:
             response = session.send(prepped)
             response.raise_for_status()  # Will raise HTTPError for bad responses
@@ -195,10 +201,20 @@ class Script(AbstractScript):
             raise RequestsError(response, f"HTTP error during POST to: {url}", payload) from e
 
     def _reset_response_state(self):
+        """
+        blanks the internally stored response values before execution
+
+        """
         self._internal_status = -1
         self._response.update({'console': '', 'value': '', 'error': ''})
 
-    def _process_execute_response(self, response_dict):
+    def _process_execute_response(self, response_dict: dict):
+        """
+        takes the response from execution and handles if there were issues raised in response, or if success
+
+        :param response_dict: expected elements are console, value, and if applicable, ScriptError
+        :raises ScriptError:
+        """
         self._response.update({
             'console': response_dict.get('Console'),
             'value': response_dict.get('Value')
