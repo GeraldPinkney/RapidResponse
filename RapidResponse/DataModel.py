@@ -443,7 +443,7 @@ class DataModel(AbstractDataModel):
                                      'Type': r['Values'][3],
                                      'Key': r['Values'][4],
                                      'referencedTable': r['Values'][5],
-                                     'referencedTableNamespace': r['Values'][7][0:r['Values'][7].find('::')]
+                                     'Related Namespace': r['Values'][7][0:r['Values'][7].find('::')]
                                      }
                                     )
                 # self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))

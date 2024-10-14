@@ -3,10 +3,16 @@ import unittest
 from unittest.mock import patch, AsyncMock
 from RapidResponse.DataTable import DataTable, DataRow, Column
 from RapidResponse.Environment import Environment
-from samples import sample_configuration
+from samples import sample_configuration, local_sample_bootstrap
 from RapidResponse.Err import DataError
+import time
 
 
+def print_recs(list_of_stuff):
+    print('new page')
+    time.sleep(10)
+    for i in list_of_stuff:
+        print(i)
 
 class DataTableTestCase(unittest.TestCase):
 
@@ -30,6 +36,57 @@ class DataTableTestCase(unittest.TestCase):
         # test
         self.assertEqual(part.scenario, {"Name": "Integration", "Scope": "Public"})
 
+    def test_data_table_explode_col_single_key(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"}, refresh=False)
+        c = Column(name='Order.Site', datatype='Reference', key='Y', referencedTable='Site',
+                   referencedTableNamespace='Core', identification_fields=None, correspondingField=None,
+                   correspondingFieldNamespace=None)
+        # test
+        print(part.explode_reference_field(c))
+        self.assertEqual(part.explode_reference_field(c), [
+            Column(name='Order.Site.Value', datatype='String', key='Y', referencedTable=None,
+                   referencedTableNamespace=None, identification_fields=None, correspondingField=None,
+                   correspondingFieldNamespace=None)])
+
+    def test_data_table_explode_col_multi_key(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::ForecastDetail', scenario={"Name": "Integration", "Scope": "Public"}, refresh=False)
+        c = Column(name='Header', datatype='Reference', key='Y', referencedTable='HistoricalDemandHeader',
+                   referencedTableNamespace='Mfg', identification_fields=None, correspondingField=None,
+                   correspondingFieldNamespace=None)
+
+        # test
+        response = part.explode_reference_field(c)
+        print(response)
+        self.assertEqual([Column(name='Header.Category.Value', datatype='String', key='Y', referencedTable='',
+                                 referencedTableNamespace='', identification_fields=None, correspondingField=None,
+                                 correspondingFieldNamespace=None),
+                          Column(name='Header.PartCustomer.Customer.Id', datatype='String', key='Y',
+                                 referencedTable=None, referencedTableNamespace=None, identification_fields=None,
+                                 correspondingField=None, correspondingFieldNamespace=None),
+                          Column(name='Header.PartCustomer.Customer.Site.Value', datatype='String', key='Y',
+                                 referencedTable='', referencedTableNamespace='', identification_fields=None,
+                                 correspondingField=None, correspondingFieldNamespace=None),
+                          Column(name='Header.PartCustomer.Part.Name', datatype='String', key='Y', referencedTable=None,
+                                 referencedTableNamespace=None, identification_fields=None, correspondingField=None,
+                                 correspondingFieldNamespace=None),
+                          Column(name='Header.PartCustomer.Part.Site.Value', datatype='String', key='Y',
+                                 referencedTable='', referencedTableNamespace='', identification_fields=None,
+                                 correspondingField=None, correspondingFieldNamespace=None)], response)
+
+    def test_data_table_explode_col_not_key(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"}, refresh=False)
+        c = Column(name='Order.Site', datatype='Reference', key='N', referencedTable=None,
+                   referencedTableNamespace=None, identification_fields=None, correspondingField=None,
+                   correspondingFieldNamespace=None)
+        # test
+        part.explode_reference_field(c)
+
     def test_data_table_without_scenario(self):
         # setup
         env = Environment(sample_configuration)
@@ -45,6 +102,44 @@ class DataTableTestCase(unittest.TestCase):
 
         # test
         self.assertEqual(len(part), 0)
+
+    def test_data_table_no_refresh_async(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part', refresh=False)
+
+        # test
+        self.assertEqual(len(part), 0)
+        part.RefreshData_async()
+        self.assertNotEqual(len(part), 0)
+
+    def test_data_table_refresh_async(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part')
+
+        # test
+        self.assertNotEqual(len(part), 0)
+        print(part[0:10])
+
+    def test_data_table_refresh_async_bootstrap(self):
+        # setup
+        env = Environment(local_sample_bootstrap)
+        part = DataTable(env, 'Mfg::Part')
+
+        # test
+        self.assertNotEqual(len(part), 0)
+
+    def test_data_table_refresh_with_funct(self):
+        # setup
+
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part', refresh=False)
+
+        # test
+        self.assertEqual(len(part), 0)
+        part.RefreshData(data_range=1000, action_on_page=print_recs)
+        self.assertNotEqual(len(part), 0)
 
     def test_data_table_no_refresh_properties(self):
         # setup
