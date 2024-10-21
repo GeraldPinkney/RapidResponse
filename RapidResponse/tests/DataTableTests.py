@@ -3,7 +3,8 @@ import unittest
 from unittest.mock import patch, AsyncMock
 from RapidResponse.DataTable import DataTable, DataRow, Column
 from RapidResponse.Environment import Environment
-from samples import sample_configuration, local_sample_bootstrap
+# from samples import sample_configuration, local_sample_bootstrap
+from RapidResponse.tests.resources.samples import sample_configuration, local_sample_bootstrap
 from RapidResponse.Err import DataError
 import time
 
@@ -81,7 +82,7 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env, 'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"}, refresh=False)
-        c = Column(name='Order.Site', datatype='Reference', key='N', referencedTable=None,
+        c = Column(name='Order.Site', datatype='Reference', key='N', referencedTable='',
                    referencedTableNamespace=None, identification_fields=None, correspondingField=None,
                    correspondingFieldNamespace=None)
         # test

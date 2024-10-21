@@ -420,7 +420,9 @@ class DataTable(Table):
                 await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range,
                                                      limit))
             #await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range, self.environment.limit))
-        #await self.client.aclose()
+
+        # can I close client here?
+        await self.client.aclose()
 
     def RefreshData_async(self, data_range: int = None):
         # calc or assign the pagesize
@@ -438,6 +440,7 @@ class DataTable(Table):
         s.close()
         asyncio.run(self._main_get_export_results_async(calc_data_range))
         self._exportID = None
+
 
 
     def _calc_optimal_pagesize(self, PageSizeSuggested=500_000):
