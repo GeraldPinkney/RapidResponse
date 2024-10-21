@@ -201,19 +201,31 @@ class DataTable(Table):
         if self._sync:
             self.add_rows(to_send)
 
-    def explode_reference_field(self, col: Column):
-        # input should look like Column(name='Order.Site', datatype='Reference', key='Y', referencedTable='Site', referencedTableNamespace=None, identification_fields=None, correspondingField=None, correspondingFieldNamespace=None)
-        fully_qualified_fieldnames = list()
+    def explode_reference_field(self, col: Column, running_list_of_cols: list = None):
+        # input should look like Column(name='Header.Category', datatype='Reference', key='Y', referencedTable='HistoricalDemandHeader', referencedTableNamespace='Mfg', identification_fields=None, correspondingField=None, correspondingFieldNamespace=None)
+        if running_list_of_cols is None:
+            running_list_of_cols = list()
+        # basecase, if its not a reference field just return the column
         if col.datatype != 'Reference':
-            fully_qualified_fieldnames.append(col)
-            return fully_qualified_fieldnames
+            running_list_of_cols.append(col)
+            return running_list_of_cols
+        # get the keys of the table that the column belongs to, then add each of those values to the response
+
         else:
             tab = self.environment.get_table(col.referencedTable, col.referencedTableNamespace)
             if tab._keyed == 'Y':
-                keys = [col.name + '.' + x for x in tab._key_fields]
+                for c in tab._table_fields:
+                    if c.key == 'Y':
+                        key_col = Column(name=col.name + '.' + c.name, datatype=c.datatype, key=c.key,
+                                         referencedTable=c.referencedTable,
+                                         referencedTableNamespace=c.referencedTableNamespace,
+                                         identification_fields=c.identification_fields,
+                                         correspondingField=c.correspondingField,
+                                         correspondingFieldNamespace=c.correspondingFieldNamespace)
+                        self.explode_reference_field(key_col, running_list_of_cols)
 
-        # check each column passes the _validate_fully_qualified_field_name
-        return fully_qualified_fieldnames
+        # print(running_list_of_cols)
+        return running_list_of_cols
 
     def set_columns(self, columns: list = None):
         # if columns = None, then set columns to all fields on table
@@ -225,6 +237,14 @@ class DataTable(Table):
                     self._logger.info(c.name + ' skipped as non key reference')
                 elif c.datatype == 'Reference' and c.key == 'N':
                     self._logger.info(c.name + ' skipped as non key reference')
+                elif c.datatype == 'Reference' and c.key == 'Y':
+                    cols = self.explode_reference_field(c)
+                    if len(cols) > 1:
+                        self.columns.extend(cols)
+                    elif len(cols) == 1:
+                        self.columns.append(cols[0])
+                    else:
+                        pass
                 else:
                     self.columns.append(c)
                     # todo if its a reference and key = N, then explode reference
@@ -339,8 +359,13 @@ class DataTable(Table):
         rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
         return rows
 
-    def RefreshData(self, data_range: int = 100_000):
-        # check tablename is set, check fields are set
+    def RefreshData(self, data_range: int = 100_000, action_on_page=None):
+        """
+        Function that sequentially reads pages of response data from table read. will apply the action_on_page function to the returned data
+        :param data_range int: requested page size. note, this is not the page size you'll get, but is adjusted by pagesizefactor
+        :param action_on_page function: function passed to RefreshData that is applied to each returned page
+        :return: None
+        """
 
         s = self._session
         self.environment.refresh_auth()
@@ -350,7 +375,12 @@ class DataTable(Table):
         self._table_data.clear()
         calc_data_range = self._calc_optimal_pagesize(data_range)
         for i in range(0, self._total_row_count, calc_data_range):
-            self._table_data.extend(self._get_export_results(s, i, calc_data_range))
+            page_response = self._get_export_results(s, i, calc_data_range)
+            self._table_data.extend(page_response)
+            if action_on_page is None:
+                pass
+            else:
+                action_on_page(page_response)
         self._exportID = None
         s.close()
 
@@ -390,7 +420,7 @@ class DataTable(Table):
                 await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range,
                                                      limit))
             #await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range, self.environment.limit))
-        await self.client.aclose()
+        #await self.client.aclose()
 
     def RefreshData_async(self, data_range: int = None):
         # calc or assign the pagesize
@@ -398,7 +428,7 @@ class DataTable(Table):
         if data_range is None:
             calc_data_range = self._calc_optimal_pagesize(500_000)
         else:
-            calc_data_range = data_range
+            calc_data_range = self._calc_optimal_pagesize(data_range)
         #prepare for data refresh
         self._table_data.clear()
         self.environment.refresh_auth()
@@ -411,30 +441,38 @@ class DataTable(Table):
 
 
     def _calc_optimal_pagesize(self, PageSizeSuggested=500_000):
+        '''
+
+        :param PageSizeSuggested: requsted pagesize that is mutliplied by the pagesizefactor to get the action pagesize
+        :return: PageSize
+        '''
         # todo account for rows returned
         # todo cache response to be able to use stats on string sizes
-        # starting point is 100,000
         pageSizeFactor = 1000
-        for c in self.columns:
-            if c.datatype == 'String':
-                pageSizeFactor = pageSizeFactor - 90
-            elif c.datatype == 'DateTime':
-                pageSizeFactor = pageSizeFactor - 75
-            elif c.datatype == 'Date' or c.datatype == 'Time':
-                pageSizeFactor = pageSizeFactor - 50
-            elif c.datatype == 'Money' or c.datatype == 'Quantity' or c.datatype == 'Integer':
-                pageSizeFactor = pageSizeFactor - 45
-            elif c.datatype == 'Enum':
-                pageSizeFactor = pageSizeFactor - 5
-            else:
-                self._logger.warning(f"datatype: {c.datatype} not expected. reduce factor by 50 & find out what this is")
-                pageSizeFactor = pageSizeFactor - 50
-
-        if pageSizeFactor < 1:
-            PageSize = 5000
+        if PageSizeSuggested < 5000:
+            PageSize = PageSizeSuggested
         else:
-            pageSizeFactor = pageSizeFactor / 1000
-            PageSize = PageSizeSuggested * pageSizeFactor
+            for c in self.columns:
+                if c.datatype == 'String':
+                    pageSizeFactor = pageSizeFactor - 90
+                elif c.datatype == 'DateTime':
+                    pageSizeFactor = pageSizeFactor - 75
+                elif c.datatype == 'Date' or c.datatype == 'Time':
+                    pageSizeFactor = pageSizeFactor - 50
+                elif c.datatype == 'Money' or c.datatype == 'Quantity' or c.datatype == 'Integer':
+                    pageSizeFactor = pageSizeFactor - 45
+                elif c.datatype == 'Enum':
+                    pageSizeFactor = pageSizeFactor - 5
+                else:
+                    self._logger.warning(
+                        f"datatype: {c.datatype} not expected. reduce factor by 50 & find out what this is")
+                    pageSizeFactor = pageSizeFactor - 50
+
+            if pageSizeFactor < 1:
+                PageSize = 5000
+            else:
+                pageSizeFactor = pageSizeFactor / 1000
+                PageSize = PageSizeSuggested * pageSizeFactor
         self._logger.info(f'pageSizeFactor: {pageSizeFactor}, PageSize: {PageSize}')
         return round(PageSize)
 

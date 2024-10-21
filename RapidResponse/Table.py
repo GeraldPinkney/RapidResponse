@@ -1,5 +1,5 @@
 # Table.py
-from typing import Literal, NamedTuple, Dict
+from typing import Literal, NamedTuple, Dict, Union
 import logging
 from RapidResponse.Err import DataError
 
@@ -15,11 +15,11 @@ class Column(NamedTuple):
     key: str
     #DATA_TYPE = Literal['String', 'Boolean', 'Date', 'DateTime', 'Integer', 'Money', 'Note', 'Quantity', 'QuantitySingle', 'Reference', 'Time', 'Vector Set']
     # if datatype is Reference, then
-    referencedTable: str = None
-    referencedTableNamespace: str = None
-    identification_fields: str = None
-    correspondingField: str = None
-    correspondingFieldNamespace: str = None
+    referencedTable: Union[str, None] = None
+    referencedTableNamespace: Union[str, None] = None
+    identification_fields: Union[str, None] = None
+    correspondingField: Union[str, None] = None
+    correspondingFieldNamespace: Union[str, None] = None
 
     def __eq__(self, other):
         if other.name == self.name:
