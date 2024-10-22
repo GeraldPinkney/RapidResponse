@@ -3,6 +3,7 @@ import json
 
 import requests
 
+import RapidResponse
 from RapidResponse.DataTable import DataTable
 from RapidResponse.Environment import Environment
 from samples import sample_configuration
@@ -10,6 +11,7 @@ from RapidResponse.Table import Table, Column
 from RapidResponse.Worksheet import Workbook
 
 if __name__ == '__main__':
+    print(RapidResponse.__version__)
     env = Environment(sample_configuration)
 
     print(env.get_table('Part', 'Mfg'))
@@ -166,3 +168,4 @@ def export_pkg():
     file = open("test_20240612.kpk", "wb")
     file.write(response.content)
     file.close() # yes, I could have done this with a context manager... whatevs
+
