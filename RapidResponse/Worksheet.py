@@ -131,7 +131,7 @@ class Workbook(AbstractWorkBook):
     """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
         :param environment: Required. contains the env details for worksheet.\n
-        :param Scenario: Optional \n
+        :param Scenario: Optional dict {"Name": "Enterprise Data", "Scope": "Public"}\n
         :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
         :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
         :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
@@ -146,7 +146,7 @@ class Workbook(AbstractWorkBook):
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
         :param environment: Required. contains the env details for worksheet.
-        :param Scenario:
+        :param Scenario: dict {"Name": "Enterprise Data", "Scope": "Public"}
         :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
         :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
         :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
@@ -301,7 +301,8 @@ class Worksheet:
         self.total_row_count = 0
 
         if self._refresh:
-            self.RefreshData()
+            # self.RefreshData()
+            self.RefreshData_async()
 
     @property
     def name(self):
@@ -392,7 +393,7 @@ class Worksheet:
 
     def __str__(self):
         # return self and first 5 rows
-        response = f'Worksheet: {self.name!r}, Scope: {self.parent_workbook_scope!r} '
+        response = f'Worksheet: {self.name!r}, Scope: {self.parent_workbook_scope!r} \n'
         if len(self.rows) > 5:
             for i in range(0, 5):
                 response = response + 'rownum: ' + str(i) + ' ' + str(self.rows[i]) + '\n'
