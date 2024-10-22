@@ -82,11 +82,15 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env, 'Mfg::Part', scenario={"Name": "Integration", "Scope": "Public"}, refresh=False)
-        c = Column(name='Order.Site', datatype='Reference', key='N', referencedTable='',
-                   referencedTableNamespace=None, identification_fields=None, correspondingField=None,
+        c = Column(name='Order.Site', datatype='Reference', key='N', referencedTable='Site',
+                   referencedTableNamespace='Core', identification_fields=None, correspondingField=None,
                    correspondingFieldNamespace=None)
         # test
-        part.explode_reference_field(c)
+        resp = part.explode_reference_field(c)[0]
+        # print(part.explode_reference_field(c))
+        self.assertEqual(Column(name='Order.Site.Value', datatype='String', key='Y', referencedTable=None,
+                                referencedTableNamespace=None, identification_fields=None, correspondingField=None,
+                                correspondingFieldNamespace=None), resp)
 
     def test_data_table_without_scenario(self):
         # setup

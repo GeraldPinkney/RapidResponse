@@ -138,7 +138,7 @@ class DataTable(Table):
     def __repr__(self):
 
         return f'DataTable(environment={self.environment!r},name={self._table_namespace!r}::{self._table_name!r},' \
-               f'columns={[col.name for col in self.columns]!r}, filter={self._filter!r}, sync={self._sync!r}) '
+               f'columns={[col.name for col in self.columns]!r}, filter={self._filter!r}, sync={self.sync!r}) '
 
     def __str__(self):
         # return self and first 5 rows
@@ -154,7 +154,7 @@ class DataTable(Table):
             self._table_data[key] = DataRow(value, self)
         else:
             self._table_data[key] = value
-        if self._sync:
+        if self.sync:
             self.environment.refresh_auth()
             self._create_upload(self._table_data[key])
             self._complete_upload()
@@ -162,7 +162,7 @@ class DataTable(Table):
 
     def __delitem__(self, key):
 
-        if self._sync:
+        if self.sync:
             # delete from RR
             self._create_deletion(self._table_data[key])
             self._complete_deletion()
@@ -184,7 +184,7 @@ class DataTable(Table):
         # adds a single new item at the end of the underlying list
         if not isinstance(values, DataRow):
             values = DataRow(values, self)
-        if self._sync:
+        if self.sync:
             self.add_row(values)
 
         self._table_data.append(values)
@@ -198,7 +198,7 @@ class DataTable(Table):
             else:
                 to_send.append(DataRow(rec, self))
         self._table_data.extend(to_send)
-        if self._sync:
+        if self.sync:
             self.add_rows(to_send)
 
     def explode_reference_field(self, col: Column, running_list_of_cols: list = None):
@@ -362,8 +362,8 @@ class DataTable(Table):
     def RefreshData(self, data_range: int = 100_000, action_on_page=None):
         """
         Function that sequentially reads pages of response data from table read. will apply the action_on_page function to the returned data
-        :param data_range int: requested page size. note, this is not the page size you'll get, but is adjusted by pagesizefactor
-        :param action_on_page function: function passed to RefreshData that is applied to each returned page
+        :param data_range: integer, requested page size. note, this is not the page size you'll get, but is adjusted by pagesizefactor
+        :param action_on_page: function, function passed to RefreshData that is applied to each returned page
         :return: None
         """
 
@@ -383,6 +383,52 @@ class DataTable(Table):
                 action_on_page(page_response)
         self._exportID = None
         s.close()
+
+    async def _create_export_async(self, client, limit: asyncio.Semaphore = None):
+        # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
+        url = self.environment.bulk_export_url
+
+        if self._filter:
+            query_filter = self.filter
+        else:
+            query_filter = ''
+        local_query_fields = [f.name for f in self.columns]
+
+        table = {'Namespace': self._table_namespace,
+                 'Name': self._table_name}
+
+        payload = json.dumps({
+            "Scenario": self.scenario,
+            "Table": table,
+            "Fields": local_query_fields,
+            "Filter": query_filter
+        })
+
+        try:
+            async with limit:
+                response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
+        except:
+            raise RequestsError(response, f"error during GET to: {url}", payload)
+        else:
+            response_dict = json.loads(response.text)
+            self._exportID = response_dict["ExportId"]
+            self._total_row_count = response_dict["TotalRows"]
+        '''if limit:
+            async with limit:
+                response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
+                if limit.locked():
+                    self._logger.info("Concurrency limit reached, waiting ...")
+                    await asyncio.sleep(1)
+        else:
+            response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
+        # check valid response
+        if response.status_code == 200:
+            response_dict = json.loads(response.text)
+        else:
+            raise RequestsError(response, f"error during GET to: {url}", payload)
+        
+        self._exportID = response_dict["ExportId"]
+        self._total_row_count = response_dict["TotalRows"]'''
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000, limit: asyncio.Semaphore = None):
         url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
@@ -408,6 +454,10 @@ class DataTable(Table):
         tasks = []
         # temporary fix due to not getting released
         limit = asyncio.Semaphore(self.max_connections)
+
+        # set exportID and totrowcount
+        await self._create_export_async(self.client, limit)
+
         for i in range(0, self._total_row_count - data_range, data_range):
             # tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
             tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, limit)))
@@ -435,9 +485,9 @@ class DataTable(Table):
         self._table_data.clear()
         self.environment.refresh_auth()
         # initialise_for_extract query
-        s = requests.Session()
-        self._create_export(s)
-        s.close()
+        # s = requests.Session()
+        # self._create_export(s)
+        # s.close()
         asyncio.run(self._main_get_export_results_async(calc_data_range))
         self._exportID = None
 
