@@ -150,7 +150,6 @@ class Environment(AbstractEnvironment):
         except KeyError:
             raise ValueError('auth_type not provided in configuration dict')
 
-        # todo refactor to make private and do property decorator
         if self.auth_type == 'basic':
             self.authentication['username'] = configuration['username']
             self.authentication['password'] = configuration['password']

@@ -90,7 +90,6 @@ class Table:
 
         if field in self._table_fields:
             return 0
-            # todo come back to this and work out why on earth we are trying to assign fields multiple times.
             # print('The field is already assigned to table')
         else:
             self._table_fields.append(field)
