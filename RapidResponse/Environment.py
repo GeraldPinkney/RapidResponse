@@ -65,11 +65,16 @@ class AbstractEnvironment:
         self.close()
 
     def set_scenarios(self, *args):
+        """
 
+        :param args:
+        :return:
+        """
         scenarios = []
         # scenarios.append({"Name": "Enterprise Data", "Scope": "Public"})
         for arg in args:
-            scenarios.append(arg)
+            s = dict(Name=arg['Name'], Scope=arg['Scope'])
+            scenarios.append(s)
         return scenarios
 
     def refresh_auth(self):

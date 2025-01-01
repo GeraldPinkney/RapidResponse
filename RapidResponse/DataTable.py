@@ -497,7 +497,7 @@ class DataTable(Table):
         '''
 
         :param PageSizeSuggested: requsted pagesize that is mutliplied by the pagesizefactor to get the action pagesize
-        :return: PageSize
+        :return PageSize: the optimal pagesize based on number of cols and datatypes
         '''
         # todo account for rows returned
         # todo cache response to be able to use stats on string sizes
