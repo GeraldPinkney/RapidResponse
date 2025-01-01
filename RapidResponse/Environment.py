@@ -8,6 +8,7 @@ import httpx
 import requests
 from RapidResponse.DataModel import DataModel
 from RapidResponse.Err import SetupError, RequestsError
+from RapidResponse.Utils import WORKBOOK_URL, BULK_URL, WORKSHEET_URL, SCRIPT_URL, ENTERPRISE_DATA_SCENARIO
 
 class AbstractEnvironment:
     """
@@ -19,6 +20,7 @@ class AbstractEnvironment:
     BULK_URL = "/integration/V1/bulk"
     WORKSHEET_URL = "/integration/V1/data/worksheet"
     SCRIPT_URL = "/integration/V1/script"
+    ENTERPRISE_DATA_SCENARIO = {"Name": "Enterprise Data", "Scope": "Public"}
 
     # SCOPE_TYPE = Literal['Public', 'Private']
 
@@ -94,31 +96,31 @@ class AbstractEnvironment:
 
     @property
     def bulk_export_url(self):
-        return self.base_url + self.BULK_URL + '/export'
+        return self.base_url + BULK_URL + '/export'
 
     @property
     def bulk_upload_url(self):
-        return self.base_url + self.BULK_URL + '/upload'
+        return self.base_url + BULK_URL + '/upload'
 
     @property
     def bulk_remove_url(self):
-        return self.base_url + self.BULK_URL + '/remove'
+        return self.base_url + BULK_URL + '/remove'
 
     @property
     def workbook_url(self):
-        return self.base_url + self.WORKBOOK_URL
+        return self.base_url + WORKBOOK_URL
 
     @property
-    def workbook_import(self):
+    def workbook_import_url(self):
         return self.workbook_url + '/import'
 
     @property
     def worksheet_url(self):
-        return self.base_url + self.WORKSHEET_URL
+        return self.base_url + WORKSHEET_URL
 
     @property
     def script_url(self):
-        return self.base_url + self.SCRIPT_URL
+        return self.base_url + SCRIPT_URL
 
     @property
     def max_connections(self):
@@ -139,7 +141,7 @@ class Environment(AbstractEnvironment):
         # Data Model
         self._configure_data_model(configuration)
         # Scenarios
-        self.scenarios = self.set_scenarios({"Name": "Enterprise Data", "Scope": "Public"})
+        self.scenarios = self.set_scenarios(ENTERPRISE_DATA_SCENARIO)
 
 
     def _configure_url(self, configuration):
@@ -252,7 +254,7 @@ class Environment(AbstractEnvironment):
         take as input the table name and return a Table object from the data dictionary.
         :param table: table name, for example Part
         :param namespace: table namespace, for example Mfg
-        :return: Table
+        :return Table:
         :raises TypeError:
         :raises ValueError:
         """

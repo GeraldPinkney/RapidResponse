@@ -16,3 +16,5 @@ WORKSHEET_URL = "/integration/V1/data/worksheet"
 BULK_URL = "/integration/V1/bulk"
 
 SCRIPT_URL = "/integration/V1/script"
+
+ENTERPRISE_DATA_SCENARIO = {"Name": "Enterprise Data", "Scope": "Public"}
