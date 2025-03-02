@@ -172,16 +172,29 @@ class DataTable(Table):
         self._total_row_count -= 1
 
     def map(self, action):
-        # yields new items that result from applying an action() callable to each item in the underlying list
+        """
+        yields new items that result from applying an action() callable to each item in the underlying list
+        :param action:
+        :return:
+        """
+        #
         return type(self)(action(item) for item in self._table_data)
 
     def for_each(self, func):
-        # calls func() on every item in the underlying list to generate some side effect.
+        """
+        calls func() on every item in the underlying list to generate some side effect.
+        :param func:
+        """
+        #
         for item in self._table_data:
             func(item)
 
     def append(self, values):
-        # adds a single new item at the end of the underlying list
+        """
+        adds a single new item at the end of the underlying list
+        :param values:
+        """
+        #
         if not isinstance(values, DataRow):
             values = DataRow(values, self)
         if self.sync:
@@ -471,7 +484,7 @@ class DataTable(Table):
                                                      limit))
             #await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range, self.environment.limit))
 
-        # can I close client here?
+        # can I close client here? No. Need to shift this to environment level for client and limit
         await self.client.aclose()
 
     def RefreshData_async(self, data_range: int = None):
