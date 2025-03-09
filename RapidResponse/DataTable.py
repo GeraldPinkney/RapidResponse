@@ -215,7 +215,13 @@ class DataTable(Table):
             self.add_rows(to_send)
 
     def explode_reference_field(self, col: Column, running_list_of_cols: list = None):
-        # input should look like Column(name='Header.Category', datatype='Reference', key='Y', referencedTable='HistoricalDemandHeader', referencedTableNamespace='Mfg', identification_fields=None, correspondingField=None, correspondingFieldNamespace=None)
+        """
+
+        :param col: input should look like Column(name='Header.Category', datatype='Reference', key='Y', referencedTable='HistoricalDemandHeader', referencedTableNamespace='Mfg', identification_fields=None, correspondingField=None, correspondingFieldNamespace=None)
+        :param running_list_of_cols: list containing cols (added to)
+        :return: running_list_of_cols
+        """
+        #
         if running_list_of_cols is None:
             running_list_of_cols = list()
         # basecase, if its not a reference field just return the column
@@ -241,7 +247,79 @@ class DataTable(Table):
         return running_list_of_cols
 
     def set_columns(self, columns: list = None):
-        # if columns = None, then set columns to all fields on table
+        """
+        if columns = None, then set columns to all fields on table and explode out any columns that are references and key
+        if list of columns is provided, add any key cols if they are missing (done via the DataError), check the field is valid,
+        :param columns: nullable list of columns to initialise table with
+        :raises DataError: if keys are missing from table, or column is not valid
+        """
+
+        if columns is None:
+            for c in self._table_fields:
+                if c.datatype == 'CompoundVector':
+                    self._logger.info(c.name + ' skipped due to type CompoundVector')
+                elif '.' in c.name and c.key == 'N':
+                    self._logger.info(c.name + ' skipped as non key reference')
+                elif c.datatype == 'Reference' and c.key == 'N':
+                    self._logger.info(c.name + ' skipped as non key reference')
+                elif c.datatype == 'Reference' and c.key == 'Y':
+                    cols = self.explode_reference_field(c)
+                    if len(cols) > 1:
+                        self.columns.extend(cols)
+                    elif len(cols) == 1:
+                        self.columns.append(cols[0])
+                    else:
+                        pass
+                else:
+                    self.columns.append(c)
+                    # todo if its a reference and key = N, then explode reference
+
+        else:
+            # check whether columns provided includes all key fields
+            for k in self._key_fields:
+                if k not in columns:
+                    raise DataError(k, 'key column not in column list: ' + str(k))
+
+            # add all valid fields to DataTable Cols
+            for c in columns:
+                col = None
+                try:
+                    col = self.get_field(c)
+                except DataError:
+                    if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
+                        col = Column(c, 'String', 'N', None)
+                    else:
+                        self._logger.warning(col.name + ' incorrect field name')
+                finally:
+                    if col.datatype == 'CompoundVector':
+                        self._logger.info(col.name + ' skipped due to type CompoundVector')
+                        pass
+                    elif col.datatype == 'Reference' and col.key == 'Y':
+                        cols = self.explode_reference_field(col)
+                        if len(cols) > 1:
+                            # todo check if col.name is already in self.columns
+                            for exploded_col in cols:
+                                if exploded_col not in self.columns:
+                                    self.columns.append(exploded_col)
+                            # self.columns.extend(cols)
+                        elif len(cols) == 1:
+                            # todo check if col.name is already in self.columns
+                            if cols[0] not in self.columns:
+                                self.columns.append(cols[0])
+                            # self.columns.append(cols[0])
+                    elif col.datatype == 'Reference' and col.key == 'N':
+                        self.columns.append(col)
+                    else:
+                        self.columns.append(col)
+
+    def set_columns_old(self, columns: list = None):
+        """
+        if columns = None, then set columns to all fields on table and explode out any columns that are references and key
+        if list of columns is provided, add any key cols if they are missing (done via the DataError), check the field is valid,
+        :param columns: nullable list of columns to initialise table with
+        :raises DataError: if keys are missing from table, or column is not valid
+        """
+
         if columns is None:
             for c in self._table_fields:
                 if c.datatype == 'CompoundVector':

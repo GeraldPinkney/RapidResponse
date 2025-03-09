@@ -54,13 +54,14 @@ class DataTableTestCase(unittest.TestCase):
     def test_data_table_explode_col_multi_key(self):
         # setup
         env = Environment(sample_configuration)
-        part = DataTable(env, 'Mfg::ForecastDetail', scenario={"Name": "Integration", "Scope": "Public"}, refresh=False)
+        ForecastDetail = DataTable(env, 'Mfg::ForecastDetail', scenario={"Name": "Integration", "Scope": "Public"},
+                                   refresh=False)
         c = Column(name='Header', datatype='Reference', key='Y', referencedTable='HistoricalDemandHeader',
                    referencedTableNamespace='Mfg', identification_fields=None, correspondingField=None,
                    correspondingFieldNamespace=None)
 
         # test
-        response = part.explode_reference_field(c)
+        response = ForecastDetail.explode_reference_field(c)
         print(response)
         self.assertEqual([Column(name='Header.Category.Value', datatype='String', key='Y', referencedTable='',
                                  referencedTableNamespace='', identification_fields=None, correspondingField=None,

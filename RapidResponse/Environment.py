@@ -16,11 +16,11 @@ class AbstractEnvironment:
         :param configuration: dictionary containing necessary information for initialising environment
         :raises SetupError: Data Model directory not valid
         """
-    WORKBOOK_URL = "/integration/V1/data/workbook"
+    """WORKBOOK_URL = "/integration/V1/data/workbook"
     BULK_URL = "/integration/V1/bulk"
     WORKSHEET_URL = "/integration/V1/data/worksheet"
     SCRIPT_URL = "/integration/V1/script"
-    ENTERPRISE_DATA_SCENARIO = {"Name": "Enterprise Data", "Scope": "Public"}
+    ENTERPRISE_DATA_SCENARIO = {"Name": "Enterprise Data", "Scope": "Public"}"""
 
     # SCOPE_TYPE = Literal['Public', 'Private']
 
@@ -40,6 +40,9 @@ class AbstractEnvironment:
         self.scenarios = None
         self._maxconnections = None
         self._session = None
+
+        self.client = None
+
 
         if not isinstance(configuration, dict):
             raise TypeError('The parameter configuration type must be dict')
@@ -123,6 +126,10 @@ class AbstractEnvironment:
         return self.base_url + SCRIPT_URL
 
     @property
+    def oauth2_url(self):
+        return self._base_url + "/oauth2/token"
+
+    @property
     def max_connections(self):
         return self._maxconnections
 
@@ -131,6 +138,9 @@ class Environment(AbstractEnvironment):
         super().__init__(configuration)
         self._session = requests.Session()
         self._maxconnections = 8
+
+        timeout = httpx.Timeout(10.0, connect=60.0)
+        self.client = httpx.AsyncClient(timeout=timeout)
         self.limit = asyncio.Semaphore(self.max_connections)
 
         # url
@@ -191,6 +201,11 @@ class Environment(AbstractEnvironment):
     def refresh_auth(self):
         auth = self._getAuth(self.auth_type)
         self.global_headers['Authorization'] = str(auth)
+        asyncio.run(self.refresh_auth_async())
+
+    async def refresh_auth_async(self):
+        auth = await self._getAuth_async(self.auth_type)
+        self.global_headers['Authorization'] = str(auth)
 
     def _getOauth2(self):
         """return the access token from RR instance based on clientID and client secret"""
@@ -199,27 +214,49 @@ class Environment(AbstractEnvironment):
         if self.authentication['clientID'] is None or self.authentication['client_secret'] is None:
             raise SetupError("oauth2 failed due to clientID or clientsecret being null")
 
-        concat_data = self.authentication['clientID'] + ":" + self.authentication[
-            'client_secret']  # clientID + client secret
+        concat_data = self.authentication['clientID'] + ":" + self.authentication['client_secret']
         data_bytes = concat_data.encode('ascii')
         base64_bytes = base64.b64encode(data_bytes)
-        b64_data = base64_bytes.decode('ascii')
-        url = self._base_url + "/oauth2/token"
+        b64_clientID_secret = base64_bytes.decode('ascii')
+
 
         payload = 'grant_type=client_credentials'
         headers = {
-            'Authorization': 'Basic ' + b64_data,
+            'Authorization': 'Basic ' + b64_clientID_secret,
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         # requests.get(url, auth=HTTPDigestAuth('user', 'pass'))
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", self.oauth2_url, headers=headers, data=payload)
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
             raise RequestsError(response, "failure during oauth2, status not 200", payload)
-        # return response_text["access_token"]
-        # print(response_dict["access_token"])
         return response_dict["access_token"]
+
+    async def _get_oauth_async(self, client, limit: asyncio.Semaphore = None):
+        if self.authentication['clientID'] is None or self.authentication['client_secret'] is None:
+            raise SetupError("oauth2 failed due to clientID or clientsecret being null")
+
+        concat_data = self.authentication['clientID'] + ":" + self.authentication['client_secret']
+        data_bytes = concat_data.encode('ascii')
+        base64_bytes = base64.b64encode(data_bytes)
+        b64_clientID_secret = base64_bytes.decode('ascii')
+
+        payload = 'grant_type=client_credentials'
+        headers = {
+            'Authorization': 'Basic ' + b64_clientID_secret,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+        try:
+            async with limit:
+                response = await client.post(url=self.oauth2_url, headers=headers, data=payload)
+                # do I need to check limit here?
+        except:
+            raise RequestsError(response, f"error during POST to: {self.oauth2_url}", payload)
+        else:
+            response_dict = json.loads(response.text)
+            return response_dict["access_token"]
 
     def _getBasicAuth(self):
         """encode username and password as base64 and return it"""
@@ -245,6 +282,23 @@ class Environment(AbstractEnvironment):
             b64_authentication = 'Basic ' + str(self._getBasicAuth())
         elif auth_type == 'oauth2':
             b64_authentication = 'Bearer ' + str(self._getOauth2())
+        else:
+            raise SetupError("invalid auth type")
+        return b64_authentication
+
+    async def _getAuth_async(self, auth_type: str):
+        """
+        get the necessary authentication details dependent on what type of auth is needed (basic or oauth2)\n
+
+        :param auth_type: basic or oauth2
+        :return: b64_authentication string of authentication
+        :raises SetupError: invalid auth type if not basic or oauth2
+        """
+        if auth_type == 'basic':
+            b64_authentication = 'Basic ' + str(self._getBasicAuth())
+        elif auth_type == 'oauth2':
+            bstr = await self._get_oauth_async(self.client, self.limit)
+            b64_authentication = 'Bearer ' + str(bstr)
         else:
             raise SetupError("invalid auth type")
         return b64_authentication

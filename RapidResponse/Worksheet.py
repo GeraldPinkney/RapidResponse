@@ -1,17 +1,16 @@
 # Worksheet.py
 import asyncio
 import json
-from array import array
 from collections import UserList
 
 import httpx
 import requests
 import logging
 import re
-from datetime import date, datetime
+from datetime import date
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
-from RapidResponse.Utils import SCOPE_PUBLIC, SCOPE_PRIVATE, VALID_SCOPES, WORKBOOK_URL, WORKSHEET_URL
+from RapidResponse.Utils import SCOPE_PUBLIC, VALID_SCOPES
 
 
 class AbstractWorkBook:
@@ -609,7 +608,8 @@ class Worksheet:
             'Rows': rows
         })
 
-        response = requests.request("POST", self.environment.workbook_import, headers=self.environment.global_headers, data=payload)
+        response = requests.request("POST", self.environment.workbook_import_url,
+                                    headers=self.environment.global_headers, data=payload)
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
@@ -636,7 +636,8 @@ class Worksheet:
             self._logger.warning(response_dict)
             self._logger.warning(payload)
             raise RequestsError(response,
-                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {self.environment.workbook_import}", payload)
+                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {self.environment.workbook_import_url}",
+                                payload)
         else:
             self._logger.error(response_readable)
             self._logger.error(response_dict)
