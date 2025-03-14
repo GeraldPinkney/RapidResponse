@@ -333,20 +333,26 @@ class DataRowTestCase(unittest.TestCase):
     def test_row_init(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site','Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer.Id', 'Order.Type.Value', 'Order.Type.ControlSet.Value',
+                'Line', 'Part.Name', 'Part.Site.Value', 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
         # execute
-        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'], IndependentDemand)
+        rec = DataRow(
+            ['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', 'Default', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15',
+             '140'], IndependentDemand)
         #print(rec)
         self.assertIsNotNone(rec)
 
     def test_row_init_with_refresh(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site','Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer.Id', 'Order.Type.Value', 'Order.Type.ControlSet.Value',
+                'Line', 'Part.Name', 'Part.Site.Value', 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=True)
         # execute
-        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'], IndependentDemand)
+        rec = DataRow(
+            ['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', 'Default', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15',
+             '140'], IndependentDemand)
         #print(rec)
         self.assertIsNotNone(rec)
 
@@ -363,29 +369,37 @@ class DataRowTestCase(unittest.TestCase):
 
     def test_dynamic_attribute_access(self):
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
-                'Quantity']
+        cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer.Id', 'Order.Type.Value', 'Order.Type.ControlSet.Value',
+                'Line', 'Part.Name', 'Part.Site.Value', 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
         # execute
-        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'],IndependentDemand)
+        rec = DataRow(
+            ['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', 'Default', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15',
+             '140'], IndependentDemand)
         self.assertEqual(rec.Line, str(1))
 
     def test_dynamic_attribute_access_dot(self):
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
+        cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer.Id', 'Order.Type.Value', 'Order.Type.ControlSet.Value',
+                'Line', 'Part.Name', 'Part.Site.Value', 'DueDate',
                 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
         # execute
-        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'],IndependentDemand)
-        self.assertEqual(rec.Order_Type, 'DCActual')
+        rec = DataRow(
+            ['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', 'Default', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15',
+             '140'], IndependentDemand)
+        self.assertEqual(rec.Order_Type_Value, 'DCActual')
 
     def test_datarow_json_serialisable(self):
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Customer', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
+        cols = ['Order.Id', 'Order.Site.Value', 'Order.Customer.Id', 'Order.Type.Value', 'Order.Type.ControlSet.Value',
+                'Line', 'Part.Name', 'Part.Site.Value', 'DueDate',
                 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, refresh=False)
         # execute
-        rec = DataRow(['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15', '140'],IndependentDemand)
+        rec = DataRow(
+            ['GP', 'DC-NorthAmerica', 'FC102', 'DCActual', 'Default', '1', 'CDMA-C333', 'DC-NorthAmerica', '2017-06-15',
+             '140'], IndependentDemand)
         #data = [{"Values": i} for i in rec]
         payload = json.dumps({
             'Scenario': {"Name": "Enterprise Data", "Scope": "Public"},

@@ -183,7 +183,7 @@ class DataTable(Table):
     def for_each(self, func):
         """
         calls func() on every item in the underlying list to generate some side effect.
-        :param func:
+        :param func: who knows...
         """
         #
         for item in self._table_data:
@@ -216,7 +216,7 @@ class DataTable(Table):
 
     def explode_reference_field(self, col: Column, running_list_of_cols: list = None):
         """
-
+        recursive algo that explodes fields.
         :param col: input should look like Column(name='Header.Category', datatype='Reference', key='Y', referencedTable='HistoricalDemandHeader', referencedTableNamespace='Mfg', identification_fields=None, correspondingField=None, correspondingFieldNamespace=None)
         :param running_list_of_cols: list containing cols (added to)
         :return: running_list_of_cols
@@ -276,9 +276,10 @@ class DataTable(Table):
 
         else:
             # check whether columns provided includes all key fields
-            for k in self._key_fields:
-                if k not in columns:
-                    raise DataError(k, 'key column not in column list: ' + str(k))
+            if self.sync:
+                for k in self._key_fields:
+                    if k not in columns:
+                        raise DataError(k, 'key column not in column list: ' + str(k))
 
             # add all valid fields to DataTable Cols
             for c in columns:
@@ -289,21 +290,23 @@ class DataTable(Table):
                     if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
                         col = Column(c, 'String', 'N', None)
                     else:
-                        self._logger.warning(col.name + ' incorrect field name')
+                        self._logger.warning(str(col) + ' incorrect field name')
                 finally:
-                    if col.datatype == 'CompoundVector':
-                        self._logger.info(col.name + ' skipped due to type CompoundVector')
+                    if col is None:
+                        pass
+                    elif col.datatype == 'CompoundVector':
+                        self._logger.info(str(col) + ' skipped due to type CompoundVector')
                         pass
                     elif col.datatype == 'Reference' and col.key == 'Y':
                         cols = self.explode_reference_field(col)
                         if len(cols) > 1:
-                            # todo check if col.name is already in self.columns
+
                             for exploded_col in cols:
                                 if exploded_col not in self.columns:
                                     self.columns.append(exploded_col)
                             # self.columns.extend(cols)
                         elif len(cols) == 1:
-                            # todo check if col.name is already in self.columns
+
                             if cols[0] not in self.columns:
                                 self.columns.append(cols[0])
                             # self.columns.append(cols[0])
@@ -312,60 +315,25 @@ class DataTable(Table):
                     else:
                         self.columns.append(col)
 
-    def set_columns_old(self, columns: list = None):
+    @property
+    def tableName(self):
         """
-        if columns = None, then set columns to all fields on table and explode out any columns that are references and key
-        if list of columns is provided, add any key cols if they are missing (done via the DataError), check the field is valid,
-        :param columns: nullable list of columns to initialise table with
-        :raises DataError: if keys are missing from table, or column is not valid
+        Returns the table name, without namespace
+        :return: TableName
         """
+        return self._table_name
 
-        if columns is None:
-            for c in self._table_fields:
-                if c.datatype == 'CompoundVector':
-                    self._logger.info(c.name + ' skipped due to type CompoundVector')
-                elif '.' in c.name and c.key == 'N':
-                    self._logger.info(c.name + ' skipped as non key reference')
-                elif c.datatype == 'Reference' and c.key == 'N':
-                    self._logger.info(c.name + ' skipped as non key reference')
-                elif c.datatype == 'Reference' and c.key == 'Y':
-                    cols = self.explode_reference_field(c)
-                    if len(cols) > 1:
-                        self.columns.extend(cols)
-                    elif len(cols) == 1:
-                        self.columns.append(cols[0])
-                    else:
-                        pass
-                else:
-                    self.columns.append(c)
-                    # todo if its a reference and key = N, then explode reference
+    @property
+    def name(self):
+        """
+        returns the fully qualified name of the table.
+        :return: Namespace :: TableName
+        """
+        return f'{self._table_namespace}::{self._table_name}'
 
-        else:
-            # check whether columns provided includes all key fields
-            for k in self._key_fields:
-                if k not in columns:
-                    raise DataError(k, 'key column not in column list: ' + str(k))
-
-            # add all valid fields to DataTable Cols
-            for c in columns:
-                col = None
-                try:
-                    col = self.get_field(c)
-                except DataError:
-                    if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
-                        col = Column(c, 'String', 'N', None)
-                    else:
-                        self._logger.warning(col.name + ' incorrect field name')
-                finally:
-                    if col.datatype == 'CompoundVector':
-                        self._logger.info(col.name + ' skipped due to type CompoundVector')
-                        pass
-                    elif col.datatype == 'Reference':
-                        # todo if its a reference, then explode reference
-                        self.columns.append(col)
-                    else:
-                        self.columns.append(col)
-            # add fields to columns
+    @property
+    def sync(self):
+        return self._sync
 
     @property
     def filter(self):
@@ -586,7 +554,7 @@ class DataTable(Table):
 
     def _calc_optimal_pagesize(self, PageSizeSuggested=500_000):
         '''
-
+        take the proposed pagesize, and modify it based off the number of chunky datatypes in the table.
         :param PageSizeSuggested: requsted pagesize that is mutliplied by the pagesizefactor to get the action pagesize
         :return PageSize: the optimal pagesize based on number of cols and datatypes
         '''
