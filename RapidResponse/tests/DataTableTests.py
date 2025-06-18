@@ -171,13 +171,23 @@ class DataTableTestCase(unittest.TestCase):
                              sync=False)
         self.assertTrue(customer.get_field('TestInt1').fieldNamespace == 'User')
 
-    def test_table_with_custom_cols_namespace_ref(self):
+    def test_namespaceExpectedNone(self):
         env = Environment(local_sample_bootstrap)
+        c = Column(name='U_Division', datatype='Str', key='N')
         cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion', 'Country.Id']
         customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"},
                              sync=False)
-        # print(customer.get_field('Country.Id').fieldNamespace)
-        self.assertTrue(customer.get_field('Country.Id').fieldNamespace == 'Solutions')
+
+        self.assertIsNone(customer.columns[customer.columns.index(c)].fieldNamespace)
+
+    def test_namespaceExpected(self):
+        env = Environment(local_sample_bootstrap)
+        c = Column(name='U_Division.U_Value', datatype='Str', key='N')
+        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division.U_Value', 'SubRegion', 'Country.Id']
+        customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"},
+                             sync=False)
+
+        self.assertEqual(customer.columns[customer.columns.index(c)].fieldNamespace, 'User')
 
     def test_table_with_custom_cols_namespace_ref2(self):
         env = Environment(local_sample_bootstrap)

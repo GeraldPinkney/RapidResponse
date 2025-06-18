@@ -240,12 +240,15 @@ class DataTable(Table):
             if tab.keyed == 'Y':
                 for c in tab.fields:
                     if c.key == 'Y':
-                        key_col = Column(name=col.name + '.' + c.name, datatype=c.datatype, key=c.key,
+                        key_col = Column(name=col.name + '.' + c.name,
+                                         datatype=c.datatype,
+                                         key=c.key,
                                          referencedTable=c.referencedTable,
                                          referencedTableNamespace=c.referencedTableNamespace,
                                          identification_fields=c.identification_fields,
                                          correspondingField=c.correspondingField,
-                                         correspondingFieldNamespace=c.correspondingFieldNamespace)
+                                         correspondingFieldNamespace=c.correspondingFieldNamespace,
+                                         fieldNamespace=c.fieldNamespace)
                         self.explode_reference_field(key_col, running_list_of_cols)
 
         # print(running_list_of_cols)
