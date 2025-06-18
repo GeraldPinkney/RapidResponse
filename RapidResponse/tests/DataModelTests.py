@@ -11,15 +11,34 @@ from RapidResponse.Err import DataError
 
 class DataModel_init_TestCase(unittest.TestCase):
 
-    def test_local_dm(self):
+    def test_local_dm_tab(self):
         data_model = DM.DataModel('C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         data_model._load_table_data_from_file(
             'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
-        col1 = Table.Column('Column1', 'string', 'N')
-        col2 = Table.Column('Column2', 'string', 'N')
         for i in data_model.tables:
-            #        i.add_fields(col1,col2)
             self.assertEqual(type(i), type(Table.Table('Part', 'Mfg')))
+
+    def test_local_dm_tab_contains(self):
+        data_model = DM.DataModel(
+            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+        data_model._load_table_data_from_file(
+            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
+        self.assertIn(Table.Table('Part', 'Mfg'), data_model.tables, 'screwed')
+
+    def test_local_dm_field(self):
+        data_model = DM.DataModel(
+            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+        data_model._load_field_data_from_file(
+            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Fields.tab')
+        test_field = {'Table': 'BillOfMaterial', 'Namespace': 'Mfg', '': '', 'Field': 'Scrap', 'Key': 'N',
+                      'Type': 'Quantity', 'Calculated': 'Input', 'Default Value': '1', 'referencedTable': '',
+                      'Related Namespace': '', 'Corresponding Field': '', 'Corresponding Namespace': '',
+                      'Record Deleted': 'Delete record', 'Record Table': 'Y', 'Record Field': 'Y'}
+        self.assertIn(test_field, data_model._fields, 'screwed')
+
+    def test_from_pkg_rsc(self):
+        data_model = DM.DataModel()
+        self.assertIn(Table.Table('Part', 'Mfg'), data_model.tables, 'screwed')
 
     def test_workbook_dm(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl', 'Content-Type': 'application/json'})

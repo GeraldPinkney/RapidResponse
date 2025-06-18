@@ -124,6 +124,11 @@ class DataTable(Table):
     def __eq__(self, other):  # todo equality operator
         return False
 
+    """def __getitem__(self, position):
+        return self._table_data[position]
+        # todo change this so a slice will return an instance of DataRow
+    """
+
     def __getitem__(self, position):
         return self._table_data[position]
         # todo change this so a slice will return an instance of DataRow
@@ -232,8 +237,8 @@ class DataTable(Table):
 
         else:
             tab = self.environment.get_table(col.referencedTable, col.referencedTableNamespace)
-            if tab._keyed == 'Y':
-                for c in tab._table_fields:
+            if tab.keyed == 'Y':
+                for c in tab.fields:
                     if c.key == 'Y':
                         key_col = Column(name=col.name + '.' + c.name, datatype=c.datatype, key=c.key,
                                          referencedTable=c.referencedTable,
@@ -311,29 +316,19 @@ class DataTable(Table):
                                 self.columns.append(cols[0])
                             # self.columns.append(cols[0])
                     elif col.datatype == 'Reference' and col.key == 'N':
-                        self.columns.append(col)
+                        if col not in self.columns:
+                            self.columns.append(col)
                     else:
-                        self.columns.append(col)
-
-    @property
-    def tableName(self):
-        """
-        Returns the table name, without namespace
-        :return: TableName
-        """
-        return self._table_name
-
-    @property
-    def name(self):
-        """
-        returns the fully qualified name of the table.
-        :return: Namespace :: TableName
-        """
-        return f'{self._table_namespace}::{self._table_name}'
+                        if col not in self.columns:
+                            self.columns.append(col)
 
     @property
     def sync(self):
         return self._sync
+
+    @property
+    def max_connections(self):
+        return self.environment.max_connections
 
     @property
     def filter(self):
@@ -467,11 +462,14 @@ class DataTable(Table):
             async with limit:
                 response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
         except:
-            raise RequestsError(response, f"error during GET to: {url}", payload)
+            raise RequestsError(response, f"error during POST to: {url}", payload)
         else:
-            response_dict = json.loads(response.text)
-            self._exportID = response_dict["ExportId"]
-            self._total_row_count = response_dict["TotalRows"]
+            if response.status_code == 200:
+                response_dict = json.loads(response.text)
+                self._exportID = response_dict["ExportId"]
+                self._total_row_count = response_dict["TotalRows"]
+            else:
+                raise RequestsError(response, f"error during POST to: {url}", payload)
         '''if limit:
             async with limit:
                 response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
@@ -702,13 +700,7 @@ class DataTable(Table):
             self._logger.error(response_dict)
             raise RequestsError(response, f"Error during bulk//deletion complete. Error during POST to: {url}", None)
 
-    @property
-    def sync(self):
-        return self._sync
 
-    @property
-    def max_connections(self):
-        return self.environment.max_connections
 
 
 class DataRow(UserList):

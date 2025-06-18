@@ -20,6 +20,7 @@ class Column(NamedTuple):
     identification_fields: Union[str, None] = None
     correspondingField: Union[str, None] = None
     correspondingFieldNamespace: Union[str, None] = None
+    fieldNamespace: Union[str, None] = None
 
     def __eq__(self, other):
         if other.name == self.name:
@@ -50,7 +51,7 @@ class Table:
     TABLE_TYPE = Literal['Input', 'Calculated']
 
     def __init__(self, name: str, namespace: str, table_type: TABLE_TYPE = 'Input', keyed: str = None,identification_fields: str = None):
-        self._logger = logging.getLogger('RapidPy.wb.tab')
+        self._logger = logging.getLogger('RapidPy.dm.tab')
         self._table_fields = []
         self._key_fields = []
 
@@ -177,3 +178,6 @@ class Table:
         except IndexError:
             raise ValueError('table name parameter must be in format namespace::tablename')
 
+    @property
+    def keyed(self):
+        return self._keyed

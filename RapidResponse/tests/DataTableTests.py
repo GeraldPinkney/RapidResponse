@@ -158,100 +158,152 @@ class DataTableTestCase(unittest.TestCase):
         self.assertNotEqual(part._total_row_count, 0)
         part._session.close()
 
+    def test_diff_col_order(self):
+        self.assertTrue(1 == 2, '')
+        env = Environment(sample_configuration)
+        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
+                'Order.Type.ControlSet.Value', 'Quantity']
+
     # test extend
     def test_data_table_extend_with_rows(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+                'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = [['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'],
-                ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '100', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500']]
+        rows = [
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '010', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'],
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '100', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500']]
         IndependentDemand.extend(rows)
 
-        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
+        self.assertIn(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '010', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'], IndependentDemand)
         IndependentDemand.del_row(rows[0])
         IndependentDemand.del_row(rows[1])
 
     def test_data_table_extend_with_data_table_rows(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+                'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = [['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'],
-                ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '100', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500']]
+        rows = [
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '010', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'],
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '100', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500']]
         IndependentDemand.extend(rows)
 
-        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '010', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
+        self.assertIn(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '010', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'], IndependentDemand)
         IndependentDemand.del_row(rows[0])
         IndependentDemand.del_row(rows[1])
     # test append
     def test_data_table_append(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+                'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '013', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500']
+        rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '013', 'GSM-850A',
+                'SOPDC-NorthAmerica', '2017-08-31', '1500']
         IndependentDemand.append(rows)
 
-        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '013', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
-        IndependentDemand.del_row(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '013', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'])
+        self.assertIn(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'])
 
     # test del
     def test_data_table_delete(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+                'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
-        rows = [['RKS-GSMa','SOPDC-NorthAmerica', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1500'],
-                ['RKS-GSMa','SOPDC-NorthAmerica', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1500']]
+        rows = [
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'],
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500']]
         IndependentDemand.extend(rows)
 
         # execute
-        index = IndependentDemand.indexof(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '01', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'])
+        index = IndependentDemand.indexof(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'])
         del IndependentDemand[index]
-        self.assertNotIn(['RKS-GSMa', 'SOPDC-NorthAmerica', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
-        index = IndependentDemand.indexof(['RKS-GSMa', 'SOPDC-NorthAmerica', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1500'])
+        self.assertNotIn(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'], IndependentDemand)
+        index = IndependentDemand.indexof(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'])
         del IndependentDemand[index]
-        self.assertNotIn(['RKS-GSMa', 'SOPDC-NorthAmerica','DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
+        self.assertNotIn(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'], IndependentDemand)
 
     # test del_row
     def test_data_table_row_delete(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+                'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
-        rows = [['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '01', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'],
-                ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '10', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500']]
+        rows = [
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'],
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500']]
         IndependentDemand.extend(rows)
 
         # execute
-        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '01', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'], IndependentDemand)
-        IndependentDemand.del_row(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '01', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'])
-        IndependentDemand.del_row(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '10', 'GSM-850A','SOPDC-NorthAmerica', '2017-08-31', '1500'])
+        self.assertIn(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'], IndependentDemand)
+        IndependentDemand.del_row(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'])
+        IndependentDemand.del_row(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1500'])
 
     # test update of attribute of individual record
     def test_data_table_col_update(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name','Part.Site', 'DueDate', 'Quantity']
+        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+                'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
-        rows = ['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '06', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1500']
+        rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '06', 'GSM-850A',
+                'SOPDC-NorthAmerica', '2017-08-31', '1500']
         IndependentDemand.append(rows)
         self.assertIn(rows, IndependentDemand)
 
         # execute
         rec = IndependentDemand[IndependentDemand.indexof(rows)]
         rec[7] = '1502'
-        self.assertIn(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '06', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1502'], IndependentDemand)
+        self.assertIn(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '06', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1502'], IndependentDemand)
 
         # teardown
-        IndependentDemand.del_row(['RKS-GSMa','SOPDC-NorthAmerica','DCConsensus', '06', 'GSM-850A', 'SOPDC-NorthAmerica', '2017-08-31', '1502'])
+        IndependentDemand.del_row(
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '06', 'GSM-850A', 'SOPDC-NorthAmerica',
+             '2017-08-31', '1502'])
 
     # test slicing
 
