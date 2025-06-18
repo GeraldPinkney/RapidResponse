@@ -251,24 +251,21 @@ class DataModel(AbstractDataModel):
             tab = Table(f['Table'], f['Namespace'])
 
             if f['Type'] != 'Reference':
-
                 cols.append(
                     Column(name=f['Field'], datatype=f['Type'], key=f['Key'], fieldNamespace=f['FieldNameSpace']))
             else:
                 for ref in self._fields:
                     if ref['Table'] == f['referencedTable'] and f['Key'] == 'Y':  # and ref['Key'] == 'Y':
-                        cols.append(
-                            Column(name=f['Field'] + '.' + ref['Field'], datatype=ref['Type'], key=ref['Key'],
-                                   referencedTable=ref['referencedTable'],
-                                   referencedTableNamespace=ref['Related Namespace'],
-                                   fieldNamespace=f['FieldNameSpace']))
+                        cols.append(Column(name=f['Field'] + '.' + ref['Field'], datatype=ref['Type'], key=ref['Key'],
+                                           referencedTable=ref['referencedTable'],
+                                           referencedTableNamespace=ref['Related Namespace'],
+                                           fieldNamespace=f['FieldNameSpace']))
                         # Column(name, datatype, key, referenceTable, referencedTableNamespace, identification_fields, correspondingField, correspondingFieldNamespace, fieldNamespace)
                     elif ref['Table'] == f['referencedTable'] and f['Key'] == 'N':
-                        cols.append(
-                            Column(name=f['Field'] + '.' + ref['Field'], datatype=ref['Type'], key=f['Key'],
-                                   referencedTable=ref['referencedTable'],
-                                   referencedTableNamespace=ref['Related Namespace'],
-                                   fieldNamespace=f['FieldNameSpace']))
+                        cols.append(Column(name=f['Field'] + '.' + ref['Field'], datatype=ref['Type'], key=f['Key'],
+                                           referencedTable=ref['referencedTable'],
+                                           referencedTableNamespace=ref['Related Namespace'],
+                                           fieldNamespace=f['FieldNameSpace']))
                         # Column(name, datatype, key, referenceTable, referencedTableNamespace, identification_fields, correspondingField, correspondingFieldNamespace, fieldNamespace)
                     else:
                         pass

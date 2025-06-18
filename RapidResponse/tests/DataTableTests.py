@@ -164,12 +164,44 @@ class DataTableTestCase(unittest.TestCase):
         cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
                 'Order.Type.ControlSet.Value', 'Quantity']
 
+    def test_table_with_custom_cols_namespace_attr(self):
+        env = Environment(local_sample_bootstrap)
+        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion', 'Country']
+        customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"},
+                             sync=False)
+        self.assertTrue(customer.get_field('TestInt1').fieldNamespace == 'User')
+
+    def test_table_with_custom_cols_namespace_ref(self):
+        env = Environment(local_sample_bootstrap)
+        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion', 'Country.Id']
+        customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"},
+                             sync=False)
+        # print(customer.get_field('Country.Id').fieldNamespace)
+        self.assertTrue(customer.get_field('Country.Id').fieldNamespace == 'Solutions')
+
+    def test_table_with_custom_cols_namespace_ref2(self):
+        env = Environment(local_sample_bootstrap)
+        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion.Id', 'Country']
+        customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"},
+                             sync=False)
+        # print(customer.get_field('SubRegion').fieldNamespace)
+        print(customer.columns)
+        self.assertIsNone(customer.get_field('SubRegion.Id').fieldNamespace)
+
     def test_table_with_custom_cols(self):
         env = Environment(local_sample_bootstrap)
         cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion', 'Country']
         customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"})
-        print(customer.columns)
+
         self.assertIsNotNone(customer)
+
+    def test_table_custom_cols_append(self):
+        env = Environment(local_sample_bootstrap)
+        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion.Id', 'Country.Id', 'Site.Value']
+        customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"})
+        print(customer)
+        rec = ['Berlin', '', '', '', '', '', '030']
+        customer.append(rec)
 
     # test extend
     def test_data_table_extend_with_rows(self):
