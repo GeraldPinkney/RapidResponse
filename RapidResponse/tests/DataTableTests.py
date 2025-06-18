@@ -164,6 +164,13 @@ class DataTableTestCase(unittest.TestCase):
         cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
                 'Order.Type.ControlSet.Value', 'Quantity']
 
+    def test_table_with_custom_cols(self):
+        env = Environment(local_sample_bootstrap)
+        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion', 'Country']
+        customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"})
+        print(customer.columns)
+        self.assertIsNotNone(customer)
+
     # test extend
     def test_data_table_extend_with_rows(self):
         # setup

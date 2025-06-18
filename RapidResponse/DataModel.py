@@ -452,8 +452,8 @@ class DataModel(AbstractDataModel):
                                      'Type': r['Values'][3],
                                      'Key': r['Values'][4],
                                      'referencedTable': r['Values'][5],
-                                     'Related Namespace': r['Values'][7][0:r['Values'][7].find('::'),
-                                                          'FieldNameSpace': r['Values'][8]]
+                                     'Related Namespace': r['Values'][7][0:r['Values'][7].find('::')],
+                                     'FieldNameSpace': r['Values'][8]
                                      }
                                     )
                 # self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
