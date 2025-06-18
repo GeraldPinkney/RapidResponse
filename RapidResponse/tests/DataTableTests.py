@@ -186,7 +186,7 @@ class DataTableTestCase(unittest.TestCase):
                              sync=False)
         # print(customer.get_field('SubRegion').fieldNamespace)
         print(customer.columns)
-        self.assertIsNone(customer.get_field('SubRegion.Id').fieldNamespace)
+        self.assertTrue(customer.get_field('SubRegion.Id').fieldNamespace == 'Solutions')
 
     def test_table_with_custom_cols(self):
         env = Environment(local_sample_bootstrap)
@@ -197,7 +197,7 @@ class DataTableTestCase(unittest.TestCase):
 
     def test_table_custom_cols_append(self):
         env = Environment(local_sample_bootstrap)
-        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion.Id', 'Country.Id', 'Site.Value']
+        cols = ['Id', 'TestInt1', 'TestString1', 'U_Division.U_Value', 'SubRegion.Id', 'Country.Id', 'Site.Value']
         customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"})
         print(customer)
         rec = ['Berlin', '', '', '', '', '', '030']
