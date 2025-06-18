@@ -4,6 +4,7 @@ import csv
 import json
 import logging
 import os
+from time import sleep
 
 import requests
 from pkg_resources import resource_filename, resource_exists
@@ -250,17 +251,25 @@ class DataModel(AbstractDataModel):
             tab = Table(f['Table'], f['Namespace'])
 
             if f['Type'] != 'Reference':
-                cols.append(Column(f['Field'], f['Type'], f['Key']))
+
+                cols.append(
+                    Column(name=f['Field'], datatype=f['Type'], key=f['Key'], fieldNamespace=f['FieldNameSpace']))
             else:
                 for ref in self._fields:
                     if ref['Table'] == f['referencedTable'] and f['Key'] == 'Y':  # and ref['Key'] == 'Y':
                         cols.append(
-                            Column(f['Field'] + '.' + ref['Field'], ref['Type'], ref['Key'], ref['referencedTable'],
-                                   ref['Related Namespace']))
+                            Column(name=f['Field'] + '.' + ref['Field'], datatype=ref['Type'], key=ref['Key'],
+                                   referencedTable=ref['referencedTable'],
+                                   referencedTableNamespace=ref['Related Namespace'],
+                                   fieldNamespace=f['FieldNameSpace']))
+                        # Column(name, datatype, key, referenceTable, referencedTableNamespace, identification_fields, correspondingField, correspondingFieldNamespace, fieldNamespace)
                     elif ref['Table'] == f['referencedTable'] and f['Key'] == 'N':
                         cols.append(
-                            Column(f['Field'] + '.' + ref['Field'], ref['Type'], f['Key'], ref['referencedTable'],
-                                   ref['Related Namespace']))
+                            Column(name=f['Field'] + '.' + ref['Field'], datatype=ref['Type'], key=f['Key'],
+                                   referencedTable=ref['referencedTable'],
+                                   referencedTableNamespace=ref['Related Namespace'],
+                                   fieldNamespace=f['FieldNameSpace']))
+                        # Column(name, datatype, key, referenceTable, referencedTableNamespace, identification_fields, correspondingField, correspondingFieldNamespace, fieldNamespace)
                     else:
                         pass
             if tab in self.tables:
@@ -443,7 +452,8 @@ class DataModel(AbstractDataModel):
                                      'Type': r['Values'][3],
                                      'Key': r['Values'][4],
                                      'referencedTable': r['Values'][5],
-                                     'Related Namespace': r['Values'][7][0:r['Values'][7].find('::')]
+                                     'Related Namespace': r['Values'][7][0:r['Values'][7].find('::'),
+                                                          'FieldNameSpace': r['Values'][8]]
                                      }
                                     )
                 # self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))

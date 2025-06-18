@@ -10,6 +10,7 @@ class Column(NamedTuple):
     # prior implementation below
     # Column = collections.namedtuple('Column', ['name', 'datatype', 'key'])
     #DATA_TYPE = Literal['String', 'Boolean', 'Date', 'DateTime', 'Integer', 'Money', 'Note', 'Quantity', 'QuantitySingle', 'Reference', 'Time', 'Vector Set']
+    # Column(name, datatype, key, referenceTable, referencedTableNamespace, identification_fields, correspondingField, correspondingFieldNamespace, fieldNamespace)
     name: str
     datatype: str
     key: str
@@ -44,6 +45,7 @@ class Column(NamedTuple):
             "identification_fields": self.identification_fields,
             "correspondingField": self.correspondingField,
             "correspondingFieldNamespace": self.correspondingFieldNamespace,
+            "fieldNamespace": self.fieldNamespace,
         }
         return column_dict
 

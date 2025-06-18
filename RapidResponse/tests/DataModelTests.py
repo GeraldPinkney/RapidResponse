@@ -30,7 +30,8 @@ class DataModel_init_TestCase(unittest.TestCase):
             'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         data_model._load_field_data_from_file(
             'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Fields.tab')
-        test_field = {'Table': 'BillOfMaterial', 'Namespace': 'Mfg', '': '', 'Field': 'Scrap', 'Key': 'N',
+        test_field = {'Table': 'BillOfMaterial', 'Namespace': 'Mfg', 'Field': 'Scrap', 'FieldNameSpace': 'Mfg',
+                      'Key': 'N',
                       'Type': 'Quantity', 'Calculated': 'Input', 'Default Value': '1', 'referencedTable': '',
                       'Related Namespace': '', 'Corresponding Field': '', 'Corresponding Namespace': '',
                       'Record Deleted': 'Delete record', 'Record Table': 'Y', 'Record Field': 'Y'}
