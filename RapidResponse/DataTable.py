@@ -604,13 +604,10 @@ class DataTable(Table):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
-        # if self._table_namespace == f.fieldNamespace then f.name else f.fieldNamespace + '::' + f.name
-        # self.get_field('SubRegion.Id').fieldNamespace
+
         # local_query_fields = [f.name for f in self.columns]
-        local_query_fields = [
-            f.name if self._table_namespace == self.get_field(
-                f.name).fieldNamespace else f.fieldNamespace + '::' + f.name
-            for f in self.columns]
+        local_query_fields = [f.name if self._table_namespace == self.get_field(
+            f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
         rows = [{"Values": i.data} for i in args]
 
         payload = json.dumps({
@@ -659,7 +656,9 @@ class DataTable(Table):
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
 
-        local_query_fields = [f.name for f in self.columns]
+        # local_query_fields = [f.name for f in self.columns]
+        local_query_fields = [f.name if self._table_namespace == self.get_field(
+            f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
         rows = [{"Values": i.data} for i in args]
 
         payload = json.dumps({

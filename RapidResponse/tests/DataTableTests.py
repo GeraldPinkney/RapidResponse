@@ -196,12 +196,17 @@ class DataTableTestCase(unittest.TestCase):
         self.assertIsNotNone(customer)
 
     def test_table_custom_cols_append(self):
+        # setup
         env = Environment(local_sample_bootstrap)
         cols = ['Id', 'TestInt1', 'TestString1', 'U_Division.U_Value', 'SubRegion.Id', 'Country.Id', 'Site.Value']
         customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"})
-        print(customer)
+        #print(customer)
         rec = ['Berlin', '', '', '', '', '', '030']
+        # execute
         customer.append(rec)
+        self.assertIn(['Berlin', '', '', '', '', '', '030'], customer)
+        # teardown
+        customer.del_row(rec)
 
     # test extend
     def test_data_table_extend_with_rows(self):
