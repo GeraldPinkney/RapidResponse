@@ -12,29 +12,30 @@ from RapidResponse.Err import DataError
 class DataModel_init_TestCase(unittest.TestCase):
 
     def test_local_dm_tab(self):
-        data_model = DM.DataModel('C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+        data_model = DM.DataModel(
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         data_model._load_table_data_from_file(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
         for i in data_model.tables:
             self.assertEqual(type(i), type(Table.Table('Part', 'Mfg')))
 
     def test_local_dm_tab_contains(self):
         data_model = DM.DataModel(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         data_model._load_table_data_from_file(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
         self.assertIn(Table.Table('Part', 'Mfg'), data_model.tables, 'screwed')
 
     def test_local_dm_field(self):
         data_model = DM.DataModel(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         data_model._load_field_data_from_file(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Fields.tab')
-        test_field = {'Table': 'BillOfMaterial', 'Namespace': 'Mfg', 'Field': 'Scrap', 'FieldNameSpace': 'Mfg',
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Fields.tab')
+        test_field = {'Table': 'BillOfMaterial', 'Namespace': 'Mfg', '': '', 'Field': 'Scrap', 'FieldNameSpace': 'Mfg',
                       'Key': 'N',
                       'Type': 'Quantity', 'Calculated': 'Input', 'Default Value': '1', 'referencedTable': '',
                       'Related Namespace': '', 'Corresponding Field': '', 'Corresponding Namespace': '',
-                      'Record Deleted': 'Delete record', 'Record Table': 'Y', 'Record Field': 'Y'}
+                      'Record Deleted': 'Delete record', 'Record Table': 'Y', 'Record Field': 'Y', 'license': None}
         self.assertIn(test_field, data_model._fields, 'screwed')
 
     def test_from_pkg_rsc(self):
@@ -55,7 +56,7 @@ class DataModel_init_TestCase(unittest.TestCase):
 
     def test_default_column_assignment(self):
         data_model = DM.DataModel(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
 
     def test_fully_qual_fieldname(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
@@ -104,7 +105,7 @@ class DataModelWBKTestCase(unittest.TestCase):
 
     def test_get_table_from_data_model(self):
         data_model = DM.DataModel(
-            'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         tab = data_model.get_table('Part', 'Mfg')
         tab1 = Table.Table(name='Part', namespace='Mfg')
         self.assertEqual(tab, tab1)

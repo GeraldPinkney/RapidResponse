@@ -175,7 +175,6 @@ class DataModel(AbstractDataModel):
         # otherwise, if these are not provided, then load from package resources
         else:
             self._load_from_package_resources()
-
         # then add fields to tables
         self._add_fields_to_tables()
 
