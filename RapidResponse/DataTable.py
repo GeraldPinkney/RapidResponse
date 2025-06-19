@@ -122,7 +122,7 @@ class DataTable(Table):
         return len(self._table_data)
 
     def __eq__(self, other):  # todo equality operator
-        return False
+        raise NotImplementedError
 
     """def __getitem__(self, position):
         return self._table_data[position]
@@ -208,7 +208,6 @@ class DataTable(Table):
         self._table_data.append(values)
 
     def extend(self, args):
-        # todo fix when doing insert messy reference fields
         to_send = []
         for rec in args:
             if isinstance(rec, type(DataRow)):
@@ -559,8 +558,7 @@ class DataTable(Table):
         :param PageSizeSuggested: requsted pagesize that is mutliplied by the pagesizefactor to get the action pagesize
         :return PageSize: the optimal pagesize based on number of cols and datatypes
         '''
-        # todo account for rows returned
-        # todo cache response to be able to use stats on string sizes
+
         pageSizeFactor = 1000
         if PageSizeSuggested < 5000:
             PageSize = PageSizeSuggested
