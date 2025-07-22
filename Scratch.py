@@ -6,11 +6,20 @@ import requests
 import RapidResponse
 from RapidResponse.DataTable import DataTable
 from RapidResponse.Environment import Environment
-from samples import sample_configuration
+from samples import sample_configuration, local_sample_bootstrap
 from RapidResponse.Table import Table, Column
 from RapidResponse.Worksheet import Workbook
 
+
+def new_field_validate():
+    env = Environment(local_sample_bootstrap)
+    print(env.data_model._get_field_namespace('Mfg::Part', 'Name'))
+
 if __name__ == '__main__':
+    new_field_validate()
+
+
+def stuff():
     print(RapidResponse.__version__)
     env = Environment(sample_configuration)
 
@@ -80,7 +89,7 @@ if __name__ == '__main__':
                   SiteGroup="All Sites",
                   Filter={"Name": "All Parts", "Scope": "Public"},
                   VariableValues=variable_values,
-                  WorksheetNames=["DataModel_Summary","DataModel_Fields"]
+                  WorksheetNames=["DataModel_Summary", "DataModel_Fields"]
                   )
     wb.refresh()
     for x in wb.worksheets:
@@ -100,23 +109,28 @@ if __name__ == '__main__':
     ws.upload(["ordnum0", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"],
               ["ordnum1", "1", "Kanata", "KNX", "7000vE", "", "130", "Default", "Kanata"])
 
+    mea_dev = {'url': 'https://na1.kinaxis.net/mrad02_dev01', 'data_model_bootstrap': 'KXSHelperREST',
+               'auth_type': 'basic',
+               'username': 'RestAPI', 'password': 'WebAccess2021#'}
+    mea_qa = {'url': 'https://na1.kinaxis.net/MRAT04_QA001', 'data_model_bootstrap': 'KXSHelperREST',
+              'auth_type': 'basic',
+              'username': 'RestAPI', 'password': 'WebAccess2021#'}
 
-mea_dev = {'url': 'https://na1.kinaxis.net/mrad02_dev01','data_model_bootstrap': 'KXSHelperREST','auth_type': 'basic','username': 'RestAPI','password': 'WebAccess2021#'}
-mea_qa = {'url': 'https://na1.kinaxis.net/MRAT04_QA001','data_model_bootstrap': 'KXSHelperREST','auth_type': 'basic','username': 'RestAPI','password': 'WebAccess2021#'}
+    mea_env = Environment(mea_dev)
+    int_wb = {"Name": "[EU] Integration", "Scope": 'Public'}
+    integration_workbook = Workbook(environment=mea_env, Scenario={'Name': 'Enterprise Data', 'Scope': 'Public'},
+                                    workbook=int_wb, SiteGroup="All Sites", WorksheetNames=['RRSite'],
+                                    Filter={"Name": "All Parts", "Scope": "Public"})
+    RRSite = integration_workbook.worksheets[0]
 
-mea_env = Environment(mea_dev)
-int_wb = {"Name": "[EU] Integration", "Scope": 'Public'}
-integration_workbook = Workbook(environment=mea_env, Scenario={'Name': 'Enterprise Data', 'Scope': 'Public'}, workbook=int_wb, SiteGroup="All Sites", WorksheetNames=['RRSite'],Filter={"Name": "All Parts", "Scope": "Public"})
-RRSite = integration_workbook.worksheets[0]
+    list_of_tables = ['Mfg::Part', 'Mfg::IndependentDemand', 'Mfg::Customer']
+    for t in list_of_tables:
+        print(DataTable(env, t))
 
+    list_of_worksheets = ['worksheet1', 'worksheet2', 'worksheet3']
 
-list_of_tables = ['Mfg::Part', 'Mfg::IndependentDemand', 'Mfg::Customer']
-for t in list_of_tables:
-    print(DataTable(env, t))
+    print(list((filter(lambda x: x['Table'] == 'Part' and x['Field'] == 'Site', env.data_model._fields))))
 
-list_of_worksheets = ['worksheet1', 'worksheet2', 'worksheet3']
-
-print(list((filter(lambda x: x['Table'] == 'Part' and x['Field'] == 'Site', env.data_model._fields))))
 
 def create_scenario(name, parent):
     env = Environment(sample_configuration)
@@ -169,4 +183,3 @@ def export_pkg():
     file = open("test_20240612.kpk", "wb")
     file.write(response.content)
     file.close() # yes, I could have done this with a context manager... whatevs
-

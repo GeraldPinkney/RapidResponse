@@ -11,10 +11,6 @@ from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Table import Table, Column
 
-
-# todo add controls to not allow update of calculated fields or delete of rows from calculated table
-# todo add AbstractDataTable
-
 class DataTable(Table):
     """
     subclass of Table that contains row data & can be used to push updates to RR\n
@@ -257,7 +253,8 @@ class DataTable(Table):
         """
         if columns = None, then set columns to all fields on table and explode out any columns that are references and key
         if list of columns is provided, add any key cols if they are missing (done via the DataError), check the field is valid,
-        :param columns: nullable list of columns to initialise table with
+        :param columns: nullable list of columns to initialise table with ['Order.Id', 'Order.Site.Value', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+                'DueDate', 'Quantity']
         :raises DataError: if keys are missing from table, or column is not valid
         """
 
@@ -283,7 +280,8 @@ class DataTable(Table):
 
         else:
             # check whether columns provided includes all key fields
-            if self.sync:
+            if False:
+                ##if self.sync:
                 for k in self._key_fields:
                     if k not in columns:
                         raise DataError(k, 'key column not in column list: ' + str(k))
@@ -291,38 +289,31 @@ class DataTable(Table):
             # add all valid fields to DataTable Cols
             for c in columns:
                 col = None
-                try:
-                    col = self.get_field(c)
-                except DataError:
-                    if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, c):
-                        col = Column(c, 'String', 'N', None)
-                    else:
-                        self._logger.warning(str(col) + ' incorrect field name')
-                finally:
-                    if col is None:
-                        pass
-                    elif col.datatype == 'CompoundVector':
-                        self._logger.info(str(col) + ' skipped due to type CompoundVector')
-                        pass
-                    elif col.datatype == 'Reference' and col.key == 'Y':
-                        cols = self.explode_reference_field(col)
-                        if len(cols) > 1:
+                col = self.get_field(c)
+                if col is None:
+                    pass
+                elif col.datatype == 'CompoundVector':
+                    self._logger.info(str(col) + ' skipped due to type CompoundVector')
+                    pass
+                elif col.datatype == 'Reference' and col.key == 'Y':
+                    cols = self.explode_reference_field(col)
+                    if len(cols) > 1:
 
-                            for exploded_col in cols:
-                                if exploded_col not in self.columns:
-                                    self.columns.append(exploded_col)
-                            # self.columns.extend(cols)
-                        elif len(cols) == 1:
+                        for exploded_col in cols:
+                            if exploded_col not in self.columns:
+                                self.columns.append(exploded_col)
+                        # self.columns.extend(cols)
+                    elif len(cols) == 1:
 
-                            if cols[0] not in self.columns:
-                                self.columns.append(cols[0])
-                            # self.columns.append(cols[0])
-                    elif col.datatype == 'Reference' and col.key == 'N':
-                        if col not in self.columns:
-                            self.columns.append(col)
-                    else:
-                        if col not in self.columns:
-                            self.columns.append(col)
+                        if cols[0] not in self.columns:
+                            self.columns.append(cols[0])
+                        # self.columns.append(cols[0])
+                elif col.datatype == 'Reference' and col.key == 'N':
+                    if col not in self.columns:
+                        self.columns.append(col)
+                else:
+                    if col not in self.columns:
+                        self.columns.append(col)
 
     @property
     def sync(self):
@@ -606,10 +597,9 @@ class DataTable(Table):
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
 
-        # local_query_fields = [f.name for f in self.columns]
+        local_query_fields = [f.name for f in self.columns]
         # local_query_fields = [f.name if self._table_namespace == self.get_field(f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
-        local_query_fields = [f.name if self._table_namespace == f.fieldNamespace else f.fieldNamespace + '::' + f.name
-                              for f in self.columns]
+        # local_query_fields = [f.name if self._table_namespace == f.fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
         rows = [{"Values": i.data} for i in args]
 
         payload = json.dumps({
@@ -625,6 +615,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
+            self._logger.error(response.text)
             raise RequestsError(response, f"error during POST to: {self.environment.bulk_upload_url}", payload)
         self._uploadId = response_dict["UploadId"]
 
@@ -636,6 +627,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
+            self._logger.error(response.text)
             raise RequestsError(response, f"error during POST to: {url}")
         results = response_dict['Results']
         response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
@@ -645,8 +637,10 @@ class DataTable(Table):
             results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
 
         if results['Status'] == 'Failure':
+            self._logger.error(response.text)
             raise RequestsError(response, f"error during POST to: {url}", None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
+            self._logger.error(response.text)
             raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(
                 results['ErrorRowCount']))
         else:
@@ -676,6 +670,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
+            self._logger.error(response.text)
             raise RequestsError(response, f"Failure during bulk//deletion create. Error during POST to: {self.environment.bulk_remove_url}", payload)
         self._uploadId = response_dict["RemovalId"]
 
@@ -688,7 +683,7 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            # print(response)
+            self._logger.error(response.text)
             raise RequestsError(response, f"Failure during bulk//deletion complete. Error during POST to: {url}", None)
 
         results = response_dict['Results']
@@ -706,8 +701,28 @@ class DataTable(Table):
             self._logger.error(response_dict)
             raise RequestsError(response, f"Error during bulk//deletion complete. Error during POST to: {url}", None)
 
+    def get_field(self, field):
+        """
+        get_field( 'Order.Site.Value')
+        take as input a fieldname, can be qualified
+        :param name:
+        :return Column:
+        """
+        response = None
+        try:
+            response = super(self.__class__, self).get_field(field)
+        except DataError:
+            self._logger.info('caught data error, now using data model to get field')
+            # validate _validate_fully_qualified_field_name(self, tablename, fieldname)
+            if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, field):
+                # get_field( 'Mfg::PartCustomer', 'Part.Site.Value')
+                self._logger.info(f'tablename: {self._table_name} fieldname: {field}')
+                response = self.environment.data_model.get_field(self.name, field)
+                self._logger.info(response)
+            else:
+                raise DataError(f'fieldname: {field}', f'invalid fieldname for {self.name}')
 
-
+        return response
 
 class DataRow(UserList):
     # Can only be initialised from DataTable, therefore no need to validate it's a good record on creation.
@@ -729,7 +744,6 @@ class DataRow(UserList):
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
         # when something is updated it should be pushed back to RR, if datatable is sync
-        # todo check if its a reference field or calculated . then don't allow
         super().__setitem__(index, str(item))
         if self._data_table.sync:
             self._data_table.add_row(self)
@@ -773,7 +787,6 @@ class DataRow(UserList):
     def insert(self, index, item):
         # allows you to insert a new item at a given position in the underlying list using the index.
         raise NotImplementedError
-        # todo implement insert
         # when something is updated it should be pushed back to RR, if datatable is sync
         # however should not fire when data is being initialised from RR
         super().insert(index, str(item))
@@ -880,3 +893,4 @@ class DataRow(UserList):
         """
         data_dict = json.loads(json_str)
         return cls.from_dict(data_dict, data_table)
+

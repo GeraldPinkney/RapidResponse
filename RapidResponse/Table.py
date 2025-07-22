@@ -7,6 +7,7 @@ from RapidResponse.Err import DataError
 
 
 class Column(NamedTuple):
+    # Column(name='Part', datatype='String', key='Y',referencedTable='Part',referencedTableNamespace='Mfg',fieldNamespace='Mfg')
     # prior implementation below
     # Column = collections.namedtuple('Column', ['name', 'datatype', 'key'])
     #DATA_TYPE = Literal['String', 'Boolean', 'Date', 'DateTime', 'Integer', 'Money', 'Note', 'Quantity', 'QuantitySingle', 'Reference', 'Time', 'Vector Set']
@@ -161,7 +162,7 @@ class Table:
         if response:
             return response
         else:
-            raise DataError(name, "field: " + name + " not found in table fields.")
+            raise DataError(name, f"field: {name} not found in {self.name} fields. Ensure not reference or nested")
 
     @property
     def fields(self):

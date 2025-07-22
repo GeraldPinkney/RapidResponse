@@ -268,17 +268,18 @@ class DataTableTestCase(unittest.TestCase):
              '2017-08-31', '1500'], IndependentDemand)
         IndependentDemand.del_row(rows[0])
         IndependentDemand.del_row(rows[1])
+
     # test append
     def test_data_table_append(self):
         # setup
-        env = Environment(sample_configuration)
+        env = Environment(local_sample_bootstrap)
         cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
                 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '013', 'GSM-850A',
-                'SOPDC-NorthAmerica', '2017-08-31', '1500']
+        rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'SOPDemandMgmt', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
+                '2017-08-31', '1500']
         IndependentDemand.append(rows)
 
         self.assertIn(
@@ -343,11 +344,21 @@ class DataTableTestCase(unittest.TestCase):
             ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '10', 'GSM-850A', 'SOPDC-NorthAmerica',
              '2017-08-31', '1500'])
 
+    def test_data_table_col_set(self):
+        # setup
+        env = Environment(sample_configuration)
+        cols = ['Order.Id', 'Order.Site.Value', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name',
+                'Part.Site.Value',
+                'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols,
+                                      scenario={"Name": "Integration", "Scope": "Public"})
+
     # test update of attribute of individual record
     def test_data_table_col_update(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
+        cols = ['Order.Id', 'Order.Site.Value', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name',
+                'Part.Site.Value',
                 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
         rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '06', 'GSM-850A',

@@ -38,6 +38,87 @@ class DataModel_init_TestCase(unittest.TestCase):
                       'Record Deleted': 'Delete record', 'Record Table': 'Y', 'Record Field': 'Y', 'license': None}
         self.assertIn(test_field, data_model._fields, 'screwed')
 
+    def test_get_field_namespace(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        c = dm._get_table_field('Mfg::Part', 'Name')
+        # print(tab.fields)
+        self.assertEqual(c.fieldNamespace, 'Mfg')
+
+    def test_get_priv_table_field(self):
+        pass
+
+    def test_get_public_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+
+        returned = dm.get_field('Mfg::PartCustomer', 'Part.Site.Value')
+        print(returned)
+
+    def test_get_nested_table_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        col = dm._get_nested_table_field('Mfg::PartCustomer', 'Part.Name')
+        # print(tab.fields)
+        self.assertEqual(col.name, 'Part.Name')
+        print(col)
+
+    def test_get_more_nested_table_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        col = dm._get_nested_table_field('Mfg::PartCustomer', 'Part.Site.Value')
+        # print(tab.fields)
+        self.assertEqual(col.name, 'Part.Site.Value')
+        print(col)
+
+    def test_get_even_more_nested_table_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        col = dm._get_nested_table_field('Mfg::IndependentDemand', 'Order.Type.ControlSet.Value')
+        # print(tab.fields)
+        self.assertEqual(col.name, 'Order.Type.ControlSet.Value')
+        print(col)
+
+    def test_get_referenced_table(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        tab = dm._get_referenced_table('PartSource', 'TransferPart')
+        self.assertEqual(tab, 'Part')
+
+    def test_get_referenced_tableAndNamespace(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        tab = dm._get_referenced_tableAndNamespace('PartSource', 'TransferPart')
+        self.assertEqual(tab, 'Mfg::Part')
+
+    def test_get_other_referenced_tableAndNamespace(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        tab = dm._get_referenced_tableAndNamespace('DemandOrder', 'Type')
+        self.assertEqual(tab, 'Mfg::DemandType')
+
+    def test_is_reference_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        isRef = dm._is_reference_field('IndependentDemand', 'Order')
+        self.assertTrue(isRef)
+
+    def test_is_reference_field_neg(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        isRef = dm._is_reference_field('IndependentDemand', 'Line')
+        self.assertFalse(isRef)
+
     def test_from_pkg_rsc(self):
         data_model = DM.DataModel()
         self.assertIn(Table.Table('Part', 'Mfg'), data_model.tables, 'screwed')
@@ -62,7 +143,14 @@ class DataModel_init_TestCase(unittest.TestCase):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
                           headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
                                    'Content-Type': 'application/json'})
-        valid = dm._validate_fully_qualified_field_name('mfg::part', 'ReferencePart.ProductHierarchy1.Value')
+        valid = dm._validate_fully_qualified_field_name('mfg::Part', 'ReferencePart.ProductHierarchy1.Value')
+        self.assertTrue(valid)
+
+    def test_fully_qual_fieldname2(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        valid = dm._validate_fully_qualified_field_name('mfg::IndependentDemand', 'Order.Type.ControlSet.Value')
         self.assertTrue(valid)
 
     def test_neg_fully_qual_fieldname(self):
@@ -79,6 +167,13 @@ class DataModel_init_TestCase(unittest.TestCase):
         valid = dm._is_valid_field('Part', 'ReferencePart')
         self.assertTrue(valid)
 
+    def test_valid_field(self):
+        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
+                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                   'Content-Type': 'application/json'})
+        valid = dm.validate_field('SPart', 'ReferencePart.ProductHierarchy1.Value')
+        self.assertTrue(valid)
+
     def test_neg_is_valid_field(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
                           headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
@@ -86,12 +181,7 @@ class DataModel_init_TestCase(unittest.TestCase):
         valid = dm._is_valid_field('Part', 'ReferenceParty')
         self.assertFalse(valid)
 
-    def test_get_ref_tab(self):
-        dm = DM.DataModel(None, url='http://localhost/rapidresponse',
-                          headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
-                                   'Content-Type': 'application/json'})
-        tab = dm._get_referenced_table('PartSource', 'TransferPart')
-        self.assertEqual(tab, 'Part')
+
 
     def test_val_error_get_ref_tab(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',

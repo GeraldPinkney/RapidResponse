@@ -1,12 +1,12 @@
 local_sample_configuration = {'url': 'http://localhost/rapidresponse',
-                              'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data',
+                              'data_model_directory': 'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel',
                               'auth_type': 'basic',
                               'username': 'gpinkney_ws',
                               'password': '1L0veR@pidResponse'
                               }
 
 sample_configuration = {'url': 'http://localhost/rapidresponse',
-                        'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data',
+                        'data_model_directory': 'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel',
                         'auth_type': 'basic',
                         'username': 'gpinkney_ws',
                         'password': '1L0veR@pidResponse'

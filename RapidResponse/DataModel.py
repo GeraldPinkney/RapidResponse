@@ -4,12 +4,13 @@ import csv
 import json
 import logging
 import os
+from dataclasses import field
 from time import sleep
 
 import requests
 from pkg_resources import resource_filename, resource_exists
 
-from RapidResponse.Err import DirectoryError, SetupError, RequestsError
+from RapidResponse.Err import DirectoryError, SetupError, RequestsError, DataError
 from RapidResponse.Table import Table, Column
 
 class AbstractDataModel:
@@ -54,7 +55,89 @@ class AbstractDataModel:
     def _add_fields_to_tables(self):
         pass
 
+    def _get_table_field(self, tablename, fieldname):
+        """
+        input like dm._get_table_field('Mfg::Part', 'Name')
+        do not provide nested fields, or reference fields
+        :param tablename:
+        :param fieldname:
+        :return Column:
+        """
+        tablearray = tablename.split('::')
+        c = None
+
+        tab = self.get_table(table=tablearray[1], namespace=tablearray[0])
+        # c = Column(name = fieldname, datatype='Str', key='N')
+
+        if self._validate_fully_qualified_field_name(tablename=tab._table_name, fieldname=fieldname):
+            if '.' not in fieldname:
+                c = tab.get_field(fieldname)
+
+            else:
+                raise DataError('cannot process nested field, {fieldname}')
+        else:
+            raise DataError('invalid field {tablename}, {fieldname}')
+        return c
+
+    def _get_nested_table_field(self, tablename, fieldname):
+        """
+        # input like self._get_nested_field_namespace( 'Mfg::PartCustomer', 'Part.Site.Value')
+        :param tablename: namespace qualified tablename, 'Mfg::PartCustomer'
+        :param fieldname: field name, delimited by . 'Part.Site.Value'
+        :return Column:
+        """
+
+        tablearray = tablename.split('::')
+        if len(tablearray) != 2:
+            raise DataError('invalid table: {tablename}. Requires format Mfg::PartCustomer')
+
+        tab = Table(namespace=tablearray[0], name=tablearray[1])
+
+        if not self._validate_fully_qualified_field_name(tab._table_name, fieldname):
+            raise DataError('invalid table: {tablename} and field: {fieldname}')
+
+        if '.' not in fieldname:
+            modified_column = self._get_table_field(tablename, fieldname)
+        else:
+            fieldarray = fieldname.split('.')  # [Part, Site, Value]
+            fieldarray.insert(0, tab._table_name)  # [PartCustomer, Part, Site, Value]
+
+            for i in range(len(fieldarray) - 1):
+                if self._is_reference_field(fieldarray[i], fieldarray[i + 1]):
+                    fieldarray[i + 1] = self._get_referenced_table(fieldarray[i], fieldarray[i + 1])
+                else:
+                    pass
+            ##print(fieldarray)
+            ##print(f'tablename: {fieldarray[-2]}, fieldname: {fieldarray[-1]}')
+            # if len(fieldarray) > 3:
+            #    temp_tab_name = fieldarray[-3]
+            # else:
+            #    temp_tab_name = fieldarray[-3].split('::')[1]
+            referenced_tab = self._get_referenced_tableAndNamespace(fieldarray[-3], fieldarray[-2])
+            c = self._get_table_field(referenced_tab, fieldarray[-1])
+            # c.name =
+            # f = self.get_field(tablename, fieldname.split('.')[0])
+            modified_column = Column(name=fieldname, datatype=c.datatype, key=c.key, referencedTable=c.referencedTable,
+                                     referencedTableNamespace=c.referencedTableNamespace,
+                                     fieldNamespace=c.fieldNamespace)
+        return modified_column
+
+    def get_field(self, tablename, fieldname):
+        """
+        get_field( 'Mfg::PartCustomer', 'Part.Site.Value')
+        :param tablename:
+        :param fieldname:
+        :return:
+        """
+        return self._get_nested_table_field(tablename, fieldname)
+
     def _validate_fully_qualified_field_name(self, tablename, fieldname):
+        """
+        loop over the fieldname, and replace the fieldnames with their real table names, then validate whether the entire thing is valid
+        :param tablename: example, Part (does not include namespace)
+        :param fieldname: ReferencePart.Des
+        :return: boolean, isValid
+        """
         isValid = False
         # basecase
         if '.' not in fieldname:
@@ -65,7 +148,6 @@ class AbstractDataModel:
 
             for i in range(len(fieldarray) - 1):
                 # check it is a valid field
-                #
                 if self._is_valid_field(fieldarray[i], fieldarray[i + 1]):
                     isValid = True
                     if self._is_reference_field(fieldarray[i], fieldarray[i + 1]):
@@ -76,14 +158,31 @@ class AbstractDataModel:
         return isValid
 
     def _is_valid_field(self, tablename, fieldname):
-        # take as input a tablename and field name (like Part, ReferencePart.BrandSubFlag.BrandFlag.Name)
+        """
+        _is_valid_field(Part, ReferencePart.BrandSubFlag.BrandFlag.Name)
+        :param tablename:
+        :param fieldname:
+        :return:
+        """
 
-        for f in self._fields:
-            if f['Table'] == tablename and f['Field'] == fieldname:
-                return True
-        return False
+        isValid = False
+        # basecase
+        if '.' in fieldname:
+            isValid = self._validate_fully_qualified_field_name(tablename, fieldname)
+        else:
+            for f in self._fields:
+                if f['Table'] == tablename and f['Field'] == fieldname:
+                    isValid = True
+        return isValid
 
     def _get_referenced_table(self, tablename, fieldname):
+        """
+
+        :param tablename: example Part
+        :param fieldname: example ReferencePart
+        :return referencedTable: table name of the reference field ReferencePart
+        :raises ValueError: if given fieldname with .
+        """
         referencedTable = None
         if '.' not in fieldname:
             for f in self._fields:
@@ -95,16 +194,61 @@ class AbstractDataModel:
 
         return referencedTable
 
-    def _is_reference_field(self, tablename, fieldname):
+    def _get_referenced_tableAndNamespace(self, tablename, fieldname):
+        """
 
+        :param tablename: part
+        :param fieldname: referencepart
+        :return referencedTableWithNamespace: {f["Related Namespace"]}::{f["referencedTable"]} table name of the reference field ReferencePart
+        :raises ValueError: Fieldname cannot be . qualified
+        :raises DataError: if provided with field that is not a reference
+        """
+        if '.' in fieldname:
+            raise ValueError(f'tablename: {tablename}, fieldname: {fieldname}', 'Fieldname cannot be . qualified')
+
+        referencedTableWithNamespace = None
+
+        for fld in self._fields:
+            if fld['Table'] == tablename and (fld['Field'] == fieldname or fld["referencedTable"] == fieldname) and fld[
+                'Type'] == 'Reference':
+                relatedNamespace = fld["Related Namespace"]
+                referencedTab = fld["referencedTable"]
+                referencedTableWithNamespace = f'{relatedNamespace}::{referencedTab}'
+            elif fld['Table'] == tablename and fld['Field'] == fieldname and fld['Type'] != 'Reference':
+                raise DataError(f'tablename: {tablename}, fieldname: {fieldname}', 'is not a reference field')
+
+        if referencedTableWithNamespace is None:
+            raise DataError(f'tablename: {tablename}, fieldname: {fieldname}',
+                            'does not resolve to a referenced table with namespace')
+
+        return referencedTableWithNamespace
+
+    def _is_reference_field(self, tablename, fieldname):
+        """
+        _is_reference_field(part, site)
+        :param tablename: table name, not qualified
+        :param fieldname: fieldname, not . qualified
+        :return boolean: isReference
+        :raise ValueError: if fieldname contains .
+        """
         # list((filter(lambda x: x['Table'] == tablename and x['Field'] == fieldname, env.data_model._fields)))
-        if '.' not in fieldname:
-            for f in self._fields:
-                if f['Table'] == tablename and f['Field'] == fieldname and f['Type'] == 'Reference':
-                    return True
-            return False
-        else:
-            raise ValueError('Fieldname cannot be . qualified')
+        isReference = False
+        if '.' in fieldname:
+            raise ValueError(f'Fieldname: {fieldname} cannot be . qualified')
+
+        for f in self._fields:
+            if f['Table'] == tablename and f['Field'] == fieldname and f['Type'] == 'Reference':
+                isReference = True
+        return isReference
+
+    def validate_field(self, tablename, fieldname):
+        """
+        loop over the fieldname, and replace the fieldnames with their real table names, then validate whether the entire thing is valid
+        :param tablename: example, Part (does not include namespace)
+        :param fieldname: ReferencePart.Des
+        :return: boolean, isValid
+        """
+        return self._validate_fully_qualified_field_name(tablename, fieldname)
 
     def get_table(self, table: str, namespace: str):
         """
@@ -360,6 +504,7 @@ class DataModel(AbstractDataModel):
                 raise RequestsError(response,
                                     "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
             for r in response_dict["Rows"]:
+                # TODO if namespace is in excluded list, skip
                 self.tables.append(Table(*r['Values']))
         return self.tables
 
@@ -442,6 +587,7 @@ class DataModel(AbstractDataModel):
             for r in response_dict["Rows"]:
                 # returned = rec.split('\t')
                 # self.rows.append(WorksheetRow(r['Values'], self))
+                # TODO if namespace is in excluded list, skip
                 self._fields.append({'Table': r['Values'][0],
                                      'Namespace': r['Values'][1],
                                      'Field': r['Values'][2],
