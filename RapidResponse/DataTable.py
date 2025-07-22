@@ -453,7 +453,7 @@ class DataTable(Table):
 
         try:
             async with limit:
-                response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
+                response = await client.post(url=url, headers=self.environment.global_headers, content=payload)
         except:
             raise RequestsError(response, f"error during POST to: {url}", payload)
         else:
