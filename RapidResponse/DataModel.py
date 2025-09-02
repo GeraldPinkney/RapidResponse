@@ -4,8 +4,6 @@ import csv
 import json
 import logging
 import os
-from dataclasses import field
-from time import sleep
 
 import requests
 from pkg_resources import resource_filename, resource_exists
@@ -64,7 +62,6 @@ class AbstractDataModel:
         :return Column:
         """
         tablearray = tablename.split('::')
-        c = None
 
         tab = self.get_table(table=tablearray[1], namespace=tablearray[0])
         # c = Column(name = fieldname, datatype='Str', key='N')
@@ -72,11 +69,10 @@ class AbstractDataModel:
         if self._validate_fully_qualified_field_name(tablename=tab._table_name, fieldname=fieldname):
             if '.' not in fieldname:
                 c = tab.get_field(fieldname)
-
             else:
-                raise DataError('cannot process nested field, {fieldname}')
+                raise DataError(f'cannot process nested field, {fieldname}')
         else:
-            raise DataError('invalid field {tablename}, {fieldname}')
+            raise DataError(f'invalid field {tablename}, {fieldname}')
         return c
 
     def _get_nested_table_field(self, tablename, fieldname):
@@ -89,12 +85,12 @@ class AbstractDataModel:
 
         tablearray = tablename.split('::')
         if len(tablearray) != 2:
-            raise DataError('invalid table: {tablename}. Requires format Mfg::PartCustomer')
+            raise DataError(f'invalid table: {tablename}. Requires format Mfg::PartCustomer')
 
         tab = Table(namespace=tablearray[0], name=tablearray[1])
 
         if not self._validate_fully_qualified_field_name(tab._table_name, fieldname):
-            raise DataError('invalid table: {tablename} and field: {fieldname}')
+            raise DataError(f'invalid table: {tablename} and field: {fieldname}')
 
         if '.' not in fieldname:
             modified_column = self._get_table_field(tablename, fieldname)
@@ -190,7 +186,7 @@ class AbstractDataModel:
                     referencedTable = f['referencedTable']
                     return referencedTable
         else:
-            raise ValueError('Fieldname cannot be . qualified')
+            raise ValueError(f'tablename: {tablename}, fieldname: {fieldname}', 'Fieldname cannot be . qualified')
 
         return referencedTable
 
@@ -219,7 +215,7 @@ class AbstractDataModel:
 
         if referencedTableWithNamespace is None:
             raise DataError(f'tablename: {tablename}, fieldname: {fieldname}',
-                            'does not resolve to a referenced table with namespace')
+                            f'tablename: {tablename}, fieldname: {fieldname} does not resolve to a referenced table with namespace')
 
         return referencedTableWithNamespace
 
@@ -234,7 +230,7 @@ class AbstractDataModel:
         # list((filter(lambda x: x['Table'] == tablename and x['Field'] == fieldname, env.data_model._fields)))
         isReference = False
         if '.' in fieldname:
-            raise ValueError(f'Fieldname: {fieldname} cannot be . qualified')
+            raise ValueError(f'tablename: {tablename}, fieldname: {fieldname}', 'Fieldname cannot be . qualified')
 
         for f in self._fields:
             if f['Table'] == tablename and f['Field'] == fieldname and f['Type'] == 'Reference':
@@ -273,7 +269,7 @@ class AbstractDataModel:
             try:
                 to_check = Table(tabarray[1], tabarray[0])
             except IndexError:
-                raise ValueError('table name parameter must be in format namespace::tablename')
+                raise ValueError(f'tablename parameter must be in format namespace::tablename. Table: {Table}')
         else:
             to_check = item
 

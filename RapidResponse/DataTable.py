@@ -638,11 +638,13 @@ class DataTable(Table):
 
         if results['Status'] == 'Failure':
             self._logger.error(response.text)
-            raise RequestsError(response, f"error during POST to: {url}", None)
+            raise RequestsError(response,
+                                f"Status is Failure during bulk upload complete. error during POST to: {url}. {response.text}",
+                                None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
             self._logger.error(response.text)
-            raise DataError(response.text, "Partial Success during bulk upload complete, error count: " + str(
-                results['ErrorRowCount']))
+            raise DataError(response.text,
+                            f"Status is Partial Success during bulk upload complete, error count: {str(results['ErrorRowCount'])}")
         else:
             self._logger.info(response_readable)
             self._logger.info(response_dict)

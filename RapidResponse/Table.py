@@ -126,11 +126,11 @@ class Table:
             if field.key == 'Y':
                 self._key_fields.remove(field.name)
         else:
-            raise ValueError('The field is not associated to the table')
+            raise ValueError(f'The field: {field.name} is not associated to {self.name}')
 
     def remove_fields(self, *fields):
         """
-        remove fields from table\n
+        remove fields from table. if field is not in table its passed over. \n
         :param fields: list of fields.
         :return: None
         """
@@ -138,7 +138,7 @@ class Table:
             try:
                 self._remove_field(f)
             except ValueError:
-                pass
+                self._logger.info(f'info: field {f.name} not found in {self.name}, skipped')
 
     def get_field(self, name: str):
         """
@@ -166,11 +166,19 @@ class Table:
 
     @property
     def fields(self):
+        """
+
+        :return table_fields: list of columns
+        """
         return self._table_fields
 
     @property
     def name(self):
-        return self._table_namespace + "::" + self._table_name
+        """
+
+        :return name: returns fully qualified name in format, namespace::tablename. example Mfg::Part
+        """
+        return f'{self._table_namespace}::{self._table_name}'
 
     @name.setter
     def name(self, new_name):

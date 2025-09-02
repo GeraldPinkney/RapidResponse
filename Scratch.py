@@ -183,3 +183,7 @@ def export_pkg():
     file = open("test_20240612.kpk", "wb")
     file.write(response.content)
     file.close() # yes, I could have done this with a context manager... whatevs
+
+
+bel_bootstrap = {'url': 'https://eu21.kinaxis.net/BELD02_DEV01/', 'data_model_bootstrap': 'KXSHelperREST',
+                 'auth_type': 'basic', 'username': 'IntegrationUser', 'password': 'Welcome1!'}

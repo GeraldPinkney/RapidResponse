@@ -278,15 +278,15 @@ class DataTableTestCase(unittest.TestCase):
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'SOPDemandMgmt', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
+        rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
                 '2017-08-31', '1500']
         IndependentDemand.append(rows)
 
         self.assertIn(
-            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
              '2017-08-31', '1500'], IndependentDemand)
         IndependentDemand.del_row(
-            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
              '2017-08-31', '1500'])
 
     # test del
@@ -352,6 +352,7 @@ class DataTableTestCase(unittest.TestCase):
                 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols,
                                       scenario={"Name": "Integration", "Scope": "Public"})
+        self.assertIsNotNone(IndependentDemand)
 
     # test update of attribute of individual record
     def test_data_table_col_update(self):
