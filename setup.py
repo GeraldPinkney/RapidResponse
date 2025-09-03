@@ -3,7 +3,7 @@ See:
 https://github.com/GeraldPinkney/RapidResponse
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, find_namespace_packages
 import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -14,7 +14,7 @@ long_description = (here / "RapidResponse/docs/README.md").read_text(encoding="u
 
 setup(
     name="RapidResponse",
-    version="1.0.16",
+    version="1.0.18",
     description="RapidResponse library",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -29,5 +29,5 @@ setup(
     package_data={  # Optional
         "": ["data/*.tab", "data/*.wwb", "docs/*.md"], # includes all tab files (i.e. those data model ones), and the wbb for data model bootstrapping
     },
-    test_suite='tests',
+    # test_suite='setup.my_test_suite',
 )
