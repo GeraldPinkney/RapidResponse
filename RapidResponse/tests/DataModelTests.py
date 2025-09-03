@@ -200,5 +200,37 @@ class DataModelWBKTestCase(unittest.TestCase):
         tab1 = Table.Table(name='Part', namespace='Mfg')
         self.assertEqual(tab, tab1)
 
+    def test_get_field(self):
+        data_model = DM.DataModel(
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+        col = data_model.get_field('Mfg::IndependentDemand', 'Order.Type.ControlSet.Value')
+        # print(col)
+        self.assertEqual(col, Table.Column(name='Order.Type.ControlSet.Value', datatype='String', key='Y',
+                                           referencedTable=None, referencedTableNamespace=None,
+                                           identification_fields=None, correspondingField=None,
+                                           correspondingFieldNamespace=None, fieldNamespace='Mfg'))
+
+    def test_get_field_not_nested(self):
+        data_model = DM.DataModel(
+            'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
+        col = data_model.get_field('Mfg::IndependentDemand', 'Line')
+        # print(col)
+        self.assertEqual(col, Table.Column(name='Line', datatype='String', key='Y', referencedTable=None,
+                                           referencedTableNamespace=None, identification_fields=None,
+                                           correspondingField=None, correspondingFieldNamespace=None,
+                                           fieldNamespace='Mfg'))
+
+    def _test_get_field_reference(self):
+        data_model = DM.DataModel(None, url='http://localhost/rapidresponse',
+                                  headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                           'Content-Type': 'application/json'})
+        col = data_model.get_field('Mfg::Customer', 'U_Division')
+        # print(col)
+        self.assertEqual(col, Table.Column(name='U_Division', datatype='Reference', key='Y', referencedTable=None,
+                                           referencedTableNamespace=None, identification_fields=None,
+                                           correspondingField=None, correspondingFieldNamespace=None,
+                                           fieldNamespace='Mfg'))
+
+
 if __name__ == '__main__':
     unittest.main()

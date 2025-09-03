@@ -243,7 +243,8 @@ class DataTable(Table):
                                          identification_fields=c.identification_fields,
                                          correspondingField=c.correspondingField,
                                          correspondingFieldNamespace=c.correspondingFieldNamespace,
-                                         fieldNamespace=c.fieldNamespace)
+                                         # modified the below. previously was fieldNamespace=c.fieldNamespace. issue was that if nested then did not work
+                                         fieldNamespace=col.fieldNamespace)
                         self.explode_reference_field(key_col, running_list_of_cols)
 
         # print(running_list_of_cols)
@@ -450,7 +451,7 @@ class DataTable(Table):
             "Fields": local_query_fields,
             "Filter": query_filter
         })
-
+        self._logger.debug(f'Create Export payload sent is: {payload}')
         try:
             async with limit:
                 response = await client.post(url=url, headers=self.environment.global_headers, content=payload)
@@ -597,7 +598,9 @@ class DataTable(Table):
         table = {'Namespace': self._table_namespace,
                  'Name': self._table_name}
 
-        local_query_fields = [f.name for f in self.columns]
+        # local_query_fields = [f.name for f in self.columns]
+        local_query_fields = [f.name if self._table_namespace == self.get_field(
+            f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
         # local_query_fields = [f.name if self._table_namespace == self.get_field(f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
         # local_query_fields = [f.name if self._table_namespace == f.fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
         rows = [{"Values": i.data} for i in args]
@@ -608,7 +611,7 @@ class DataTable(Table):
             'Fields': local_query_fields,
             'Rows': rows
         })
-
+        self._logger.debug(f'Create Upload payload: {payload}')
         response = requests.request("POST", self.environment.bulk_upload_url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
@@ -620,7 +623,7 @@ class DataTable(Table):
         self._uploadId = response_dict["UploadId"]
 
     def _complete_upload(self):
-        url = self.environment.bulk_upload_url + "/" + self._uploadId[1:] + '/complete'
+        url = f'{self.environment.bulk_upload_url}/{self._uploadId[1:]}/complete'
         response = requests.request("POST", url, headers=self.environment.global_headers)
 
         # check valid response
@@ -646,8 +649,8 @@ class DataTable(Table):
             raise DataError(response.text,
                             f"Status is Partial Success during bulk upload complete, error count: {str(results['ErrorRowCount'])}")
         else:
-            self._logger.info(response_readable)
-            self._logger.info(response_dict)
+            self._logger.debug(response_readable)
+            self._logger.debug(response_dict)
 
     def _create_deletion(self, *args):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
@@ -665,7 +668,7 @@ class DataTable(Table):
             'Fields': local_query_fields,
             'Rows': rows
         })
-
+        self._logger.debug(f'Create Deletion payload: {payload}')
         response = requests.request("POST", self.environment.bulk_remove_url, headers=self.environment.global_headers, data=payload)
 
         # check valid response
@@ -707,22 +710,24 @@ class DataTable(Table):
         """
         get_field( 'Order.Site.Value')
         take as input a fieldname, can be qualified
-        :param name:
+        :param name: 'Order.Site.Value'
         :return Column:
         """
-        response = None
         try:
+            self._logger.debug(
+                f'Fetch field: {field} from table: {self.name}. only works if its an attribute of table, not reference')
             response = super(self.__class__, self).get_field(field)
         except DataError:
-            self._logger.info('caught data error, now using data model to get field')
+            self._logger.debug(
+                'Caught data error when trying to get from Table object, now using data model to get field. using get_field()')
             # validate _validate_fully_qualified_field_name(self, tablename, fieldname)
             if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, field):
                 # get_field( 'Mfg::PartCustomer', 'Part.Site.Value')
-                self._logger.info(f'tablename: {self._table_name} fieldname: {field}')
+                self._logger.debug(f'Valid Field: tablename: {self._table_name} fieldname: {field}')
                 response = self.environment.data_model.get_field(self.name, field)
-                self._logger.info(response)
+                self._logger.debug(f'self.environment.data_model.get_field response: {response}')
             else:
-                raise DataError(f'fieldname: {field}', f'invalid fieldname for {self.name}')
+                raise DataError(f'Invalid Field: fieldname: {field}', f'tablename {self.name}')
 
         return response
 

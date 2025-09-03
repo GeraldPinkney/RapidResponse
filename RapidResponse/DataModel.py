@@ -77,7 +77,7 @@ class AbstractDataModel:
 
     def _get_nested_table_field(self, tablename, fieldname):
         """
-        # input like self._get_nested_field_namespace( 'Mfg::PartCustomer', 'Part.Site.Value')
+        # input like self._get_nested_field( 'Mfg::PartCustomer', 'Part.Site.Value')
         :param tablename: namespace qualified tablename, 'Mfg::PartCustomer'
         :param fieldname: field name, delimited by . 'Part.Site.Value'
         :return Column:
@@ -90,10 +90,24 @@ class AbstractDataModel:
         tab = Table(namespace=tablearray[0], name=tablearray[1])
 
         if not self._validate_fully_qualified_field_name(tab._table_name, fieldname):
-            raise DataError(f'invalid table: {tablename} and field: {fieldname}')
+            raise DataError(f'Field failed validity test. Invalid table: {tablename} and field: {fieldname}')
 
         if '.' not in fieldname:
-            modified_column = self._get_table_field(tablename, fieldname)
+            try:
+                modified_column = self._get_table_field(tablename, fieldname)
+            except DataError:
+                if self._is_reference_field(tablearray[1], fieldname):
+                    for c in self._fields:
+                        # print(f'{c['Table']} == {tablearray[1]}, {c["Field"]} == {field_to_search}')
+                        if c['Table'] == tablearray[1] and c["Field"] == fieldname:
+                            # print('found rec')
+                            modified_column = Column(name=c['Field'], datatype=c['Type'], key=c['Key'],
+                                                     referencedTable=c['referencedTable'],
+                                                     referencedTableNamespace=c['Related Namespace'],
+                                                     fieldNamespace=c['FieldNameSpace'])
+                else:
+                    raise DataError(
+                        f'Caught DataError exception, but field is not a refeerence. invalid table: {tablename} and field: {fieldname}')
         else:
             fieldarray = fieldname.split('.')  # [Part, Site, Value]
             fieldarray.insert(0, tab._table_name)  # [PartCustomer, Part, Site, Value]
@@ -103,16 +117,8 @@ class AbstractDataModel:
                     fieldarray[i + 1] = self._get_referenced_table(fieldarray[i], fieldarray[i + 1])
                 else:
                     pass
-            ##print(fieldarray)
-            ##print(f'tablename: {fieldarray[-2]}, fieldname: {fieldarray[-1]}')
-            # if len(fieldarray) > 3:
-            #    temp_tab_name = fieldarray[-3]
-            # else:
-            #    temp_tab_name = fieldarray[-3].split('::')[1]
             referenced_tab = self._get_referenced_tableAndNamespace(fieldarray[-3], fieldarray[-2])
             c = self._get_table_field(referenced_tab, fieldarray[-1])
-            # c.name =
-            # f = self.get_field(tablename, fieldname.split('.')[0])
             modified_column = Column(name=fieldname, datatype=c.datatype, key=c.key, referencedTable=c.referencedTable,
                                      referencedTableNamespace=c.referencedTableNamespace,
                                      fieldNamespace=c.fieldNamespace)
@@ -121,11 +127,30 @@ class AbstractDataModel:
     def get_field(self, tablename, fieldname):
         """
         get_field( 'Mfg::PartCustomer', 'Part.Site.Value')
-        :param tablename:
-        :param fieldname:
-        :return:
+        :param tablename: fully qualified, in format namespace::name
+        :param fieldname: can be nested, for example 'Part.Site.Value'
+        :return Column:
         """
-        return self._get_nested_table_field(tablename, fieldname)
+        col = self._get_nested_table_field(tablename, fieldname)
+        # now take the original namespace from the field. and overwrite it.
+        tablearray = tablename.split('::')
+        if len(tablearray) != 2:
+            raise DataError(f'invalid table: {tablename}. Requires format Mfg::PartCustomer')
+
+        # split to get the first bit of the fieldname, i.e. Part from Part.Site.Value
+        if '.' not in fieldname:
+            field_to_search = fieldname
+        else:
+            fieldarray = fieldname.split('.')  # [Part, Site, Value]
+            field_to_search = fieldarray[0]
+
+        # get the namespace of the original field
+        for c in self._fields:
+            # print(f'{c['Table']} == {tablearray[1]}, {c["Field"]} == {field_to_search}')
+            if c['Table'] == tablearray[1] and c["Field"] == field_to_search:
+                # print('found rec')
+                col = col._replace(fieldNamespace=c['FieldNameSpace'])
+        return col
 
     def _validate_fully_qualified_field_name(self, tablename, fieldname):
         """

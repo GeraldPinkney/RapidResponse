@@ -89,7 +89,7 @@ class RequestsError(Error):
 
 class DataError(Error):
     def __init__(self, data, msg=None):
-        self.msg = "DataError: " + msg
+        self.msg = f"DataError:  {msg}"
         self.data = data
         self.logger = logging.getLogger('RapidPy')
         self.logger.error(f'Error: exception instance {type(self)}.')
