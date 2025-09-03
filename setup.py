@@ -14,7 +14,7 @@ long_description = (here / "RapidResponse/docs/README.md").read_text(encoding="u
 
 setup(
     name="RapidResponse",
-    version="1.0.18",
+    version="1.0.21",
     description="RapidResponse library",
     long_description=long_description,
     long_description_content_type="text/markdown",

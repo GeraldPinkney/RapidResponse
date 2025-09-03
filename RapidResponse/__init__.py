@@ -1,3 +1,3 @@
-from pkg_resources import get_distribution
+from importlib_metadata import version
 
-__version__ = get_distribution('RapidResponse').version
+__version__ = version('RapidResponse')

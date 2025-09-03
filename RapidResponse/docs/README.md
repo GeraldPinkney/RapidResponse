@@ -14,6 +14,8 @@ Before using this library there is setup that would need to be performed in Rapi
  - creation of a webservices user (required), 
  - creation of oauth2 client details (optional),
  - upload of the KXSHelperREST.wwb to target environment (optional). 
+- upload GP.GetWorkbook.Variables.spt
+- upload GP.GetWorkbook.Worksheets.spt
 
 It is also suggested that the RR documentation is reviewed https://help.kinaxis.com/20162/webservice/default.htm
 
@@ -112,6 +114,11 @@ in https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/web%2520s
 
 **log_directory**: (Optional) where logging information is written to
 
+**worksheet_script**: (Optional) Name of the helper script that pulls worksheet names from Maestreo. example, '
+GP.GetWorkbook.Worksheets'
+
+**variables_script**: (Optional) Name of the helper script that pulls variables from Maestreo. example, '
+GP.GetWorkbook.Variables'
 
 ### Reviewing data model information on a table
 ```python
@@ -249,6 +256,105 @@ for those who love pandas, you may want this
 df = pd.DataFrame([p for p in part])
 df.columns = [c.name for c in part.columns]
 df
+```
+
+## Workbook - Overivew
+
+Container for worksheets
+https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
+
+**Parameters**
+
+- :param environment: Required. contains the env details for worksheet.
+- :param workbook dict: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": '
+  Public'}
+- :param Scenario dict: Optional {"Name": "Integration", "Scope": "Public"}
+- :param SiteGroup str: Optional, the site or site filter to use with the workbook Example, "All Sites"
+- :param WorksheetNames list: Optional, the worksheets you want to retrieve data
+  from ["worksheet name1", "worksheet name2"]
+- :param Filter str: Optional,the filter to apply to the workbook, defined as an object that contains the filter name
+  and scope {"Name": "All Parts", "Scope": "Public"}
+- :param VariableValues dict: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "
+  DataModel_IsReadOnly": "All"}
+
+## Workbook - Usage Instructions
+
+create a workbook and print the worksheets contained within
+
+```python
+# setuo environment with worksheet and variables scripts
+sample_configuration = {'url': 'http://localhost/rapidresponse',
+                        'data_model_directory': 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\data',
+                        'auth_type': 'basic',
+                        'username': 'gpinkney_ws',
+                        'password': '1L0veR@pidResponse',
+                        'worksheet_script': 'GP.GetWorkbook.Worksheets',
+                        'variables_script': 'GP.GetWorkbook.Variables'}
+
+# initialise environment
+env = Environment(sample_configuration)
+wb_dict = {"Name": 'GP Data Validation', "Scope": 'Public'}
+
+# setup workbook 
+wb = Workbook(environment=env, workbook=wb_dict)
+
+# print the worksheets in the workbook
+for ws in wb:
+    print(ws)
+
+Worksheet: 'Summary By Site', Scope: 'Public'
+Worksheet: 'Summary By Part Type', Scope: 'Public'
+Worksheet: 'Allocation', Scope: 'Public'
+Worksheet: 'BillOfMaterial', Scope: 'Public'
+Worksheet: 'BOMAlternate', Scope: 'Public'
+Worksheet: 'Batch', Scope: 'Public'
+Worksheet: 'Calendar', Scope: 'Public'
+Worksheet: 'CalendarDate', Scope: 'Public'
+Worksheet: 'Constraint', Scope: 'Public'
+Worksheet: 'Constraint Available', Scope: 'Public'
+Worksheet: 'CurrencyConversionActuals', Scope: 'Public'
+Worksheet: 'CurrencyConversionForecast', Scope: 'Public'
+Worksheet: 'Customer', Scope: 'Public'
+Worksheet: 'DemandOrder', Scope: 'Public'
+Worksheet: 'ForecastDetail', Scope: 'Public'
+Worksheet: 'Historical Demand Actual', Scope: 'Public'
+Worksheet: 'Historical Supply Actual', Scope: 'Public'
+Worksheet: 'IndependentDemand', Scope: 'Public'
+Worksheet: 'OnHand', Scope: 'Public'
+Worksheet: 'Part', Scope: 'Public'
+Worksheet: 'Part Source', Scope: 'Public'
+Worksheet: 'PartSolution', Scope: 'Public'
+Worksheet: 'Part UOM Conversion', Scope: 'Public'
+Worksheet: 'ScheduledReceipt', Scope: 'Public'
+Worksheet: 'Site', Scope: 'Public'
+Worksheet: 'Source', Scope: 'Public'
+Worksheet: 'SourceConstraint', Scope: 'Public'
+Worksheet: 'SupplyOrder', Scope: 'Public'
+Worksheet: 'Supplier', Scope: 'Public'
+Worksheet: 'PartCustomer', Scope: 'Public'
+Worksheet: 'ReferencePart', Scope: 'Public'
+Worksheet: 'Region', Scope: 'Public'
+Worksheet: 'RegionGroup', Scope: 'Public'
+Worksheet: 'Part Validation', Scope: 'Public'
+Worksheet: 'Part Validation - Details', Scope: 'Public'
+Worksheet: 'PartSource Validation', Scope: 'Public'
+Worksheet: 'PartSource Validation - Details', Scope: 'Public'
+Worksheet: 'Source Validation', Scope: 'Public'
+Worksheet: 'Bill Of Material Validation', Scope: 'Public'
+Worksheet: 'Calendar Validation', Scope: 'Public'
+Worksheet: 'CCF Validation', Scope: 'Public'
+Worksheet: 'CCA Validation', Scope: 'Public'
+Worksheet: 'UnitOfMeasure Validation', Scope: 'Public'
+Worksheet: 'IndependentDemand Validation', Scope: 'Public'
+Worksheet: 'ScheduledReceipt Validation', Scope: 'Public'
+Worksheet: 'OnHand Validation', Scope: 'Public'
+Worksheet: 'Constraints', Scope: 'Public'
+Worksheet: 'ConstraintsMDM', Scope: 'Public'
+Worksheet: 'ConstraintAvailable', Scope: 'Public'
+Worksheet: 'Part Sources', Scope: 'Public'
+
+# refresh all worksheets
+wb.
 ```
 ## Worksheet - Overview
 

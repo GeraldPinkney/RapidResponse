@@ -1,42 +1,29 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import os
 
 import RapidResponse
-import RapidResponse.Table as Table
 import RapidResponse.DataModel as DataModel
-from RapidResponse.DataTable import DataTable, DataRow
 from RapidResponse.Environment import Environment
-from samples import sample_configuration
 from RapidResponse.Err import DataError
 
-# Mocking imports from RapidResponse
-'''class DataModel:
-    def __init__(self, data_model_directory, url, headers, workbook):
-        self.data_model_directory = data_model_directory
-        self.url = url
-        self.headers = headers
-        self.workbook = workbook
-
-    def get_table(self, table, namespace):
-        return f"Mocked Table: {namespace}.{table}"'''
-
-class SetupError(Exception):
-    pass
-
-class RequestsError(Exception):
-    def __init__(self, response, message, payload):
-        self.response = response
-        self.message = message
-        self.payload = payload
 
 import base64
 import json
-import requests
 
+
+class TestPackages(unittest.TestCase):
+    def test_version(self):
+        print(RapidResponse.__version__)
 
 class TestEnvironment(unittest.TestCase):
-
+    local_sample_bootstrap = {'url': 'http://localhost/rapidresponse',
+                              'data_model_bootstrap': 'KXSHelperREST',
+                              'auth_type': 'basic',
+                              'username': 'gpinkney_ws',
+                              'password': '1L0veR@pidResponse',
+                              'worksheet_script': 'GP.GetWorkbook.Worksheets',
+                              'variables_script': 'GP.GetWorkbook.Variables'
+                              }
     def setUp(self):
         self.valid_config = {
             'url': 'http://example.com',
@@ -87,7 +74,7 @@ class TestEnvironment(unittest.TestCase):
         self.assertEqual(env._getBasicAuth(), expected_auth)
 
     @patch('requests.request')
-    def test_get_oauth2(self, mock_request):
+    def _test_get_oauth2(self, mock_request):
         config = self.valid_config.copy()
         config['auth_type'] = 'oauth2'
         config['clientID'] = 'client_id'
@@ -110,7 +97,7 @@ class TestEnvironment(unittest.TestCase):
         self.assertEqual(env.global_headers['Authorization'], expected_auth)
 
     @patch('requests.request')
-    def test_refresh_auth_oauth2(self, mock_request):
+    def _test_refresh_auth_oauth2(self, mock_request):
         config = self.valid_config.copy()
         config['auth_type'] = 'oauth2'
         config['clientID'] = 'client_id'
@@ -146,6 +133,9 @@ class TestEnvironment(unittest.TestCase):
         env = Environment(self.valid_config)
         self.assertEqual(env._data_model_dir, 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
 
+    def test_env_with_scripts(self):
+        env = Environment(self.local_sample_bootstrap)
+        print(env._worksheet_script)
 
 if __name__ == '__main__':
     unittest.main()

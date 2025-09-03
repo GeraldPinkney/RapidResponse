@@ -7,6 +7,7 @@ import os
 
 import requests
 from pkg_resources import resource_filename, resource_exists
+# from importlib_resources import
 
 from RapidResponse.Err import DirectoryError, SetupError, RequestsError, DataError
 from RapidResponse.Table import Table, Column

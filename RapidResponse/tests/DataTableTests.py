@@ -1,12 +1,12 @@
 import json
+import time
 import unittest
-from unittest.mock import patch, AsyncMock
+
 from RapidResponse.DataTable import DataTable, DataRow, Column
 from RapidResponse.Environment import Environment
+from RapidResponse.Err import DataError
 # from samples import sample_configuration, local_sample_bootstrap
 from RapidResponse.tests.resources.samples import sample_configuration, local_sample_bootstrap
-from RapidResponse.Err import DataError
-import time
 
 
 def print_recs(list_of_stuff):
@@ -265,23 +265,22 @@ class DataTableTestCase(unittest.TestCase):
     def test_data_table_append(self):
         # setup
         env = Environment(local_sample_bootstrap)
-        cols = ['Order.Customer.Id', 'Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line',
+        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line',
                 'Part.Name', 'Part.Site',
                 'DueDate', 'Quantity']
         IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
 
         # execute
-        rows = ['Robucks', 'RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A',
-                'SOPDC-NorthAmerica',
+        rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
                 '2017-08-31', '1500']
         IndependentDemand.append(rows)
 
         self.assertIn(
-            ['Robucks', 'RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A',
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A',
              'SOPDC-NorthAmerica',
              '2017-08-31', '1500'], IndependentDemand)
         IndependentDemand.del_row(
-            ['Robucks', 'RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A',
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A',
              'SOPDC-NorthAmerica',
              '2017-08-31', '1500'])
 

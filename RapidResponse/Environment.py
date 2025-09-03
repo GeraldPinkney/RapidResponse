@@ -3,8 +3,10 @@ import base64
 import json
 import logging
 import os
+from asyncio import Timeout
 
 import httpx
+from httpx import AsyncClient
 import requests
 from RapidResponse.DataModel import DataModel
 from RapidResponse.Err import SetupError, RequestsError
@@ -40,7 +42,8 @@ class AbstractEnvironment:
         self.scenarios = None
         self._maxconnections = None
         self._session = None
-
+        self._variables_script = None
+        self._worksheet_script = None
         self.client = None
 
 
@@ -150,9 +153,10 @@ class Environment(AbstractEnvironment):
         self._session.headers = self.global_headers
         # Data Model
         self._configure_data_model(configuration)
-        # Scenarios
+        # Scenario default
         self.scenarios = self.set_scenarios(ENTERPRISE_DATA_SCENARIO)
-
+        # Workbook scripts
+        self._configure_workbook_defaults(configuration)
 
     def _configure_url(self, configuration):
         try:
@@ -177,12 +181,26 @@ class Environment(AbstractEnvironment):
             raise ValueError('invalid authentication type')
         self.refresh_auth()
 
+    def _configure_workbook_defaults(self, configuration):
+        try:
+            self._variables_script = configuration['variables_script']
+        except KeyError:
+            self._variables_script = None
+            self._logger.debug(f'configuration variables_script not provided')
+        try:
+            self._worksheet_script = configuration['worksheet_script']
+        except KeyError:
+            self._worksheet_script = None
+            self._logger.debug(f'configuration worksheet_script not provided')
+
     def _configure_data_model(self, configuration):
         try:
             self._data_model_dir = configuration['data_model_directory']
         except KeyError:
             self._data_model_dir = None
             # raise SetupError("Data Model directory not valid: " + configuration['data_model_directory'])
+            self._logger.debug(f'configuration data_model_directory not provided')
+
         else:
             if os.path.exists(configuration['data_model_directory']):
                 self._data_model_dir = configuration['data_model_directory']
