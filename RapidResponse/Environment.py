@@ -152,7 +152,8 @@ class Environment(AbstractEnvironment):
         self._configure_data_model(configuration)
         # Scenarios
         self.scenarios = self.set_scenarios(ENTERPRISE_DATA_SCENARIO)
-
+        # Workbook scripts
+        self._configure_workbook_defaults(configuration)
 
     def _configure_url(self, configuration):
         try:
@@ -176,6 +177,16 @@ class Environment(AbstractEnvironment):
         else:
             raise ValueError('invalid authentication type')
         self.refresh_auth()
+
+    def _configure_workbook_defaults(self, configuration):
+        try:
+            self._variables_script = configuration['variables_script']
+        except KeyError:
+            self._variables_script = None
+        try:
+            self._worksheet_script = configuration['worksheet_script']
+        except KeyError:
+            self._worksheet_script = None
 
     def _configure_data_model(self, configuration):
         try:

@@ -1,6 +1,6 @@
 import unittest
 from RapidResponse.Environment import Environment
-from samples import sample_configuration
+from samples import sample_configuration, local_sample_bootstrap
 from RapidResponse.Script import Script
 import random
 
@@ -72,6 +72,32 @@ class ParamsScriptTest(unittest.TestCase):
         Ignite_Create_Scenario = Script(env, 'Ignite_Create_Scenario', scope='Public', parameters=param)
         Ignite_Create_Scenario.parameters.update({'newScenario': 'Good2GreatZZZ'})
         self.assertEqual(Ignite_Create_Scenario.parameters.get("newScenario"), 'Good2GreatZZZ')
+
+    def test_fetch_result_variables(self):
+        env = Environment(local_sample_bootstrap)
+        param = {"SharedWorkbookName": "S&OP Finance Operating Plan", "IsIncludeHiddenWorksheet": False,
+                 "loggingLevel": "2"}
+        GPGetWorkbookVariables = Script(env, 'GP.GetWorkbook.Variables', scope='Public', parameters=param)
+        GPGetWorkbookVariables.execute()
+        # print(GPGetWorkbookVariables)
+        # print(GPGetWorkbookVariables.console)
+        print(GPGetWorkbookVariables.value)
+        # Ignite_Create_Scenario.parameters.update({'newScenario': 'Good2GreatZZZ'})
+        self.assertEqual(GPGetWorkbookVariables.value,
+                         '"name: DDTrue defaultValue: trueValue", "name: DDFalse defaultValue: falseValue"')
+
+    def test_fetch_results_worksheets(self):
+        env = Environment(local_sample_bootstrap)
+        param = {"SharedWorkbookName": "GP Data Validation", "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
+        GPGetWorkbookVariables = Script(env, 'GP.GetWorkbook.Worksheets', scope='Public', parameters=param)
+        GPGetWorkbookVariables.execute()
+        # print(GPGetWorkbookVariables)
+        # print(GPGetWorkbookVariables.console)
+        # print(GPGetWorkbookVariables.value)
+        # Ignite_Create_Scenario.parameters.update({'newScenario': 'Good2GreatZZZ'})
+        self.assertEqual(
+            '"Summary By Site", "Summary By Part Type", "Allocation", "BillOfMaterial", "BOMAlternate", "Batch", "Calendar", "CalendarDate", "Constraint", "Constraint Available", "CurrencyConversionActuals", "CurrencyConversionForecast", "Customer", "DemandOrder", "ForecastDetail", "Historical Demand Actual", "Historical Supply Actual", "IndependentDemand", "OnHand", "Part", "Part Source", "PartSolution", "Part UOM Conversion", "ScheduledReceipt", "Site", "Source", "SourceConstraint", "SupplyOrder", "Supplier", "PartCustomer", "ReferencePart", "Region", "RegionGroup", "Part Validation", "Part Validation - Details", "PartSource Validation", "PartSource Validation - Details", "Source Validation", "Bill Of Material Validation", "Calendar Validation", "CCF Validation", "CCA Validation", "UnitOfMeasure Validation", "IndependentDemand Validation", "ScheduledReceipt Validation", "OnHand Validation", "Constraints", "ConstraintsMDM", "ConstraintAvailable", "Part Sources"',
+            GPGetWorkbookVariables.value)
 
 
 # resource not available

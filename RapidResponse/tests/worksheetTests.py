@@ -76,6 +76,7 @@ class WorksheetTestCase(unittest.TestCase):
                        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+
         self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
         rec = ['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
@@ -83,16 +84,19 @@ class WorksheetTestCase(unittest.TestCase):
         ws.append(rec)
 
     def test_ws_extend(self):
+        # init
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
         workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
         scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
         Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
 
         self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
+
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
         recs = [['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
                'DC-NorthAmerica'],['102-CDMAc', '12345', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
                'DC-NorthAmerica']]
+
         ws.extend(recs)
 
     def test_ws_slice(self):
@@ -157,10 +161,12 @@ class WorksheetRowTestCase(unittest.TestCase):
         #self.assertNotEqual(len(wsr), 0)
 
     def test_wsr_dynamic_attr_access(self):
+        # init
         ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
         workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
         scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
         Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
+
         wsr = WorksheetRow(['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual','DC-NorthAmerica'], ws)
         self.assertEqual(wsr.OrderId, '102-CDMAc')
 
@@ -173,7 +179,46 @@ class WorksheetRowTestCase(unittest.TestCase):
         wsr[1] = 'GP1234567'
 
 class WorkbookTestCase(unittest.TestCase):
-    pass
+    env = Environment(sample_configuration)
+    wb_dict = {"Name": 'GP Data Validation', "Scope": 'Public'}
+    OrdersByCustomerDict = {'Name': 'Orders by Customer', "Scope": 'Public'}
+    Scenario = {"Name": "Integration", "Scope": "Public"}
+
+    def test_fetch_ws_from_mx(self):
+        wb = Workbook(environment=self.env, workbook=self.wb_dict)
+        self.assertIsNotNone(wb)
+
+    def test_basic_wb_params_scenario(self):
+        OrdersByCustomer = Workbook(environment=self.env, workbook=self.OrdersByCustomerDict,
+                                    WorksheetNames=["Actual Orders"],
+                                    Scenario=self.Scenario, SiteGroup="All Sites",
+                                    Filter={"Name": "All Parts", "Scope": "Public"},
+                                    VariableValues={"customer": "ebikes.com"})
+        self.assertEqual(OrdersByCustomer.scenario, self.Scenario)
+
+    def test_basic_wb_params_scenario_defaulted(self):
+        OrdersByCustomer = Workbook(environment=self.env,
+                                    workbook=self.OrdersByCustomerDict,
+                                    WorksheetNames=["Actual Orders"],
+                                    SiteGroup="All Sites",
+                                    Filter={"Name": "All Parts", "Scope": "Public"},
+                                    VariableValues={"customer": "ebikes.com"})
+        self.assertEqual(OrdersByCustomer.scenario, {"Name": "Enterprise Data", "Scope": "Public"})
+
+    def test_basic_wb_params_siteGroup_defaulted(self):
+        OrdersByCustomer = Workbook(environment=self.env,
+                                    workbook=self.OrdersByCustomerDict,
+                                    WorksheetNames=["Actual Orders"],
+                                    Filter={"Name": "All Parts", "Scope": "Public"},
+                                    VariableValues={"customer": "ebikes.com"})
+        self.assertEqual(OrdersByCustomer.site_group, 'All Sites')
+
+    def test_basic_wb_params_filter_defaulted(self):
+        OrdersByCustomer = Workbook(environment=self.env,
+                                    workbook=self.OrdersByCustomerDict,
+                                    WorksheetNames=["Actual Orders"],
+                                    VariableValues={"customer": "ebikes.com"})
+        self.assertEqual(OrdersByCustomer.filter, {"Name": "All Parts", "Scope": "Public"})
 
 
 if __name__ == '__main__':

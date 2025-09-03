@@ -10,6 +10,7 @@ import re
 from datetime import date
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Environment import Environment
+from RapidResponse.Script import Script
 from RapidResponse.Utils import SCOPE_PUBLIC, VALID_SCOPES
 
 
@@ -27,26 +28,30 @@ class AbstractWorkBook:
 
            """
     # WORKBOOK_URL = "/integration/V1/data/workbook"
+
     '''SCOPE_PUBLIC = 'Public'
     SCOPE_PRIVATE = 'Private'
     VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}'''
     ALL_SITES = 'All Sites'
 
-    def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
-                 Filter: dict = None, VariableValues: dict = None):
+    def __init__(self, environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
         :param environment: Required. contains the env details for worksheet.
-        :param Scenario:
-        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
-        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
-        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
-        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
-        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+        :param workbook dict: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+        :param Scenario dict: Optional {"Name": "Integration", "Scope": "Public"}
+        :param SiteGroup str: Optional, the site or site filter to use with the workbook Example, "All Sites"
+        :param WorksheetNames list: Optional, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+        :param Filter str: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+        :param VariableValues dict: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
 
 
         """
+        self.fetch_worksheets_from_mx = False
+        self.fetch_variables_from_mx = False
+        # self.VARIABLESUTILSCRIPT = 'GP.GetWorkbook.Variables'
+        # self.WORKSHEETUTILSCRIPT = 'GP.GetWorkbook.Worksheets'
         self._logger = logging.getLogger('RapidPy.wb.wb')
         self.worksheets = list()
         self._scenario = dict()
@@ -55,6 +60,7 @@ class AbstractWorkBook:
         self._site_group = None
         self._filter = None
         self._variable_values = None
+
 
 
     def __str__(self):
@@ -129,34 +135,37 @@ class AbstractWorkBook:
 class Workbook(AbstractWorkBook):
     """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
-        :param environment: Required. contains the env details for worksheet.\n
-        :param Scenario: Optional dict {"Name": "Enterprise Data", "Scope": "Public"}\n
-        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
-        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
-        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
-        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
-        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+        :param environment: Required. contains the env details for worksheet.
+        :param workbook dict: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+        :param Scenario dict: Optional {"Name": "Integration", "Scope": "Public"}
+        :param SiteGroup str: Optional, the site or site filter to use with the workbook Example, "All Sites"
+        :param WorksheetNames list: Optional, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+        :param Filter str: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+        :param VariableValues dict: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
 
 
         """
-    def __init__(self, environment, Scenario: dict, workbook: dict, SiteGroup: str, WorksheetNames: list,
+
+    def __init__(self, environment, workbook: dict, Scenario: dict = None, SiteGroup: str = None,
+                 WorksheetNames: list = None,
                  Filter: dict = None, VariableValues: dict = None):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
         :param environment: Required. contains the env details for worksheet.
-        :param Scenario: dict {"Name": "Enterprise Data", "Scope": "Public"}
-        :param workbook: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
-        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
-        :param WorksheetNames: Required, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
-        :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
-        :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
+        :param workbook dict: Required, The workbook the required data is in. Example,{"Name": 'workbookname', "Scope": 'Public'}
+        :param Scenario dict: Optional {"Name": "Integration", "Scope": "Public"}
+        :param SiteGroup str: Optional, the site or site filter to use with the workbook Example, "All Sites"
+        :param WorksheetNames list: Optional, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
+        :param Filter str: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
+        :param VariableValues dict: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
 
 
         """
-        super().__init__(environment, Scenario, workbook, SiteGroup, WorksheetNames, Filter, VariableValues)
+        super().__init__(environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues)
 
         # validations
+
         if not isinstance(environment, Environment):
             raise TypeError("The parameter environment type must be Environment.")
         if not environment:
@@ -164,6 +173,7 @@ class Workbook(AbstractWorkBook):
 
         # assign env
         self._environment = environment
+
 
         if Scenario:
             self._scenario = dict(Name=Scenario['Name'], Scope=Scenario['Scope'])
@@ -176,27 +186,75 @@ class Workbook(AbstractWorkBook):
             self._site_group = self.ALL_SITES
         else:
             self._site_group = str(SiteGroup)
-
+        # set Filter
         if not Filter:
             self._filter = dict({"Name": "All Parts", "Scope": SCOPE_PUBLIC})
         else:
             self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
+        # set script params
+        if self.environment._worksheet_script is None:
+            self.fetch_worksheets_from_mx = False
+        else:
+            self.fetch_worksheets_from_mx = True
 
-        self._variable_values = dict(VariableValues)
+        if self.environment._variables_script is None:
+            self.fetch_variables_from_mx = False
+        else:
+            self.fetch_variables_from_mx = True
 
-        self.worksheets = [
-            Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
-                      self._variable_values) for name in WorksheetNames]
+        if VariableValues:
+            self._variable_values = dict(VariableValues)
+        elif self.fetch_variables_from_mx:
+            self._logger.debug(f'Fetching variables from Maestro using {self.environment._variables_script}')
+            self._variable_values = self._fetch_variables(self.environment._variables_script)
+        else:
+            self._logger.debug(f'Variables might be required, who really knows?! Guess we see if it gives error later')
+
+        if WorksheetNames:
+            self._set_worksheets(WorksheetNames)
+        elif self.fetch_worksheets_from_mx:
+            self._logger.debug(
+                f'Attempting to fetch worksheets from Maestro using {self.environment._worksheet_script}')
+            self._set_worksheets(self._fetch_worksheets(self.environment._worksheet_script))
+        else:
+            raise ValueError('worksheets are required')
 
     def refresh(self):
         # populate all child worksheets with data
         for ws in self.worksheets:
             try:
-                ws.RefreshData_async()
+                ws.RefreshData()
             except:
-                self._logger.error('something went wrong with ' + ws.name)
+                self._logger.error(f'something went wrong with {ws.name}')
                 raise
 
+    def _set_worksheets(self, list_of_worksheets):
+        self.worksheets = [
+            Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
+                      self._variable_values, refresh=False) for name in list_of_worksheets]
+
+    def _fetch_worksheets(self, helper_workbook):
+        param = {"SharedWorkbookName": self.name, "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
+        worksheetsResponse = Script(self.environment, helper_workbook, scope='Public', parameters=param)
+        worksheetsResponse.execute()
+        worksheets = worksheetsResponse.value.replace('"', '')
+        worksheetarray = worksheets.split(', ')
+        self._logger.debug(f'{worksheetarray}')
+        return worksheetarray
+
+    def _fetch_variables(self, helper_workbook):
+        param = {"SharedWorkbookName": self.name, "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
+        variablesResponse = Script(self.environment, helper_workbook, scope='Public', parameters=param)
+        variablesResponse.execute()
+        var_list = json.loads('[' + variablesResponse.value + ']')
+        variables_dict = {}
+        for var in var_list:
+            variables_dict.update({var["name"]: var["defaultValue"]})
+        return variables_dict
+
+
+# todo set script names from config dict
+# todo change worksheet get to be dynamic attr access __getattr__
 
 class Worksheet:
     """
@@ -300,8 +358,8 @@ class Worksheet:
         self.total_row_count = 0
 
         if self._refresh:
-            # self.RefreshData()
-            self.RefreshData_async()
+            self.RefreshData()
+            #self.RefreshData_async()
 
     @property
     def name(self):
@@ -714,24 +772,6 @@ class WorksheetRow(UserList):
         super().__setitem__(index, str(item))
         if self._worksheet.sync:
             to_send = list(self)
-            '''types = [item['DataType'] for item in self.columns]
-            for i in range(len(types)):
-                if types[i] == 'Date':
-                    if to_send[i] == 'Undefined':
-                        to_send[i] = ''
-                    elif to_send[i] == 'Future':
-                        to_send[i] = '31-12-99'
-                    elif to_send[i] == 'Past':
-                        to_send[i] = '01-01-70'
-                    elif to_send[i] == 'Today':
-                        today = date.today()
-                        formatted_today = today.strftime("%d-%m-%y")
-                        to_send[i] = formatted_today
-                    else:
-                        print(to_send[i])
-                        pattern = r"\b(19\d\d|20\d\d)[-/](0[1-9]|1[0-2])[-/](0[1-9]|[12]\d|3[01])\b"  # YYYY-MM-DD
-                        dates = re.findall(pattern, to_send[i])
-                        to_send[i] = f"{dates[0][2]}-{dates[0][1]}-{dates[0][0][2:]}"  # '07-06-20'''''
             self._worksheet.add_row(to_send)
 
 

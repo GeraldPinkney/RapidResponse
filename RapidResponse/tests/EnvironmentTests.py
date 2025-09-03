@@ -36,7 +36,14 @@ import requests
 
 
 class TestEnvironment(unittest.TestCase):
-
+    local_sample_bootstrap = {'url': 'http://localhost/rapidresponse',
+                              'data_model_bootstrap': 'KXSHelperREST',
+                              'auth_type': 'basic',
+                              'username': 'gpinkney_ws',
+                              'password': '1L0veR@pidResponse',
+                              'worksheet_script': 'GP.GetWorkbook.Worksheets',
+                              'variables_script': 'GP.GetWorkbook.Variables'
+                              }
     def setUp(self):
         self.valid_config = {
             'url': 'http://example.com',
@@ -146,6 +153,9 @@ class TestEnvironment(unittest.TestCase):
         env = Environment(self.valid_config)
         self.assertEqual(env._data_model_dir, 'C:\\Users\\gpinkney\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
 
+    def test_env_with_scripts(self):
+        env = Environment(self.local_sample_bootstrap)
+        print(env._worksheet_script)
 
 if __name__ == '__main__':
     unittest.main()
