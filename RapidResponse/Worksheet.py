@@ -1,15 +1,16 @@
 # Worksheet.py
 import asyncio
 import json
+import logging
+import re
 from collections import UserList
+from datetime import date
 
 import httpx
 import requests
-import logging
-import re
-from datetime import date
-from RapidResponse.Err import RequestsError, DataError
+
 from RapidResponse.Environment import Environment
+from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Script import Script
 from RapidResponse.Utils import SCOPE_PUBLIC, VALID_SCOPES
 
@@ -254,7 +255,6 @@ class Workbook(AbstractWorkBook):
         return variables_dict
 
 
-# todo set script names from config dict
 # todo change worksheet get to be dynamic attr access __getattr__
 
 class Worksheet:

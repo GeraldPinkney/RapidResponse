@@ -1,12 +1,7 @@
 import unittest
 
-
-import RapidResponse.Table as Table
 import RapidResponse.DataModel as DM
-from RapidResponse.DataTable import DataTable, DataRow
-from RapidResponse.Environment import Environment
-from samples import sample_configuration
-from RapidResponse.Err import DataError
+import RapidResponse.Table as Table
 
 
 class DataModel_init_TestCase(unittest.TestCase):
@@ -46,8 +41,6 @@ class DataModel_init_TestCase(unittest.TestCase):
         # print(tab.fields)
         self.assertEqual(c.fieldNamespace, 'Mfg')
 
-    def test_get_priv_table_field(self):
-        pass
 
     def test_get_public_field(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
@@ -56,6 +49,10 @@ class DataModel_init_TestCase(unittest.TestCase):
 
         returned = dm.get_field('Mfg::PartCustomer', 'Part.Site.Value')
         print(returned)
+        self.assertEqual(returned,
+                         Table.Column(name='Part.Site.Value', datatype='String', key='Y', referencedTable=None,
+                                      referencedTableNamespace=None, identification_fields=None,
+                                      correspondingField=None, correspondingFieldNamespace=None, fieldNamespace='Mfg'))
 
     def test_get_nested_table_field(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
@@ -231,6 +228,17 @@ class DataModelWBKTestCase(unittest.TestCase):
                                            correspondingField=None, correspondingFieldNamespace=None,
                                            fieldNamespace='Mfg'))
 
+    def test_exclude_using_namespace(self):
+        data_model = DM.DataModel(None, url='http://localhost/rapidresponse',
+                                  headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl',
+                                           'Content-Type': 'application/json'}, workbook='KXSHelperREST')
+        self.assertIsNotNone(data_model)
+        self.assertEqual('System', data_model._excludedNamespacesList[0])
+        count = 0
+        for f in data_model._fields:
+            if f['FieldNameSpace'] == 'System':
+                count = count + 1
+        self.assertEqual(count, 0)
 
 if __name__ == '__main__':
     unittest.main()

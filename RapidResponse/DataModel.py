@@ -7,10 +7,12 @@ import os
 
 import requests
 from pkg_resources import resource_filename, resource_exists
-# from importlib_resources import
 
 from RapidResponse.Err import DirectoryError, SetupError, RequestsError, DataError
 from RapidResponse.Table import Table, Column
+
+
+# from importlib_resources import
 
 class AbstractDataModel:
     """
@@ -27,7 +29,7 @@ class AbstractDataModel:
         :raises ValueError: The parameter data_model_directory must be provided
         :raises DirectoryError: directory not valid or file not valid
         """
-
+        self._excludedNamespacesList = ['System']
         self.tables = []
         self._fields = []
         # logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -83,7 +85,7 @@ class AbstractDataModel:
         :param fieldname: field name, delimited by . 'Part.Site.Value'
         :return Column:
         """
-
+        modified_column = None
         tablearray = tablename.split('::')
         if len(tablearray) != 2:
             raise DataError(f'invalid table: {tablename}. Requires format Mfg::PartCustomer')
@@ -384,6 +386,7 @@ class DataModel(AbstractDataModel):
             rowcount = 0
             reader = csv.DictReader(csvfile, delimiter='\t')  # update delimiter if its comma not tab
             for row in reader:
+                # todo exclude based on namespace
                 self.tables.append(
                     Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
                 rowcount += 1
@@ -400,6 +403,7 @@ class DataModel(AbstractDataModel):
             rowcount = 0
             reader = csv.DictReader(csvfile, delimiter='\t')  # update delimiter if its comma not tab
             for row in reader:
+                # todo exclude based on namespace
                 self._fields.append(row)
                 rowcount += 1
             self.logger.info(f'info: filename {file_path} rowcount {rowcount}')
@@ -462,6 +466,8 @@ class DataModel(AbstractDataModel):
         return isValid
 
     def _load_table_data_from_helper_wbk(self, url, headers, workbook):
+        queryID = None
+        total_row_count = None
         b_url = url
         url = b_url + "/integration/V1/data/workbook"
         headers = headers
@@ -527,10 +533,15 @@ class DataModel(AbstractDataModel):
                                     "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
             for r in response_dict["Rows"]:
                 # TODO if namespace is in excluded list, skip
-                self.tables.append(Table(*r['Values']))
+                if r['Values'][1] in self._excludedNamespacesList:
+                    self.logger.debug(f'record skipped due to excluded namespace: {r['Values'][1]}')
+                else:
+                    self.tables.append(Table(*r['Values']))
         return self.tables
 
     def _load_field_data_from_helper_wbk(self, url, headers, workbook):
+        total_row_count = None
+        queryID = None
         b_url = url
         url = b_url + "/integration/V1/data/workbook"
         headers = headers
@@ -610,16 +621,18 @@ class DataModel(AbstractDataModel):
                 # returned = rec.split('\t')
                 # self.rows.append(WorksheetRow(r['Values'], self))
                 # TODO if namespace is in excluded list, skip
-                self._fields.append({'Table': r['Values'][0],
-                                     'Namespace': r['Values'][1],
-                                     'Field': r['Values'][2],
-                                     'Type': r['Values'][3],
-                                     'Key': r['Values'][4],
-                                     'referencedTable': r['Values'][5],
-                                     'Related Namespace': r['Values'][7][0:r['Values'][7].find('::')],
-                                     'FieldNameSpace': r['Values'][8]
-                                     }
-                                    )
+                if r['Values'][8] in self._excludedNamespacesList:
+                    self.logger.debug(f'record skipped due to excluded namespace: {r['Values'][1]}')
+                else:
+                    self._fields.append({'Table': r['Values'][0],
+                                         'Namespace': r['Values'][1],
+                                         'Field': r['Values'][2],
+                                         'Type': r['Values'][3],
+                                         'Key': r['Values'][4],
+                                         'referencedTable': r['Values'][5],
+                                         'Related Namespace': r['Values'][7][0:r['Values'][7].find('::')],
+                                         'FieldNameSpace': r['Values'][8]
+                                         })
                 # self.tables.append(Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
 
         return self._fields
