@@ -1,8 +1,8 @@
 import unittest
 
 from RapidResponse.Environment import Environment
-from samples import sample_configuration
-from RapidResponse.Worksheet import Worksheet, Workbook, WorksheetRow, Cell
+from RapidResponse.Worksheet import Worksheet, Workbook, WorksheetRow
+from samples import sample_configuration, local_sample_bootstrap
 
 
 class WorksheetTestCase(unittest.TestCase):
@@ -179,7 +179,7 @@ class WorksheetRowTestCase(unittest.TestCase):
         wsr[1] = 'GP1234567'
 
 class WorkbookTestCase(unittest.TestCase):
-    env = Environment(sample_configuration)
+    env = Environment(local_sample_bootstrap)
     wb_dict = {"Name": 'GP Data Validation', "Scope": 'Public'}
     OrdersByCustomerDict = {'Name': 'Orders by Customer', "Scope": 'Public'}
     Scenario = {"Name": "Integration", "Scope": "Public"}
@@ -187,6 +187,10 @@ class WorkbookTestCase(unittest.TestCase):
     def test_fetch_ws_from_mx(self):
         wb = Workbook(environment=self.env, workbook=self.wb_dict)
         self.assertIsNotNone(wb)
+
+    def test_dynamic_worksheet_name_access(self):
+        wb = Workbook(environment=self.env, workbook=self.wb_dict, refresh=False)
+        self.assertEqual(str(wb.Summary_By_Site), "Worksheet: 'Summary By Site', Scope: 'Public' ")
 
     def test_basic_wb_params_scenario(self):
         OrdersByCustomer = Workbook(environment=self.env, workbook=self.OrdersByCustomerDict,

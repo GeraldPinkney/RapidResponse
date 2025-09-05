@@ -532,7 +532,6 @@ class DataModel(AbstractDataModel):
                 raise RequestsError(response,
                                     "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url)
             for r in response_dict["Rows"]:
-                # TODO if namespace is in excluded list, skip
                 if r['Values'][1] in self._excludedNamespacesList:
                     self.logger.debug(f'record skipped due to excluded namespace: {r['Values'][1]}')
                 else:
@@ -612,15 +611,7 @@ class DataModel(AbstractDataModel):
                 raise RequestsError(response,
                                     "failure during workbook retrieve_worksheet_data, status not 200" + '\nurl:' + url, payload)
 
-            # response_rows = response_dict['Rows']
-            # for r in response_rows:
-            #    # print(r['Values'])
-            #    rows.append()
-            # self.rows = rows
             for r in response_dict["Rows"]:
-                # returned = rec.split('\t')
-                # self.rows.append(WorksheetRow(r['Values'], self))
-                # TODO if namespace is in excluded list, skip
                 if r['Values'][8] in self._excludedNamespacesList:
                     self.logger.debug(f'record skipped due to excluded namespace: {r['Values'][1]}')
                 else:

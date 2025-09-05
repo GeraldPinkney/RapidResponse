@@ -68,6 +68,40 @@ class AbstractWorkBook:
     def __str__(self):
         return f'Name: {self.name!r}, Scope: {self.workbook_scope!r}'
 
+    def __len__(self):
+        return len(self.worksheets)
+
+    def __getitem__(self, position):
+        return self.worksheets[position]
+
+    def indexof(self, rec):
+        return self.worksheets.index(rec)
+
+    def __contains__(self, item):
+        if item in self.worksheets:
+            return True
+        else:
+            return False
+
+    def __eq__(self, other):
+        if self.name == other.name:
+            return True
+        else:
+            return False
+
+    def __getattr__(self, name):
+        # method only called as fallback when no named attribute
+        cls = type(self)
+        try:
+            Ids = [i.name for i in self.worksheets]
+            pos = Ids.index(name.replace('_', ' '))
+        except ValueError:  # exception thrown if could not find name
+            pos = -1
+        if 0 <= pos < len(self.worksheets):
+            return self[pos]
+        msg = f'{cls.__name__!r} object has no attribute {name!r}'
+        raise AttributeError(msg)
+
     def refresh(self):
         # populate all child worksheets with data
         pass
@@ -117,21 +151,6 @@ class AbstractWorkBook:
         for ws in self.worksheets:
             ws.site_group = self.site_group
 
-    def __len__(self):
-        return len(self.worksheets)
-
-    def __getitem__(self, position):
-        return self.worksheets[position]
-
-    def indexof(self, rec):
-        return self.worksheets.index(rec)
-
-    def __contains__(self, item):
-        # get workbook name and scope. then check if that value is present in worksheets
-        if item in self.worksheets:
-            return True
-        else:
-            return False
 
 
 class Workbook(AbstractWorkBook):
@@ -150,7 +169,7 @@ class Workbook(AbstractWorkBook):
 
     def __init__(self, environment, workbook: dict, Scenario: dict = None, SiteGroup: str = None,
                  WorksheetNames: list = None,
-                 Filter: dict = None, VariableValues: dict = None):
+                 Filter: dict = None, VariableValues: dict = None, refresh: bool = True):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
@@ -165,7 +184,7 @@ class Workbook(AbstractWorkBook):
 
         """
         super().__init__(environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues)
-
+        self._refresh = refresh
         # validations
 
         if not isinstance(environment, Environment):
@@ -233,7 +252,7 @@ class Workbook(AbstractWorkBook):
     def _set_worksheets(self, list_of_worksheets):
         self.worksheets = [
             Worksheet(self.environment, name, self._workbook, self._scenario, self._site_group, self._filter,
-                      self._variable_values, refresh=False) for name in list_of_worksheets]
+                      self._variable_values, refresh=self._refresh) for name in list_of_worksheets]
 
     def _fetch_worksheets(self, helper_workbook):
         param = {"SharedWorkbookName": self.name, "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
@@ -439,8 +458,14 @@ class Worksheet:
     def __getitem__(self, position):
         return self.rows[position]
 
+    def __eq__(self, other):
+        if self.name == other.name and self.parent_workbook == other.parent_workbook:
+            return True
+        else:
+            return False
+
     def __contains__(self, item):
-        # get key fields for table. then check if that value is present
+        # todo get key fields for table. then check if that value is present
         if item in self.rows:
             return True
         else:
