@@ -386,11 +386,10 @@ class DataModel(AbstractDataModel):
             rowcount = 0
             reader = csv.DictReader(csvfile, delimiter='\t')  # update delimiter if its comma not tab
             for row in reader:
-                # todo exclude based on namespace
                 self.tables.append(
                     Table(row['Table'], row['Namespace'], row['Type'], row['Keyed'], row['Identification Fields']))
                 rowcount += 1
-            self.logger.info(f'info: filename {file_path} rowcount {rowcount}')
+            self.logger.debug(f'info: filename {file_path} rowcount {rowcount}')
         return self.tables
 
     def _load_field_data_from_file(self, file_path):
@@ -403,10 +402,9 @@ class DataModel(AbstractDataModel):
             rowcount = 0
             reader = csv.DictReader(csvfile, delimiter='\t')  # update delimiter if its comma not tab
             for row in reader:
-                # todo exclude based on namespace
                 self._fields.append(row)
                 rowcount += 1
-            self.logger.info(f'info: filename {file_path} rowcount {rowcount}')
+            self.logger.debug(f'info: filename {file_path} rowcount {rowcount}')
         return self._fields
 
     def _add_fields_to_tables(self):
@@ -437,7 +435,7 @@ class DataModel(AbstractDataModel):
                                            fieldNamespace=f['FieldNameSpace']))
                         # Column(name, datatype, key, referenceTable, referencedTableNamespace, identification_fields, correspondingField, correspondingFieldNamespace, fieldNamespace)
                     else:
-                        pass
+                        self.logger.debug(f'record not found, therefore not added to fields: {ref}')
             if tab in self.tables:
                 i = self.tables.index(tab)
                 self.tables[i].add_fields(cols)
@@ -455,7 +453,6 @@ class DataModel(AbstractDataModel):
 
             for i in range(len(fieldarray) - 1):
                 # check it is a valid field
-                #
                 if self._is_valid_field(fieldarray[i], fieldarray[i + 1]):
                     isValid = True
                     if self._is_reference_field(fieldarray[i], fieldarray[i + 1]):
