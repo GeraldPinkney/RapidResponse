@@ -1,18 +1,16 @@
 # DataModel.py
 
 import csv
+import importlib.resources
 import json
 import logging
 import os
 
 import requests
-from pkg_resources import resource_filename, resource_exists
 
 from RapidResponse.Err import DirectoryError, SetupError, RequestsError, DataError
 from RapidResponse.Table import Table, Column
 
-
-# from importlib_resources import
 
 class AbstractDataModel:
     """
@@ -364,19 +362,21 @@ class DataModel(AbstractDataModel):
             raise DirectoryError('file not valid', self._data_model_dir + '\\Fields.tab')
 
     def _load_from_package_resources(self):
-        if resource_exists(__name__, 'data/Tables.tab'):
-            file_name = resource_filename(__name__, 'data/Tables.tab')
-            self._load_table_data_from_file(file_name)
+        if importlib.resources.files('RapidResponse.data').joinpath('Tables.tab').is_file():
+            ref = importlib.resources.files('RapidResponse.data') / 'Tables.tab'
+            with importlib.resources.as_file(ref) as file_name:
+                self._load_table_data_from_file(file_name)
         else:
             raise SetupError('failed to use data package - data/Tables.tab')
 
-        if resource_exists(__name__, 'data/Fields.tab'):
-            file_name = resource_filename(__name__, 'data/Fields.tab')
-            self._load_field_data_from_file(file_name)
+        if importlib.resources.files('RapidResponse.data').joinpath('Fields.tab').is_file():
+            ref = importlib.resources.files('RapidResponse.data') / 'Fields.tab'
+            with importlib.resources.as_file(ref) as file_name:
+                self._load_field_data_from_file(file_name)
         else:
             raise SetupError('failed to use data package - data/Fields.tab')
 
-    def _load_table_data_from_file(self, file_path: str):
+    def _load_table_data_from_file(self, file_path):
         """
         load table data from local file. will not have field data until enriched\n
         :param file_path: file path containing the Tables.tab file
@@ -393,7 +393,7 @@ class DataModel(AbstractDataModel):
             self.logger.info(f'info: filename {file_path} rowcount {rowcount}')
         return self.tables
 
-    def _load_field_data_from_file(self, file_path: str):
+    def _load_field_data_from_file(self, file_path):
         """
         load field data from local file\n
         :param file_path: file path containing the Fields.tab file
@@ -504,8 +504,8 @@ class DataModel(AbstractDataModel):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            print(payload)
-            print(url)
+            self.logger.debug(f'payload: {payload}')
+            self.logger.debug(f'url: {url}')
             raise RequestsError(response,
                                 " failure during workbook initialise_for_extract, status not 200", payload)
         response_worksheets = response_dict.get('Worksheets')
@@ -577,8 +577,8 @@ class DataModel(AbstractDataModel):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            print(payload)
-            print(url)
+            self.logger.debug(f'payload: {payload}')
+            self.logger.debug(f'url: {url}')
             raise RequestsError(response,"failure during workbook initialise_for_extract", payload)
 
         response_worksheets = response_dict.get('Worksheets')
