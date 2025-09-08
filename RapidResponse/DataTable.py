@@ -464,22 +464,6 @@ class DataTable(Table):
                 self._total_row_count = response_dict["TotalRows"]
             else:
                 raise RequestsError(response, f"error during POST to: {url}", payload)
-        '''if limit:
-            async with limit:
-                response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
-                if limit.locked():
-                    self._logger.info("Concurrency limit reached, waiting ...")
-                    await asyncio.sleep(1)
-        else:
-            response = await client.post(url=url, headers=self.environment.global_headers, data=payload)
-        # check valid response
-        if response.status_code == 200:
-            response_dict = json.loads(response.text)
-        else:
-            raise RequestsError(response, f"error during GET to: {url}", payload)
-        
-        self._exportID = response_dict["ExportId"]
-        self._total_row_count = response_dict["TotalRows"]'''
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000, limit: asyncio.Semaphore = None):
         url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
