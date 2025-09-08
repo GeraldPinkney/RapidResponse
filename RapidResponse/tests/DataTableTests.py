@@ -45,7 +45,7 @@ class DataTableTestCase(unittest.TestCase):
                    referencedTableNamespace='Core', identification_fields=None, correspondingField=None,
                    correspondingFieldNamespace=None)
         # test
-        print(part.explode_reference_field(c))
+        # print(part.explode_reference_field(c))
         self.assertEqual(part.explode_reference_field(c), [
             Column(name='Order.Site.Value', datatype='String', key='Y', referencedTable=None,
                    referencedTableNamespace=None, identification_fields=None, correspondingField=None,
@@ -62,7 +62,7 @@ class DataTableTestCase(unittest.TestCase):
 
         # test
         response = ForecastDetail.explode_reference_field(c)
-        print(response)
+        #print(response)
         self.assertEqual([Column(name='Header.Category.Value', datatype='String', key='Y', referencedTable='',
                                  referencedTableNamespace='', identification_fields=None, correspondingField=None,
                                  correspondingFieldNamespace=None),
@@ -109,6 +109,20 @@ class DataTableTestCase(unittest.TestCase):
         # test
         self.assertEqual(len(part), 0)
 
+    def test_data_table_bool_false(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part', refresh=False)
+        # test
+        self.assertFalse(part)
+
+    def test_data_table_bool_true(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part', refresh=True)
+        # test
+        self.assertTrue(part)
+
     def test_data_table_no_refresh_async(self):
         # setup
         env = Environment(sample_configuration)
@@ -126,7 +140,7 @@ class DataTableTestCase(unittest.TestCase):
 
         # test
         self.assertNotEqual(len(part), 0)
-        print(part[0:10])
+        #print(part[0:10])
 
     def test_data_table_refresh_async_bootstrap(self):
         # setup

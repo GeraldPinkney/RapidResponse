@@ -48,7 +48,7 @@ class DataModel_init_TestCase(unittest.TestCase):
                                    'Content-Type': 'application/json'})
 
         returned = dm.get_field('Mfg::PartCustomer', 'Part.Site.Value')
-        print(returned)
+        # print(returned)
         self.assertEqual(returned,
                          Table.Column(name='Part.Site.Value', datatype='String', key='Y', referencedTable=None,
                                       referencedTableNamespace=None, identification_fields=None,
@@ -61,7 +61,7 @@ class DataModel_init_TestCase(unittest.TestCase):
         col = dm._get_nested_table_field('Mfg::PartCustomer', 'Part.Name')
         # print(tab.fields)
         self.assertEqual(col.name, 'Part.Name')
-        print(col)
+        #print(col)
 
     def test_get_more_nested_table_field(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
@@ -70,7 +70,7 @@ class DataModel_init_TestCase(unittest.TestCase):
         col = dm._get_nested_table_field('Mfg::PartCustomer', 'Part.Site.Value')
         # print(tab.fields)
         self.assertEqual(col.name, 'Part.Site.Value')
-        print(col)
+        #print(col)
 
     def test_get_even_more_nested_table_field(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
@@ -79,7 +79,7 @@ class DataModel_init_TestCase(unittest.TestCase):
         col = dm._get_nested_table_field('Mfg::IndependentDemand', 'Order.Type.ControlSet.Value')
         # print(tab.fields)
         self.assertEqual(col.name, 'Order.Type.ControlSet.Value')
-        print(col)
+        #print(col)
 
     def test_get_referenced_table(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',

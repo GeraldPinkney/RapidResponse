@@ -1,15 +1,18 @@
 # DataTable.py
 
+import asyncio
 import json
 import logging
 from collections import UserList
-import requests
-import asyncio
-import httpx
 from copy import deepcopy
+
+import httpx
+import requests
+
 from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Table import Table, Column
+
 
 class DataTable(Table):
     """
@@ -108,22 +111,14 @@ class DataTable(Table):
             self.RefreshData_async()
 
     def __bool__(self):
-        if len(self._table_data) > 0:
-            return True
-        else:
-            return False
+        return len(self._table_data) > 0
 
 
     def __len__(self):
         return len(self._table_data)
 
-    def __eq__(self, other):  # todo equality operator
-        raise NotImplementedError
-
-    """def __getitem__(self, position):
-        return self._table_data[position]
-        # todo change this so a slice will return an instance of DataRow
-    """
+    def __eq__(self, other):
+        return super().__eq__(other)
 
     def __getitem__(self, position):
         return self._table_data[position]
@@ -250,6 +245,59 @@ class DataTable(Table):
         # print(running_list_of_cols)
         return running_list_of_cols
 
+    def _assign_all_cols(self):
+        cols_to_add = list()
+        for c in self._table_fields:
+            if c.datatype == 'CompoundVector':
+                self._logger.info(c.name + ' skipped due to type CompoundVector')
+            elif '.' in c.name and c.key == 'N':
+                self._logger.info(c.name + ' skipped as non key reference')
+            elif c.datatype == 'Reference' and c.key == 'N':
+                self._logger.info(c.name + ' skipped as non key reference')
+            elif c.datatype == 'Reference' and c.key == 'Y':
+                cols = self.explode_reference_field(c)
+                if len(cols) > 1:
+                    cols_to_add.extend(cols)
+                elif len(cols) == 1:
+                    cols_to_add.append(cols[0])
+                else:
+                    pass
+            else:
+                cols_to_add.append(c)
+        # print(cols_to_add)
+        self.columns.extend(cols_to_add)
+
+    def _assign_cols_from_input(self, columns):
+        if False:
+            for k in self._key_fields:
+                if k not in columns:
+                    self._logger.debug(f'key column not in column list: {str(k)}')
+        cols_to_add = list()
+        for c in columns:
+            col = self.get_field(c)
+            if col is None:
+                pass
+            elif col.datatype == 'CompoundVector':
+                self._logger.info(str(col) + ' skipped due to type CompoundVector')
+                pass
+            elif col.datatype == 'Reference' and col.key == 'Y':
+                cols = self.explode_reference_field(col)
+                if len(cols) > 1:
+                    for exploded_col in cols:
+                        if exploded_col not in cols_to_add:
+                            cols_to_add.append(exploded_col)
+                elif len(cols) == 1:
+                    if cols[0] not in cols_to_add:
+                        cols_to_add.append(cols[0])
+            elif col.datatype == 'Reference' and col.key == 'N':
+                if col not in cols_to_add:
+                    cols_to_add.append(col)
+            else:
+                if col not in cols_to_add:
+                    cols_to_add.append(col)
+        # print(cols_to_add)
+        self.columns.extend(cols_to_add)
+
     def set_columns(self, columns: list = None):
         """
         if columns = None, then set columns to all fields on table and explode out any columns that are references and key
@@ -260,61 +308,10 @@ class DataTable(Table):
         """
 
         if columns is None:
-            for c in self._table_fields:
-                if c.datatype == 'CompoundVector':
-                    self._logger.info(c.name + ' skipped due to type CompoundVector')
-                elif '.' in c.name and c.key == 'N':
-                    self._logger.info(c.name + ' skipped as non key reference')
-                elif c.datatype == 'Reference' and c.key == 'N':
-                    self._logger.info(c.name + ' skipped as non key reference')
-                elif c.datatype == 'Reference' and c.key == 'Y':
-                    cols = self.explode_reference_field(c)
-                    if len(cols) > 1:
-                        self.columns.extend(cols)
-                    elif len(cols) == 1:
-                        self.columns.append(cols[0])
-                    else:
-                        pass
-                else:
-                    self.columns.append(c)
-                    # todo if its a reference and key = N, then explode reference
-
+            self._assign_all_cols()
         else:
-            # check whether columns provided includes all key fields
-            if False:
-                ##if self.sync:
-                for k in self._key_fields:
-                    if k not in columns:
-                        raise DataError(k, 'key column not in column list: ' + str(k))
-
             # add all valid fields to DataTable Cols
-            for c in columns:
-                col = None
-                col = self.get_field(c)
-                if col is None:
-                    pass
-                elif col.datatype == 'CompoundVector':
-                    self._logger.info(str(col) + ' skipped due to type CompoundVector')
-                    pass
-                elif col.datatype == 'Reference' and col.key == 'Y':
-                    cols = self.explode_reference_field(col)
-                    if len(cols) > 1:
-
-                        for exploded_col in cols:
-                            if exploded_col not in self.columns:
-                                self.columns.append(exploded_col)
-                        # self.columns.extend(cols)
-                    elif len(cols) == 1:
-
-                        if cols[0] not in self.columns:
-                            self.columns.append(cols[0])
-                        # self.columns.append(cols[0])
-                elif col.datatype == 'Reference' and col.key == 'N':
-                    if col not in self.columns:
-                        self.columns.append(col)
-                else:
-                    if col not in self.columns:
-                        self.columns.append(col)
+            self._assign_cols_from_input(columns)
 
     @property
     def sync(self):
@@ -338,12 +335,8 @@ class DataTable(Table):
 
     @scenario.setter
     def scenario(self, new_scenario):
-        #self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
         try:
-            #if ['Name', 'Scope'] in list(new_scenario.keys()):
             self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
-            #else:
-            #    raise ValueError(f"scenario not valid:  {new_scenario}. provide Name, Scope")
         except AttributeError:
             raise ValueError(f"scenario not valid:  {new_scenario}. provide Name, Scope")
 
@@ -511,7 +504,6 @@ class DataTable(Table):
 
     def RefreshData_async(self, data_range: int = None):
         # calc or assign the pagesize
-        # todo implement this as a queue with retries https://github.com/rednafi/think-async/blob/master/patterns/limit_concurrency_on_queue.py
         if data_range is None:
             calc_data_range = self._calc_optimal_pagesize(500_000)
         else:
@@ -520,13 +512,39 @@ class DataTable(Table):
         self._table_data.clear()
         self.environment.refresh_auth()
         # initialise_for_extract query
-        # s = requests.Session()
-        # self._create_export(s)
-        # s.close()
         asyncio.run(self._main_get_export_results_async(calc_data_range))
         self._exportID = None
 
+    def _format_response(self, response_dict):
+        """
+        Formats a dictionary containing webservice call operation results into a human-readable string.
 
+        Args:
+            response_dict (dict): A dictionary with a 'Results' key, where the value
+                                  is a dictionary containing webservice call operation counts.
+
+        Returns:
+            str: A formatted string showing the status and row counts of the operation.
+        """
+        results = response_dict.get('Results', {})
+
+        status = results.get('Status', 'N/A')
+        inserted = results.get('InsertedRowCount', 'N/A')
+        modified = results.get('ModifiedRowCount', 'N/A')
+        deleted = results.get('DeleteRowCount', 'N/A')
+        error = results.get('ErrorRowCount', 'N/A')
+        unchanged = results.get('UnchangedRowCount', 'N/A')
+
+        response_readable = (
+            f"status: {status}\n"
+            f"InsertedRowCount: {inserted}\n"
+            f"ModifiedRowCount: {modified}\n"
+            f"DeleteRowCount: {deleted}\n"
+            f"ErrorRowCount: {error}\n"
+            f"UnchangedRowCount: {unchanged}"
+        )
+        self._logger.info(response_readable)
+        return response_readable
 
     def _calc_optimal_pagesize(self, PageSizeSuggested=500_000):
         '''
@@ -560,7 +578,7 @@ class DataTable(Table):
             else:
                 pageSizeFactor = pageSizeFactor / 1000
                 PageSize = PageSizeSuggested * pageSizeFactor
-        self._logger.info(f'pageSizeFactor: {pageSizeFactor}, PageSize: {PageSize}')
+        self._logger.debug(f'pageSizeFactor: {pageSizeFactor}, PageSize: {PageSize}')
         return round(PageSize)
 
     def add_row(self, rec):
@@ -602,7 +620,6 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            self._logger.error(response.text)
             raise RequestsError(response, f"error during POST to: {self.environment.bulk_upload_url}", payload)
         self._uploadId = response_dict["UploadId"]
 
@@ -614,27 +631,18 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            self._logger.error(response.text)
             raise RequestsError(response, f"error during POST to: {url}")
         results = response_dict['Results']
-        response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
-            results['InsertedRowCount']) + '\nModifiedRowCount: ' + str(
-            results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
-            results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
-            results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-
+        response_readable = self._format_response(results)
         if results['Status'] == 'Failure':
-            self._logger.error(response.text)
             raise RequestsError(response,
                                 f"Status is Failure during bulk upload complete. error during POST to: {url}. {response.text}",
                                 None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
-            self._logger.error(response.text)
             raise DataError(response.text,
                             f"Status is Partial Success during bulk upload complete, error count: {str(results['ErrorRowCount'])}")
         else:
             self._logger.debug(response_readable)
-            self._logger.debug(response_dict)
 
     def _create_deletion(self, *args):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
@@ -659,7 +667,6 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            self._logger.error(response.text)
             raise RequestsError(response, f"Failure during bulk//deletion create. Error during POST to: {self.environment.bulk_remove_url}", payload)
         self._uploadId = response_dict["RemovalId"]
 
@@ -672,44 +679,29 @@ class DataTable(Table):
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            self._logger.error(response.text)
             raise RequestsError(response, f"Failure during bulk//deletion complete. Error during POST to: {url}", None)
 
         results = response_dict['Results']
-        response_readable = 'status: ' + results['Status'] + '\nInsertedRowCount: ' + str(
-            results['InsertedRowCount']) + '\nModifiedRowCount: ' + str(
-            results['ModifiedRowCount']) + '\nDeleteRowCount: ' + str(
-            results['DeleteRowCount']) + '\nErrorRowCount: ' + str(
-            results['ErrorRowCount']) + '\nUnchangedRowCount: ' + str(results['UnchangedRowCount'])
-        self._logger.info(response)
-        self._logger.info(response_readable)
-        self._logger.info(response_dict)
-
+        response_readable = self._format_response(results)
         if results['Status'] == 'Failure':
-            self._logger.error(response_readable)
-            self._logger.error(response_dict)
             raise RequestsError(response, f"Error during bulk//deletion complete. Error during POST to: {url}", None)
+        else:
+            self._logger.debug(response_readable)
 
     def get_field(self, field):
         """
         get_field( 'Order.Site.Value')
         take as input a fieldname, can be qualified
-        :param name: 'Order.Site.Value'
+        :param field: 'Order.Site.Value'
         :return Column:
         """
         try:
-            self._logger.debug(
-                f'Fetch field: {field} from table: {self.name}. only works if its an attribute of table, not reference')
             response = super(self.__class__, self).get_field(field)
         except DataError:
             self._logger.debug(
                 'Caught data error when trying to get from Table object, now using data model to get field. using get_field()')
-            # validate _validate_fully_qualified_field_name(self, tablename, fieldname)
             if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, field):
-                # get_field( 'Mfg::PartCustomer', 'Part.Site.Value')
-                self._logger.debug(f'Valid Field: tablename: {self._table_name} fieldname: {field}')
                 response = self.environment.data_model.get_field(self.name, field)
-                self._logger.debug(f'self.environment.data_model.get_field response: {response}')
             else:
                 raise DataError(f'Invalid Field: fieldname: {field}', f'tablename {self.name}')
 
@@ -754,22 +746,6 @@ class DataRow(UserList):
             return self[pos]
         msg = f'{cls.__name__!r} object has no attribute {name!r}'
         raise AttributeError(msg)
-
-    '''def g__setattr__(self, name, value):
-        cls = type(self)
-
-        if name in self.__dict__:
-            super().__setattr__(name, value)
-            return 0
-        Ids = [i.name for i in self.columns]
-        if name in Ids:
-            pos = Ids.index(name)
-            self.__setitem__(pos, value)
-        else:
-            error = ''
-        if error:
-            msg = error.format(cls_name=cls.__name__, attr_name=name)
-            raise AttributeError(msg)'''
 
     @property
     def columns(self):

@@ -5,7 +5,7 @@ https://github.com/GeraldPinkney/RapidResponse
 
 import pathlib
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 here = pathlib.Path(__file__).parent.resolve()
 
@@ -15,13 +15,13 @@ long_description = (here / "RapidResponse/docs/README.md").read_text(encoding="u
 
 setup(
     name="RapidResponse",
-    version="1.0.23",
+    version="1.0.24",
     description="RapidResponse library",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/GeraldPinkney/RapidResponse",
     author="Heraldo Industries",  # Heraldo Industries
-    packages=find_packages(),  # Required include=['RapidResponse']
+    packages=find_namespace_packages(exclude=['RapidResponse.tests', 'venv']),  # Required include=['RapidResponse']
     #package_dir={"": "."},
     python_requires=">=3.10, <4",
     install_requires=["requests>=2.31.0", "httpx", "setuptools>=70"],

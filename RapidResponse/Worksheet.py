@@ -102,7 +102,7 @@ class AbstractWorkBook:
         msg = f'{cls.__name__!r} object has no attribute {name!r}'
         raise AttributeError(msg)
 
-    def refresh(self):
+    def RefreshData(self):
         # populate all child worksheets with data
         pass
 
@@ -240,7 +240,7 @@ class Workbook(AbstractWorkBook):
         else:
             raise ValueError('worksheets are required')
 
-    def refresh(self):
+    def RefreshData(self):
         # populate all child worksheets with data
         for ws in self.worksheets:
             try:
@@ -268,13 +268,10 @@ class Workbook(AbstractWorkBook):
         variablesResponse = Script(self.environment, helper_workbook, scope='Public', parameters=param)
         variablesResponse.execute()
         var_list = json.loads('[' + variablesResponse.value + ']')
-        variables_dict = {}
+        variables_dict = dict()
         for var in var_list:
             variables_dict.update({var["name"]: var["defaultValue"]})
         return variables_dict
-
-
-# todo change worksheet get to be dynamic attr access __getattr__
 
 class Worksheet:
     """
@@ -325,17 +322,6 @@ class Worksheet:
         self._name = str(worksheet)
 
         # workbook
-        '''if not isinstance(workbook, dict):
-            raise TypeError("The parameter workbook type must be dict.")
-        if not workbook:
-            raise ValueError("The parameter workbook must not be empty.")
-        wb_keys = workbook.keys()
-        if len(wb_keys) != 2:
-            raise ValueError("The parameter workbook must contain only Name and Scope.")
-        if 'Name' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Name.")
-        if 'Scope' not in wb_keys:
-            raise ValueError("The parameter workbook must contain Scope.")'''
         self._parent_workbook = dict({"Name": workbook['Name'], "Scope": workbook['Scope']})
 
         self._sync = bool(sync)
@@ -343,24 +329,12 @@ class Worksheet:
 
         # scenario
         if scenario:
-            '''if not isinstance(scenario, dict):
-                raise TypeError("The parameter scenario type must be dict.")
-            scenario_keys = scenario.keys()
-            if len(scenario_keys) != 2:
-                raise ValueError("The parameter scenario must contain only Name and Scope.")
-            if 'Name' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Name.")
-            if 'Scope' not in scenario_keys:
-                raise ValueError("The parameter scenario must contain Scope.")'''
             self._scenario = dict({"Name": scenario['Name'], "Scope": scenario['Scope']})
         else:
             self._scenario = self.environment.scenarios[0]
 
         # sitegroup
-        #if not isinstance(SiteGroup, str):
-        #    raise TypeError("The parameter SiteGroup type must be str.")
         if not SiteGroup:
-            # raise ValueError("The parameter SiteGroup must not be empty.")
             self._site_group = 'All Sites'
         else:
             self._site_group = str(SiteGroup)
@@ -403,18 +377,6 @@ class Worksheet:
 
     @filter.setter
     def filter(self, new_filter):
-        '''if not isinstance(new_filter, dict):
-            raise TypeError("filter must be dict.")
-        if not new_filter:
-            raise ValueError("filter must not be empty.")
-
-        filt_keys = new_filter.keys()
-        if len(filt_keys) != 2:
-            raise ValueError("filter must contain only Name and Scope.")
-        if 'Name' not in filt_keys:
-            raise ValueError("filter must contain Name.")
-        if 'Scope' not in filt_keys:
-            raise ValueError("filter must contain Scope.")'''
         self._filter = dict({"Name": new_filter['Name'], "Scope": new_filter['Scope']})
 
     @property
@@ -423,15 +385,6 @@ class Worksheet:
 
     @scenario.setter
     def scenario(self, new_scenario):
-        #if not isinstance(new_scenario, dict):
-        #    raise TypeError("The parameter scenario type must be dict.")
-        #scenario_keys = new_scenario.keys()
-        #if len(scenario_keys) != 2:
-        #    raise ValueError("The parameter scenario must contain only Name and Scope.")
-        #if 'Name' not in scenario_keys:
-        #    raise ValueError("The parameter scenario must contain Name.")
-        #if 'Scope' not in scenario_keys:
-        #    raise ValueError("The parameter scenario must contain Scope.")
         self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
 
     @property
@@ -465,7 +418,6 @@ class Worksheet:
             return False
 
     def __contains__(self, item):
-        # todo get key fields for table. then check if that value is present
         if item in self.rows:
             return True
         else:
@@ -530,9 +482,6 @@ class Worksheet:
         :param session:
         :return: response_dict
         """
-        #headers = self.environment.global_headers
-        #headers['Content-Type'] = 'application/json'
-        #url = self.environment.workbook_url
 
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
@@ -582,9 +531,8 @@ class Worksheet:
         :param pageSize:
         :return: rows[]
         """
-        #print(f'start: {startRow}, pagesize: {pageSize}')
-        #headers = self.environment.global_headers
-        #headers['Content-Type'] = 'application/json'
+        self._logger.debug(f'_get_export_results start: {startRow}, pagesize: {pageSize}')
+
         url = self.environment.worksheet_url + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
 
         req = requests.Request("GET", url, headers=self.environment.global_headers)
@@ -745,10 +693,6 @@ class WorksheetRow(UserList):
             raise DataError(str(iterable), 'mismatch in length of worksheet columns: ' + str(len(self._worksheet.columns)) + ' and row: ' + str(len(iterable)))
 
         super().__init__(str(item) for item in iterable)
-        '''to_init = []
-        for x in range(len(iterable)):
-            to_init.append(Cell(iterable[x], self._worksheet.columns[x]["DataType"], self._worksheet.columns[x]["Id"],self._worksheet.columns[x]["Header"],self._worksheet.columns[x]["IsEditable"]))
-        super().__init__(to_init)'''
 
     def __getattr__(self, name):
         # method only called as fallback when no named attribute
@@ -763,22 +707,6 @@ class WorksheetRow(UserList):
         msg = f'{cls.__name__!r} object has no attribute {name!r}'
         raise AttributeError(msg)
 
-    '''def __setattr__(self, name, value):
-        cls = type(self)
-
-        if name in self.__dict__:
-            super().__setattr__(name, value)
-            return 0
-        Ids = [i['Id'] for i in self.columns]
-        if name in Ids:
-            pos = Ids.index(name)
-            self.__setitem__(pos, value)
-        else:
-            error = ''
-        if error:
-            msg = error.format(cls_name=cls.__name__, attr_name=name)
-            raise AttributeError(msg)'''
-
     def __len__(self):
         return super().__len__()
 
@@ -789,10 +717,6 @@ class WorksheetRow(UserList):
     def columns(self):
         return self._worksheet.columns
 
-    #def __setitem__(self, index, item):
-        # assign a new value using the item’s index, like a_list[index] = item
-        # super().__setitem__(index, str(item))
-        #raise NotImplementedError
     def __setitem__(self, index, item):
         # assign a new value using the item’s index, like a_list[index] = item
 

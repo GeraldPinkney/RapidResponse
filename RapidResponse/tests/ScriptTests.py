@@ -1,7 +1,9 @@
 import unittest
+
 from RapidResponse.Environment import Environment
-from samples import sample_configuration, local_sample_bootstrap
 from RapidResponse.Script import Script
+from samples import sample_configuration, local_sample_bootstrap
+
 
 class BasicTestCase(unittest.TestCase):
     def test_basic(self):
@@ -80,7 +82,7 @@ class ParamsScriptTest(unittest.TestCase):
         GPGetWorkbookVariables.execute()
         # print(GPGetWorkbookVariables)
         # print(GPGetWorkbookVariables.console)
-        print(GPGetWorkbookVariables.value)
+        # print(GPGetWorkbookVariables.value)
         # Ignite_Create_Scenario.parameters.update({'newScenario': 'Good2GreatZZZ'})
         self.assertIsNotNone(GPGetWorkbookVariables.value)
 

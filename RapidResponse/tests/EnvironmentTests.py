@@ -1,3 +1,5 @@
+import base64
+import json
 import unittest
 from unittest.mock import patch, MagicMock
 
@@ -7,13 +9,10 @@ from RapidResponse.Environment import Environment
 from RapidResponse.Err import DataError
 
 
-import base64
-import json
-
-
 class TestPackages(unittest.TestCase):
     def test_version(self):
-        print(RapidResponse.__version__)
+        # print(RapidResponse.__version__)
+        self.assertIsNotNone(RapidResponse.__version__)
 
 class TestEnvironment(unittest.TestCase):
     local_sample_bootstrap = {'url': 'http://localhost/rapidresponse',
@@ -135,7 +134,8 @@ class TestEnvironment(unittest.TestCase):
 
     def test_env_with_scripts(self):
         env = Environment(self.local_sample_bootstrap)
-        print(env._worksheet_script)
+        # print(env._worksheet_script)
+        self.assertEqual(env._worksheet_script, 'GP.GetWorkbook.Worksheets')
 
 if __name__ == '__main__':
     unittest.main()
