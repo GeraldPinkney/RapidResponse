@@ -51,7 +51,7 @@ class TestEnvironment(unittest.TestCase):
     def test_init_invalid_auth_type(self):
         with self.assertRaises(ValueError) as context:
             Environment(self.invalid_config)
-        self.assertEqual(str(context.exception), 'invalid authentication type')
+        self.assertEqual(str(context.exception), 'invalid authentication type invalid_auth')
 
     def test_init_missing_url(self):
         config = self.valid_config.copy()

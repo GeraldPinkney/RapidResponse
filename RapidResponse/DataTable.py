@@ -46,8 +46,6 @@ class DataTable(Table):
             raise TypeError("The parameter tablename type must be str.")
         if not tablename:
             raise ValueError("The parameter tablename must not be empty.")
-        if not isinstance(sync, bool):
-            raise TypeError("The parameter sync type must be bool.")
 
         tabarray = tablename.split('::')
         try:
@@ -59,8 +57,8 @@ class DataTable(Table):
         self.environment = environment
         self._filter = table_filter
         self._sync = bool(sync)
-        self._total_row_count = 0 # _total_row_count used during export data gathering
 
+        self._total_row_count = 0 # _total_row_count used during export data gathering
         # initialise internal variables to be used later
         self._uploadId = None
         self._exportID = None
@@ -80,14 +78,7 @@ class DataTable(Table):
             self.scenario = self.environment.scenarios[0]
         else:
             # check scenario has both Name and scope {"Name": "Enterprise Data", "Scope": "Public"}
-            try:
-                if ['Name', 'Scope'] == list(scenario.keys()):
-                    self.scenario = scenario
-                else:
-                    raise ValueError('scenario not valid: ' + scenario)
-                    # self.scenario = environment.scenarios[0]
-            except AttributeError:
-                raise ValueError("scenario parameter format is {'Name': 'Integration', 'Scope': 'Public'} " + scenario)
+            self.scenario = scenario
 
         # set columns and filters
         try:
@@ -265,10 +256,11 @@ class DataTable(Table):
             else:
                 cols_to_add.append(c)
         # print(cols_to_add)
+        self._logger.info(f'cols to add: {[c.name for c in cols_to_add]}')
         self.columns.extend(cols_to_add)
 
     def _assign_cols_from_input(self, columns):
-        if False:  # previously this checked for self.sync
+        if self.sync:  # previously this checked for self.sync
             for k in self._key_fields:
                 if k not in columns:
                     self._logger.debug(f'key column not in column list: {str(k)}')
@@ -295,7 +287,7 @@ class DataTable(Table):
             else:
                 if col not in cols_to_add:
                     cols_to_add.append(col)
-        # print(cols_to_add)
+        self._logger.info(f'cols to add: {[c.name for c in cols_to_add]}')
         self.columns.extend(cols_to_add)
 
     def set_columns(self, columns: list = None):
@@ -527,22 +519,13 @@ class DataTable(Table):
         Returns:
             str: A formatted string showing the status and row counts of the operation.
         """
-        results = response_dict.get('Results', {})
-
-        status = results.get('Status', 'N/A')
-        inserted = results.get('InsertedRowCount', 'N/A')
-        modified = results.get('ModifiedRowCount', 'N/A')
-        deleted = results.get('DeleteRowCount', 'N/A')
-        error = results.get('ErrorRowCount', 'N/A')
-        unchanged = results.get('UnchangedRowCount', 'N/A')
-
         response_readable = (
-            f"status: {status}\n"
-            f"InsertedRowCount: {inserted}\n"
-            f"ModifiedRowCount: {modified}\n"
-            f"DeleteRowCount: {deleted}\n"
-            f"ErrorRowCount: {error}\n"
-            f"UnchangedRowCount: {unchanged}"
+            f"status: {response_dict.get('Status', 'N/A')}\n"
+            f"InsertedRowCount: {response_dict.get('InsertedRowCount', 'N/A')}\n"
+            f"ModifiedRowCount: {response_dict.get('ModifiedRowCount', 'N/A')}\n"
+            f"DeleteRowCount: {response_dict.get('DeleteRowCount', 'N/A')}\n"
+            f"ErrorRowCount: {response_dict.get('ErrorRowCount', 'N/A')}\n"
+            f"UnchangedRowCount: {response_dict.get('UnchangedRowCount', 'N/A')}"
         )
         self._logger.info(response_readable)
         return response_readable
@@ -653,6 +636,7 @@ class DataTable(Table):
         # local_query_fields = [f.name for f in self.columns]
         local_query_fields = [f.name if self._table_namespace == self.get_field(
             f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
+
         rows = [{"Values": i.data} for i in args]
 
         payload = json.dumps({
@@ -686,8 +670,11 @@ class DataTable(Table):
         response_readable = self._format_response(results)
         if results['Status'] == 'Failure':
             raise RequestsError(response, f"Error during bulk//deletion complete. Error during POST to: {url}", None)
+        elif results['Status'] == 'Success':
+            pass
+            # self._logger.debug(response_readable)
         else:
-            self._logger.debug(response_readable)
+            self._logger.warning(response_readable)
 
     def get_field(self, field):
         """

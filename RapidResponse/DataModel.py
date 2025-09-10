@@ -435,7 +435,8 @@ class DataModel(AbstractDataModel):
                                            fieldNamespace=f['FieldNameSpace']))
                         # Column(name, datatype, key, referenceTable, referencedTableNamespace, identification_fields, correspondingField, correspondingFieldNamespace, fieldNamespace)
                     else:
-                        self.logger.debug(f'record not found, therefore not added to fields: {ref}')
+                        pass
+                        # self.logger.debug(f'record not found, therefore not added to fields: {ref}')
             if tab in self.tables:
                 i = self.tables.index(tab)
                 self.tables[i].add_fields(cols)

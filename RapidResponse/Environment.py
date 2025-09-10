@@ -3,14 +3,14 @@ import base64
 import json
 import logging
 import os
-from asyncio import Timeout
 
 import httpx
-from httpx import AsyncClient
 import requests
+
 from RapidResponse.DataModel import DataModel
 from RapidResponse.Err import SetupError, RequestsError
 from RapidResponse.Utils import WORKBOOK_URL, BULK_URL, WORKSHEET_URL, SCRIPT_URL, ENTERPRISE_DATA_SCENARIO
+
 
 class AbstractEnvironment:
     """
@@ -18,19 +18,12 @@ class AbstractEnvironment:
         :param configuration: dictionary containing necessary information for initialising environment
         :raises SetupError: Data Model directory not valid
         """
-    """WORKBOOK_URL = "/integration/V1/data/workbook"
-    BULK_URL = "/integration/V1/bulk"
-    WORKSHEET_URL = "/integration/V1/data/worksheet"
-    SCRIPT_URL = "/integration/V1/script"
-    ENTERPRISE_DATA_SCENARIO = {"Name": "Enterprise Data", "Scope": "Public"}"""
-
-    # SCOPE_TYPE = Literal['Public', 'Private']
 
     def __init__(self, configuration: dict):
 
 
         logging.basicConfig(filename='logging.log', filemode='w',
-                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.ERROR)
+                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.WARNING)
         self._logger = logging.getLogger('RapidPy.env')
 
         self._base_url = None
@@ -178,7 +171,7 @@ class Environment(AbstractEnvironment):
             self.authentication['clientID'] = configuration['clientID']
             self.authentication['client_secret'] = configuration['client_secret']
         else:
-            raise ValueError('invalid authentication type')
+            raise ValueError(f'invalid authentication type {self.auth_type}')
         self.refresh_auth()
 
     def _configure_workbook_defaults(self, configuration):

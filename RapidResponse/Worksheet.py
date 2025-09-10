@@ -594,7 +594,7 @@ class Worksheet:
         await client.aclose()
 
     def RefreshData_async(self, data_range: int = 5000):
-
+    # todo get this to work. then modify environment to create event loop and take sessions from there.
         self.environment.refresh_auth()
         # initialise_for_extract query
         s = requests.Session()
