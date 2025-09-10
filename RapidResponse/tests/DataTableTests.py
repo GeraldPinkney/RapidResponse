@@ -16,7 +16,9 @@ def print_recs(list_of_stuff):
         print(i)
 
 class DataTableTestCase(unittest.TestCase):
-
+    integration_scenario = {"Name": "Integration", "Scope": "Public"}
+    indy_dem_cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name',
+                     'Part.Site', 'DueDate', 'Quantity']
     # test various initialisations
     def test_data_table_no_params_small(self):
         # setup
@@ -97,7 +99,6 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env,'Mfg::Part')
-
         # test
         self.assertEqual(part.scenario, {"Name": "Enterprise Data", "Scope": "Public"})
 
@@ -105,7 +106,6 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env,'Mfg::Part', refresh=False)
-
         # test
         self.assertEqual(len(part), 0)
 
@@ -127,7 +127,6 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env, 'Mfg::Part', refresh=False)
-
         # test
         self.assertEqual(len(part), 0)
         part.RefreshData_async()
@@ -137,7 +136,6 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env, 'Mfg::Part')
-
         # test
         self.assertNotEqual(len(part), 0)
         #print(part[0:10])
@@ -146,16 +144,13 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(local_sample_bootstrap)
         part = DataTable(env, 'Mfg::Part')
-
         # test
         self.assertNotEqual(len(part), 0)
 
     def test_data_table_refresh_with_funct(self):
         # setup
-
         env = Environment(sample_configuration)
         part = DataTable(env, 'Mfg::Part', refresh=False)
-
         # test
         self.assertEqual(len(part), 0)
         part.RefreshData(data_range=1000, action_on_page=print_recs)
@@ -165,18 +160,11 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         part = DataTable(env,'Mfg::Part', refresh=False)
-
         # test
         self.assertEqual(len(part), 0)
         part._create_export()
         self.assertNotEqual(part._total_row_count, 0)
         part._session.close()
-
-    def test_diff_col_order(self):
-        self.assertTrue(1 == 1, '')
-        env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type', 'Line', 'Part.Name', 'Part.Site', 'DueDate',
-                'Order.Type.ControlSet.Value', 'Quantity']
 
     def test_table_with_custom_cols_namespace_attr(self):
         env = Environment(local_sample_bootstrap)
@@ -224,11 +212,9 @@ class DataTableTestCase(unittest.TestCase):
         cols = ['Id', 'TestInt1', 'TestString1', 'U_Division', 'SubRegion', 'Country', 'Site.Value']
         customer = DataTable(env, 'Mfg::Customer', cols, scenario={"Name": "Integration", "Scope": "Public"})
         rec = ['Paris', '', '', '', '', '', '030']
-
         # execute
         customer.append(rec)
         self.assertIn(['Paris', '', '', '', '', '', '030'], customer)
-
         # teardown
         customer.del_row(rec)
 
@@ -236,10 +222,8 @@ class DataTableTestCase(unittest.TestCase):
     def test_data_table_extend_with_rows(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
-                'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
-
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', columns=self.indy_dem_cols,
+                                      scenario=self.integration_scenario)
         # execute
         rows = [
             ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '010', 'GSM-850A', 'SOPDC-NorthAmerica',
@@ -257,9 +241,8 @@ class DataTableTestCase(unittest.TestCase):
     def test_data_table_extend_with_data_table_rows(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
-                'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', columns=self.indy_dem_cols,
+                                      scenario=self.integration_scenario)
 
         # execute
         rows = [
@@ -279,10 +262,8 @@ class DataTableTestCase(unittest.TestCase):
     def test_data_table_append(self):
         # setup
         env = Environment(local_sample_bootstrap)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line',
-                'Part.Name', 'Part.Site',
-                'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', columns=self.indy_dem_cols,
+                                      scenario=self.integration_scenario)
 
         # execute
         rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
@@ -290,21 +271,18 @@ class DataTableTestCase(unittest.TestCase):
         IndependentDemand.append(rows)
 
         self.assertIn(
-            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A',
-             'SOPDC-NorthAmerica',
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
              '2017-08-31', '1500'], IndependentDemand)
         IndependentDemand.del_row(
-            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A',
-             'SOPDC-NorthAmerica',
+            ['RKS-GSMa', 'SOPDC-NorthAmerica', 'Default', 'DCConsensus', '013', 'GSM-850A', 'SOPDC-NorthAmerica',
              '2017-08-31', '1500'])
 
     # test del
     def test_data_table_delete(self):
         # setup
         env = Environment(sample_configuration)
-        cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
-                'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', columns=self.indy_dem_cols,
+                                      scenario=self.integration_scenario)
         rows = [
             ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
              '2017-08-31', '1500'],
@@ -334,7 +312,8 @@ class DataTableTestCase(unittest.TestCase):
         env = Environment(sample_configuration)
         cols = ['Order.Id', 'Order.Site', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
                 'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', columns=self.indy_dem_cols,
+                                      scenario=self.integration_scenario)
         rows = [
             ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '01', 'GSM-850A', 'SOPDC-NorthAmerica',
              '2017-08-31', '1500'],
@@ -357,10 +336,9 @@ class DataTableTestCase(unittest.TestCase):
         # setup
         env = Environment(sample_configuration)
         cols = ['Order.Id', 'Order.Site.Value', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name',
-                'Part.Site.Value',
-                'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols,
-                                      scenario={"Name": "Integration", "Scope": "Public"})
+                'Part.Site.Value', 'DueDate', 'Quantity']
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', columns=self.indy_dem_cols,
+                                      scenario=self.integration_scenario)
         self.assertIsNotNone(IndependentDemand)
 
     # test update of attribute of individual record
@@ -369,7 +347,8 @@ class DataTableTestCase(unittest.TestCase):
         env = Environment(sample_configuration)
         cols = ['Order.Id', 'Order.Site.Value', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name',
                 'Part.Site.Value', 'DueDate', 'Quantity']
-        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', cols, scenario={"Name": "Integration", "Scope": "Public"})
+        IndependentDemand = DataTable(env, 'Mfg::IndependentDemand', columns=self.indy_dem_cols,
+                                      scenario=self.integration_scenario)
         rows = ['RKS-GSMa', 'SOPDC-NorthAmerica', 'SOPDemandMgmt', 'DCConsensus', '06', 'GSM-850A',
                 'SOPDC-NorthAmerica', '2017-08-31', '1500']
         IndependentDemand.append(rows)

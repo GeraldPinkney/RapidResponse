@@ -268,7 +268,7 @@ class DataTable(Table):
         self.columns.extend(cols_to_add)
 
     def _assign_cols_from_input(self, columns):
-        if False:
+        if False:  # previously this checked for self.sync
             for k in self._key_fields:
                 if k not in columns:
                     self._logger.debug(f'key column not in column list: {str(k)}')
@@ -300,10 +300,11 @@ class DataTable(Table):
 
     def set_columns(self, columns: list = None):
         """
-        if columns = None, then set columns to all fields on table and explode out any columns that are references and key
-        if list of columns is provided, add any key cols if they are missing (done via the DataError), check the field is valid,
-        :param columns: nullable list of columns to initialise table with ['Order.Id', 'Order.Site.Value', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site',
-                'DueDate', 'Quantity']
+        If columns = None, then set columns to all fields on table and explode out any columns that are references and key.
+        If list of columns is provided, add any key cols if they are missing (done via the DataError), check the field is valid,
+
+        :param columns: nullable list of columns to initialise table with ['Order.Id', 'Order.Site.Value', 'Order.Type.ControlSet.Value', 'Order.Type', 'Line', 'Part.Name', 'Part.Site','DueDate', 'Quantity']
+        :returns None:
         :raises DataError: if keys are missing from table, or column is not valid
         """
 
