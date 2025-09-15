@@ -17,4 +17,6 @@ BULK_URL = "/integration/V1/bulk"
 
 SCRIPT_URL = "/integration/V1/script"
 
-ENTERPRISE_DATA_SCENARIO = {"Name": "Enterprise Data", "Scope": "Public"}
+ENTERPRISE_DATA_SCENARIO = {"Name": "Enterprise Data", "Scope": SCOPE_PUBLIC}
+ALL_SITES = 'All Sites'
+ALL_PARTS = dict({"Name": "All Parts", "Scope": SCOPE_PUBLIC})

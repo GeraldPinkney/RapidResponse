@@ -12,7 +12,7 @@ import requests
 from RapidResponse.Environment import Environment
 from RapidResponse.Err import RequestsError, DataError
 from RapidResponse.Script import Script
-from RapidResponse.Utils import SCOPE_PUBLIC, VALID_SCOPES
+from RapidResponse.Utils import SCOPE_PUBLIC, VALID_SCOPES, ALL_SITES, ALL_PARTS
 
 
 class AbstractWorkBook:
@@ -29,11 +29,6 @@ class AbstractWorkBook:
 
            """
     # WORKBOOK_URL = "/integration/V1/data/workbook"
-
-    '''SCOPE_PUBLIC = 'Public'
-    SCOPE_PRIVATE = 'Private'
-    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}'''
-    ALL_SITES = 'All Sites'
 
     def __init__(self, environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues):
         """
@@ -61,6 +56,7 @@ class AbstractWorkBook:
         self._site_group = None
         self._filter = None
         self._variable_values = None
+
 
     def __repr__(self):
         return f'Workbook({self.environment!r}, {self.name!r}, {self.scenario!r}, {self.site_group!r}, {self.worksheets!r}, {self.filter!r}, {self._variable_values!r})'
@@ -168,8 +164,7 @@ class Workbook(AbstractWorkBook):
         """
 
     def __init__(self, environment, workbook: dict, Scenario: dict = None, SiteGroup: str = None,
-                 WorksheetNames: list = None,
-                 Filter: dict = None, VariableValues: dict = None, refresh: bool = True):
+                 WorksheetNames: list = None, Filter: dict = None, VariableValues: dict = None, refresh: bool = True):
         """
         https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
@@ -204,12 +199,12 @@ class Workbook(AbstractWorkBook):
         self._workbook = dict(Name=workbook['Name'], Scope=workbook['Scope'])
 
         if not SiteGroup:
-            self._site_group = self.ALL_SITES
+            self._site_group = ALL_SITES
         else:
             self._site_group = str(SiteGroup)
         # set Filter
         if not Filter:
-            self._filter = dict({"Name": "All Parts", "Scope": SCOPE_PUBLIC})
+            self._filter = ALL_PARTS
         else:
             self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
         # set script params
@@ -288,9 +283,7 @@ class Worksheet:
     :param refresh: boolean refresh row data on initialisation
     """
     #WORKSHEET_URL = "/integration/V1/data/worksheet"
-    '''SCOPE_PUBLIC = 'Public'
-    SCOPE_PRIVATE = 'Private'
-    VALID_SCOPES = {SCOPE_PUBLIC, SCOPE_PRIVATE}'''
+    DEFAULT_PAGESIZE = 5000
 
     def __init__(self, environment, worksheet: str, workbook: dict, scenario=None, SiteGroup: str = None,
                  Filter: dict = None, VariableValues: dict = None, sync: bool = True, refresh: bool = True):
@@ -305,7 +298,7 @@ class Worksheet:
         :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
         """
-        self._logger = logging.getLogger('RapidPy.wb.ws')
+        self._logger = logging.getLogger('RapidPy.ws')
         # validations
         # environment
         if not isinstance(environment, Environment):
@@ -326,6 +319,8 @@ class Worksheet:
 
         self._sync = bool(sync)
         self._refresh = bool(refresh)
+        self._export_status = None
+        self._upload_status = None
 
         # scenario
         if scenario:
@@ -335,12 +330,12 @@ class Worksheet:
 
         # sitegroup
         if not SiteGroup:
-            self._site_group = 'All Sites'
+            self._site_group = ALL_SITES
         else:
             self._site_group = str(SiteGroup)
 
         if not Filter:
-            self._filter = dict({"Name": "All Parts", "Scope": SCOPE_PUBLIC})
+            self._filter = ALL_PARTS
         else:
             self._filter = Filter
         self._variable_values = VariableValues
@@ -354,6 +349,19 @@ class Worksheet:
         if self._refresh:
             self.RefreshData()
             #self.RefreshData_async()
+
+    @property
+    def status(self):
+        if self._upload_status:
+            if not self._upload_status['Success']:
+                error = self._upload_status['Errors']
+                return f"Error: Code {error['Code']}\nMessage {error['Message']}\n\nSee log for details"
+            else:
+                return f'Success'
+        elif self._export_status:
+            return f'Success'
+        else:
+            return f'Not Run'
 
     @property
     def name(self):
@@ -378,6 +386,8 @@ class Worksheet:
     @filter.setter
     def filter(self, new_filter):
         self._filter = dict({"Name": new_filter['Name'], "Scope": new_filter['Scope']})
+        if self._refresh:
+            self.RefreshData()
 
     @property
     def scenario(self):
@@ -386,6 +396,8 @@ class Worksheet:
     @scenario.setter
     def scenario(self, new_scenario):
         self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
+        if self._refresh:
+            self.RefreshData()
 
     @property
     def sync(self):
@@ -398,6 +410,8 @@ class Worksheet:
     @site_group.setter
     def site_group(self, new_site_group):
         self._site_group = str(new_site_group)
+        if self._refresh:
+            self.RefreshData()
 
     def __len__(self):
         return len(self.rows)
@@ -477,12 +491,7 @@ class Worksheet:
             self.rows.extend([WorksheetRow(item, self) for item in args[0]])
         self.total_row_count = len(self.rows)
 
-    def _create_export(self, session):
-        """
-        :param session:
-        :return: response_dict
-        """
-
+    def _prepare_export_params(self):
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
             "SiteGroup": self._site_group,  # "All Sites"
@@ -493,6 +502,15 @@ class Worksheet:
             workbook_parameters['Filter'] = self._filter
         if self._variable_values:
             workbook_parameters['VariableValues'] = self._variable_values
+        return workbook_parameters
+
+    def _create_export(self, session):
+        """
+        :param session:
+        :return: response_dict
+        """
+
+        workbook_parameters = self._prepare_export_params()
 
         payload = json.dumps({
             'Scenario': self._scenario,
@@ -503,15 +521,13 @@ class Worksheet:
         prepped = req.prepare()
         response = session.send(prepped)
 
-        # print(response.text)
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
-            self._logger.error(payload)
-            self._logger.error(self.environment.workbook_url)
             raise RequestsError(response,
-                                f"failure during POST workbook initialise_for_extract to: {self.environment.global_headers}", payload)
+                                f"failure during POST workbook initialise_for_extract to: {self.environment.global_headers}",
+                                payload)
 
         response_worksheets = response_dict.get('Worksheets')
         for ws in response_worksheets:
@@ -520,9 +536,10 @@ class Worksheet:
                 self.total_row_count = ws.get('TotalRowCount')
                 self.columns = ws.get('Columns')
                 #self.rows = ws.get('Rows')  # should be []
+                self._export_status = ws
         return response_dict
 
-    def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
+    def _get_export_results(self, session, startRow: int = 0, pageSize: int = DEFAULT_PAGESIZE):
         # add some checking for not null, blah. check pagesize is not insane
         """
 
@@ -549,13 +566,13 @@ class Worksheet:
         rows = [WorksheetRow(rec['Values'], self) for rec in response_dict["Rows"]]
         return rows
 
-    def RefreshData(self, data_range: int = 5000):
+    def RefreshData(self, data_range: int = DEFAULT_PAGESIZE):
         s = requests.Session()
         self.environment.refresh_auth()
         try:
             self._create_export(s)
         except TypeError:
-            raise RequestsError(None, msg='likely due to invalid worksheetname')
+            raise RequestsError(None, msg='LIKELY due to invalid worksheetname')
         else:
             self.rows.clear()
             for i in range(0, self.total_row_count, data_range):
@@ -564,7 +581,7 @@ class Worksheet:
             self._queryID = None
             s.close()
 
-    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000):
+    async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = DEFAULT_PAGESIZE):
         url = self.environment.worksheet_url + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
         #print(f'start: {startRow}, pagesize: {pageSize}')
         #headers = self.environment.global_headers
@@ -593,7 +610,7 @@ class Worksheet:
             self.rows.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
         await client.aclose()
 
-    def RefreshData_async(self, data_range: int = 5000):
+    def RefreshData_async(self, data_range: int = DEFAULT_PAGESIZE):
     # todo get this to work. then modify environment to create event loop and take sessions from there.
         self.environment.refresh_auth()
         # initialise_for_extract query
@@ -610,17 +627,7 @@ class Worksheet:
             self._queryID = None
             #s.close()
 
-    def upload(self, *args):
-        """
-        Sending the request imports the data specified in the Rows field using the worksheet's import rules
-
-        :param args: list [] of records you want to send. don't just send a single record!! i.e. [0,0]
-        :return: results from request
-        """
-        #headers = self.environment.global_headers
-        #headers['Content-Type'] = 'application/json'
-        #url = self.environment.workbook_import
-
+    def _prepare_upload_params(self):
         workbook_parameters = {
             "Workbook": self.parent_workbook,  # {'Name': 'KXSHelperREST', "Scope": 'Public'}
             "SiteGroup": self._site_group,  # "All Sites"
@@ -633,6 +640,20 @@ class Worksheet:
             workbook_parameters['Filter'] = self._filter
         if self._variable_values:
             workbook_parameters['VariableValues'] = self._variable_values
+        return workbook_parameters
+
+    def upload(self, *args):
+        """
+        Sending the request imports the data specified in the Rows field using the worksheet's import rules
+
+        :param args: list [] of records you want to send. don't just send a single record!! i.e. [0,0]
+        :return: results from request
+        """
+        #headers = self.environment.global_headers
+        #headers['Content-Type'] = 'application/json'
+        #url = self.environment.workbook_import
+
+        workbook_parameters = self._prepare_upload_params()
 
         rows = [{"Values": i} for i in args]
 
@@ -650,35 +671,48 @@ class Worksheet:
         else:
             #self._logger.error(payload)
             raise RequestsError(response,
-                                f"failure during workbook-worksheet upload, POST to: {self.environment.global_headers}", payload)
+                                f"failure during workbook-worksheet upload. Non-200 response, POST to: {self.environment.global_headers}",
+                                payload)
 
         results = response_dict['Worksheets'][0]  # this only supports single worksheet, so no idea why it's an array.
-        response_readable = 'status: ' + str(response_dict['Success']) + \
-                            '\nWorksheetName: ' + str(results['WorksheetName']) + \
-                            '\nImportedRowCount: ' + str(results['ImportedRowCount']) + \
-                            '\nInsertedRowCount: ' + str(results['InsertedRowCount']) + \
-                            '\nModifiedRowCount: ' + str(results['ModifiedRowCount']) + \
-                            '\nDeletedRowCount: ' + str(results['DeletedRowCount']) + \
-                            '\nErrorRowCount: ' + str(results['ErrorRowCount']) + \
-                            '\nErrors: ' + str(results['Errors'])
+        self._upload_status = response_dict
+        response_readable = self._format_response(results)
 
         if response_dict['Success'] and results['ErrorRowCount'] <= 0:
             self._logger.info(response_readable)
-            self._logger.info(response_dict)
         elif response_dict['Success'] and results['ErrorRowCount'] > 0:
             self._logger.warning(response_readable)
-            self._logger.warning(response_dict)
-            self._logger.warning(payload)
             raise RequestsError(response,
                                 f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {self.environment.workbook_import_url}",
                                 payload)
         else:
-            self._logger.error(response_readable)
             self._logger.error(response_dict)
-            self._logger.error(payload)
             raise RequestsError(response, f"failure during worksheet upload", payload)
         return results
 
+    def _format_response(self, response_dict):
+        """
+        Formats a dictionary containing webservice call operation results into a human-readable string.
+
+        Args:
+            response_dict (dict): A dictionary with a 'Results' key, where the value
+                                  is a dictionary containing webservice call operation counts.
+
+        Returns:
+            str: A formatted string showing the status and row counts of the operation.
+        """
+        response_readable = (
+            f"status: {response_dict.get('Status', 'N/A')}\n"
+            f"ImportedRowCount: {response_dict.get('ImportedRowCount', 'N/A')}\n"
+            f"InsertedRowCount: {response_dict.get('InsertedRowCount', 'N/A')}\n"
+            f"ModifiedRowCount: {response_dict.get('ModifiedRowCount', 'N/A')}\n"
+            f"DeleteRowCount: {response_dict.get('DeleteRowCount', 'N/A')}\n"
+            f"ErrorRowCount: {response_dict.get('ErrorRowCount', 'N/A')}\n"
+            f"Errors: {response_dict.get('Errors', 'N/A')}\n"
+            f"UnchangedRowCount: {response_dict.get('UnchangedRowCount', 'N/A')}"
+        )
+        self._logger.info(response_readable)
+        return response_readable
 
 class WorksheetRow(UserList):
     def __init__(self, iterable, worksheet: Worksheet):

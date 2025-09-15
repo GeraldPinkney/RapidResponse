@@ -6,9 +6,7 @@ from samples import sample_configuration, local_sample_bootstrap
 
 
 class WorksheetTestCase(unittest.TestCase):
-
-
-    # env = Environment(sample_configuration)
+    env = Environment(sample_configuration)
     def test_worksheet_init(self):
         variable_values = {
             "DataModel_IsHidden": "No",
@@ -17,7 +15,7 @@ class WorksheetTestCase(unittest.TestCase):
             "FilterType": "All"
         }
 
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="DataModel_Summary",
+        ws = Worksheet(environment=self.env, worksheet="DataModel_Summary",
                        workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
 
@@ -35,7 +33,7 @@ class WorksheetTestCase(unittest.TestCase):
             "FilterType": "All"
         }
 
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="DataModel_Summary",
+        ws = Worksheet(environment=self.env, worksheet="DataModel_Summary",
                        workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
 
@@ -51,13 +49,13 @@ class WorksheetTestCase(unittest.TestCase):
             "SupplyForecast": "All",
             "InventoryPlan": "All"
         }
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Supply and Demand (Units)",
+        ws = Worksheet(environment=self.env, worksheet="Supply and Demand (Units)",
                        workbook={'Name': 'S&OP Plan Review', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
         self.assertNotEqual(len(ws.rows), 0, 'fail')
 
     def test_ws_simple(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+        ws = Worksheet(environment=self.env, worksheet="OnHand",
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"})
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
@@ -65,13 +63,13 @@ class WorksheetTestCase(unittest.TestCase):
         self.assertNotEqual(len(ws.columns), 0, "cols not set")
 
     def test_ws_refresh_False(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+        ws = Worksheet(environment=self.env, worksheet="OnHand",
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, refresh=False)
         self.assertEqual(len(ws), 0)
 
     def test_ws_append(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        ws = Worksheet(environment=self.env, worksheet="Actual Orders",
                        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
                        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
@@ -85,7 +83,7 @@ class WorksheetTestCase(unittest.TestCase):
 
     def test_ws_extend(self):
         # init
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        ws = Worksheet(environment=self.env, worksheet="Actual Orders",
         workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
         scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
         Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
@@ -100,7 +98,7 @@ class WorksheetTestCase(unittest.TestCase):
         ws.extend(recs)
 
     def test_ws_slice(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        ws = Worksheet(environment=self.env, worksheet="Actual Orders",
                        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
                        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
@@ -110,7 +108,7 @@ class WorksheetTestCase(unittest.TestCase):
 # chagne value in place
 # self.rows[0][0] = xx
     def test_ws_setitem(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="Actual Orders",
+        ws = Worksheet(environment=self.env, worksheet="Actual Orders",
                        workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
                        scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"})
@@ -118,20 +116,20 @@ class WorksheetTestCase(unittest.TestCase):
         rec[5] = '07-06-20'
 
     def test_ws_change(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+        ws = Worksheet(environment=self.env, worksheet="OnHand",
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"})
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
 
     def test_ws_simple_bool(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+        ws = Worksheet(environment=self.env, worksheet="OnHand",
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"})
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
         self.assertTrue(ws)
 
     def test_ws_simple_bool_f(self):
-        ws = Worksheet(environment=Environment(sample_configuration), worksheet="OnHand",
+        ws = Worksheet(environment=self.env, worksheet="OnHand",
                        workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, refresh=False)
         #self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
