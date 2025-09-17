@@ -188,17 +188,19 @@ class DataTable(Table):
             self.add_row(values)
 
         self._table_data.append(values)
+        self._total_row_count += 1
 
     def extend(self, args):
         to_send = []
         for rec in args:
-            if isinstance(rec, type(DataRow)):
+            if isinstance(rec, DataRow):
                 to_send.append(rec)
             else:
                 to_send.append(DataRow(rec, self))
         self._table_data.extend(to_send)
         if self.sync:
             self.add_rows(to_send)
+        self._total_row_count += len(args)
 
     def explode_reference_field(self, col: Column, running_list_of_cols: list = None):
         """
@@ -490,8 +492,6 @@ class DataTable(Table):
             self._table_data.extend(
                 await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range,
                                                      limit))
-            #await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range, self.environment.limit))
-
         # can I close client here? No. Need to shift this to environment level for client and limit
         await self.client.aclose()
 
