@@ -23,7 +23,7 @@ class AbstractEnvironment:
 
 
         logging.basicConfig(filename='logging.log', filemode='w',
-                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.WARNING)
+                            format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
         self._logger = logging.getLogger('RapidPy.env')
 
         self._base_url = None

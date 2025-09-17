@@ -5,6 +5,75 @@ from RapidResponse.Worksheet import Worksheet, Workbook, WorksheetRow
 from samples import sample_configuration, local_sample_bootstrap
 
 
+class WorksheetAsyncTestCase(unittest.TestCase):
+    env = Environment(sample_configuration)
+    kxs_variable_values = {
+        "DataModel_IsHidden": "No",
+        "DataModel_IsReadOnly": "All",
+        "DataModel_IsIncludeDataTypeSet": "N",
+        "FilterType": "All"
+    }
+
+    def test_worksheet_init(self):
+        ws = Worksheet(environment=self.env, worksheet="DataModel_Summary",
+                       workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=self.kxs_variable_values,
+                       refresh=False)
+
+        # ws._create_export()
+        self.assertEqual(ws.name, 'DataModel_Summary')
+        ws.RefreshData_async()
+
+        # self.assertIsNotNone(ws._queryID,"QueryID not set correctly")
+        self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
+        self.assertNotEqual(len(ws.columns), 0, "cols not set")
+
+    def test_worksheet_retrieve(self):
+        ws = Worksheet(environment=self.env, worksheet="DataModel_Summary",
+                       workbook={'Name': 'KXSHelperREST', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=self.kxs_variable_values,
+                       refresh=False)
+
+        ws.RefreshData_async()
+        self.assertNotEqual(len(ws._rows), 0, 'fail')
+
+    def test_worksheet_retrieve_with_amp(self):
+        variable_values = {
+            "DemandShipment": "Actual",
+            "SupplyShipment": "All",
+            "DemandForecast": "All",
+            "SupplyForecast": "All",
+            "InventoryPlan": "All"
+        }
+        ws = Worksheet(environment=self.env, worksheet="Supply and Demand (Units)",
+                       workbook={'Name': 'S&OP Plan Review', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values, refresh=False)
+        ws.RefreshData_async()
+        self.assertNotEqual(len(ws._rows), 0, 'fail')
+
+    def test_ws_simple(self):
+        ws = Worksheet(environment=self.env, worksheet="OnHand",
+                       workbook={'Name': '.Input Tables', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, refresh=False)
+        ws.RefreshData_async()
+        self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
+        self.assertNotEqual(len(ws.columns), 0, "cols not set")
+
+    def test_ws_append(self):
+        ws = Worksheet(environment=self.env, worksheet="Actual Orders",
+                       workbook={'Name': 'Orders by Customer', "Scope": 'Public'},
+                       scenario={"Name": "Integration", "Scope": "Public"}, SiteGroup="All Sites",
+                       Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues={"customer": "ebikes.com"},
+                       refresh=False)
+        # self.assertIsNotNone(ws._queryID, "QueryID not set correctly")
+
+        ws.RefreshData_async()
+        self.assertIsNotNone(ws.total_row_count, "_total_row_count not set correctly")
+        self.assertNotEqual(len(ws.columns), 0, "cols not set")
+        rec = ['102-CDMAc', '1234', 'DC-NorthAmerica', 'FC102', 'CDMA-C333', '01-01-20', '140', 'DCActual',
+               'DC-NorthAmerica']
+        ws.append(rec)
+
 class WorksheetTestCase(unittest.TestCase):
     env = Environment(sample_configuration)
     def test_worksheet_init(self):
@@ -39,7 +108,7 @@ class WorksheetTestCase(unittest.TestCase):
 
         #ws._create_export()
         #ws._get_export_results()
-        self.assertNotEqual(len(ws.rows), 0, 'fail')
+        self.assertNotEqual(len(ws._rows), 0, 'fail')
 
     def test_worksheet_retrieve_with_amp(self):
         variable_values = {
@@ -52,7 +121,7 @@ class WorksheetTestCase(unittest.TestCase):
         ws = Worksheet(environment=self.env, worksheet="Supply and Demand (Units)",
                        workbook={'Name': 'S&OP Plan Review', "Scope": 'Public'}, scenario=None, SiteGroup="All Sites",
                        Filter={"Name": "All Parts", "Scope": "Public"}, VariableValues=variable_values)
-        self.assertNotEqual(len(ws.rows), 0, 'fail')
+        self.assertNotEqual(len(ws._rows), 0, 'fail')
 
     def test_ws_simple(self):
         ws = Worksheet(environment=self.env, worksheet="OnHand",
@@ -137,7 +206,6 @@ class WorksheetTestCase(unittest.TestCase):
     # test indexof
 
     # test contains
-
 
 class WorksheetRowTestCase(unittest.TestCase):
     def test_wsr_init(self):

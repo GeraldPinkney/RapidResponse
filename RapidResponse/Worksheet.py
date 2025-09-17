@@ -282,7 +282,7 @@ class Worksheet:
     :param sync: boolean control whether any updates are pushed back to RR
     :param refresh: boolean refresh row data on initialisation
     """
-    #WORKSHEET_URL = "/integration/V1/data/worksheet"
+    # todo work out what is broken with extend or append in worksheet
     DEFAULT_PAGESIZE = 5000
 
     def __init__(self, environment, worksheet: str, workbook: dict, scenario=None, SiteGroup: str = None,
@@ -294,10 +294,11 @@ class Worksheet:
         :param environment: Required. contains the env details for worksheet.
         :param worksheet: Required, the worksheets you want to retrieve data from. Example, DataModel_Summary
         :param workbook: Required, The workbook the required data is in. Example, {'Name': 'KXSHelperREST', "Scope": 'Public'}
-        :param SiteGroup: Required, the site or site filter to use with the workbook Example, "All Sites"
+        :param SiteGroup: Optional, the site or site filter to use with the workbook Example, "All Sites"
         :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
         """
+
         self._logger = logging.getLogger('RapidPy.ws')
         # validations
         # environment
@@ -321,6 +322,9 @@ class Worksheet:
         self._refresh = bool(refresh)
         self._export_status = None
         self._upload_status = None
+        timeout = httpx.Timeout(10.0, connect=60.0)
+        self.client = httpx.AsyncClient(timeout=timeout)
+        self.max_connections = 10
 
         # scenario
         if scenario:
@@ -341,7 +345,7 @@ class Worksheet:
         self._variable_values = VariableValues
 
         self.columns = list()
-        self.rows = list()
+        self._rows = list()
 
         self._queryID = None
         self.total_row_count = 0
@@ -414,16 +418,16 @@ class Worksheet:
             self.RefreshData()
 
     def __len__(self):
-        return len(self.rows)
+        return len(self._rows)
 
     def __bool__(self):
-        if len(self.rows) > 0:
+        if len(self._rows) > 0:
             return True
         else:
             return False
 
     def __getitem__(self, position):
-        return self.rows[position]
+        return self._rows[position]
 
     def __eq__(self, other):
         if self.name == other.name and self.parent_workbook == other.parent_workbook:
@@ -432,7 +436,7 @@ class Worksheet:
             return False
 
     def __contains__(self, item):
-        if item in self.rows:
+        if item in self._rows:
             return True
         else:
             return False
@@ -443,22 +447,22 @@ class Worksheet:
     def __str__(self):
         # return self and first 5 rows
         response = f'Worksheet: {self.name!r}, Scope: {self.parent_workbook_scope!r} '
-        if len(self.rows) > 0:
+        if len(self._rows) > 0:
             response = response + '\n'
-        if len(self.rows) > 5:
+        if len(self._rows) > 5:
             for i in range(0, 5):
-                response = response + 'rownum: ' + str(i) + ' ' + str(self.rows[i]) + '\n'
+                response = response + 'rownum: ' + str(i) + ' ' + str(self._rows[i]) + '\n'
             response = response + '...'
         return response
 
     def __setitem__(self, key, value):
         if not isinstance(value, WorksheetRow):
-            self.rows[key] = WorksheetRow(value, self)
+            self._rows[key] = WorksheetRow(value, self)
         else:
-            self.rows[key] = value
+            self._rows[key] = value
         if self._sync:
             self.environment.refresh_auth()
-            self.upload(self.rows[key])
+            self.upload(self._rows[key])
 
     def add_row(self, rec):
         #s = requests.Session()
@@ -471,25 +475,31 @@ class Worksheet:
             self.upload(*rows)
 
     def append(self, values):
-        # adds a single new item at the end of the underlying list
+        """
+        Adds a single new item to the end of the underlying list.
+
+        :param values: A single item or an instance of WorksheetRow to be added.
+        :type values: Any
+        :return: None
+        """
         if self._sync:
             self.add_row(values)
 
         if not isinstance(values, WorksheetRow):
-            self.rows.append(WorksheetRow(values, self))
+            self._rows.append(WorksheetRow(values, self))
         else:
-            self.rows.append(values)
-        self.total_row_count = len(self.rows)
+            self._rows.append(values)
+        self.total_row_count = len(self._rows)
 
     def extend(self, *args):
         if self._sync:
             self.add_rows(*args)
 
         if isinstance(*args, type(WorksheetRow)):
-            self.rows.extend(*args)
+            self._rows.extend(*args)
         else:
-            self.rows.extend([WorksheetRow(item, self) for item in args[0]])
-        self.total_row_count = len(self.rows)
+            self._rows.extend([WorksheetRow(item, self) for item in args[0]])
+        self.total_row_count = len(self._rows)
 
     def _prepare_export_params(self):
         workbook_parameters = {
@@ -503,6 +513,16 @@ class Worksheet:
         if self._variable_values:
             workbook_parameters['VariableValues'] = self._variable_values
         return workbook_parameters
+
+    def _process_create_export_response(self, response_dict):
+        response_worksheets = response_dict.get('Worksheets')
+        for ws in response_worksheets:
+            if ws.get('Name') == self.name:
+                self._queryID = ws['QueryHandle']['QueryID']
+                self.total_row_count = ws.get('TotalRowCount')
+                self.columns = ws.get('Columns')
+                # self.rows = ws.get('Rows')  # should be []
+                self._export_status = ws
 
     def _create_export(self, session):
         """
@@ -574,17 +594,48 @@ class Worksheet:
         except TypeError:
             raise RequestsError(None, msg='LIKELY due to invalid worksheetname')
         else:
-            self.rows.clear()
+            self._rows.clear()
             for i in range(0, self.total_row_count, data_range):
-                self.rows.extend(self._get_export_results(s, i, data_range))
+                self._rows.extend(self._get_export_results(s, i, data_range))
         finally:
             self._queryID = None
             s.close()
 
+    async def _create_export_async(self, client, limit: asyncio.Semaphore = None):
+        """
+                :param client:
+                :param limit:
+                :return: response_dict
+                """
+
+        workbook_parameters = self._prepare_export_params()
+
+        payload = json.dumps({
+            'Scenario': self._scenario,
+            'WorkbookParameters': workbook_parameters
+        })
+
+        try:
+            async with limit:
+                response = await client.post(url=self.environment.workbook_url, headers=self.environment.global_headers,
+                                             content=payload)
+        except:
+            raise RequestsError(response,
+                                f"failure during POST workbook _create_export_async to: {self.environment.workbook_url}",
+                                payload)
+        else:
+            if response.status_code == 200:
+                response_dict = json.loads(response.text)
+                self._process_create_export_response(response_dict)
+                return response_dict
+            else:
+                raise RequestsError(response,
+                                    f"failure during POST workbook _create_export_async to: {self.environment.global_headers}",
+                                    payload)
+
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = DEFAULT_PAGESIZE):
         url = self.environment.worksheet_url + "?queryId=" + self._queryID[1:] + "&workbookName=" + self.parent_workbook['Name'].replace('&', '%26').replace(' ','%20') + "&Scope=" + self.parent_workbook['Scope'] + "&worksheetName=" + self.name.replace('&', '%26').replace(' ','%20') + "&startRow=" + str(startRow) + "&pageSize=" + str(pageSize)
-        #print(f'start: {startRow}, pagesize: {pageSize}')
-        #headers = self.environment.global_headers
+        self._logger.debug(f'_get_export_results start: {startRow}, pagesize: {pageSize}')
 
         response = await client.get(url=url, headers=self.environment.global_headers)
         if response.status_code == 200:
@@ -596,36 +647,36 @@ class Worksheet:
 
     async def _main_get_export_results_async(self, data_range):
 
-        client = httpx.AsyncClient()
-        #for i in range(0, self._total_row_count - data_range, data_range):
-        #    print(f'i: {i}, range: {data_range}, time: {datetime.now()}')
-        #    tasks.append(asyncio.Task(self._get_export_results_async(client, i, data_range)))
-        tasks = [asyncio.Task(self._get_export_results_async(client, i, data_range)) for i in range(0, self.total_row_count - data_range, data_range)]
+        limit = asyncio.Semaphore(self.max_connections)
+        # set exportID and totrowcount
+        response_dict = await self._create_export_async(self.client, limit)
+        self._process_create_export_response(response_dict)
+
+        tasks = [asyncio.Task(self._get_export_results_async(self.client, i, data_range)) for i in
+                 range(0, self.total_row_count - data_range, data_range)]
         for coroutine in asyncio.as_completed(tasks):
-            self.rows.extend(await coroutine)
+            self._rows.extend(await coroutine)
 
         remaining_records = self.total_row_count % data_range
         if remaining_records > 0:
-            await asyncio.sleep(1)
-            self.rows.extend(await self._get_export_results_async(client, self.total_row_count - remaining_records, data_range))
-        await client.aclose()
+            self._rows.extend(
+                await self._get_export_results_async(self.client, self.total_row_count - remaining_records, data_range))
+        await self.client.aclose()
 
-    def RefreshData_async(self, data_range: int = DEFAULT_PAGESIZE):
-    # todo get this to work. then modify environment to create event loop and take sessions from there.
+    def _calc_optimal_pagesize(self, pagesize):
+
+        return self.DEFAULT_PAGESIZE
+
+    def RefreshData_async(self, data_range: int = None):
+        # todo get this to work. then modify environment to create event loop and take sessions from there.
+        calc_data_range = self._calc_optimal_pagesize(data_range)
+
         self.environment.refresh_auth()
         # initialise_for_extract query
-        s = requests.Session()
-        try:
-            self._create_export(s)
-            s.close()
-        except TypeError:
-            raise RequestsError(None, msg='likely due to invalid worksheetname')
-        else:
-            self.rows.clear()
-            asyncio.run(self._main_get_export_results_async(data_range))
-        finally:
-            self._queryID = None
-            #s.close()
+        self._rows.clear()
+        asyncio.run(self._main_get_export_results_async(calc_data_range))
+        self._queryID = None
+
 
     def _prepare_upload_params(self):
         workbook_parameters = {
@@ -683,8 +734,7 @@ class Worksheet:
         elif response_dict['Success'] and results['ErrorRowCount'] > 0:
             self._logger.warning(response_readable)
             raise RequestsError(response,
-                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {self.environment.workbook_import_url}",
-                                payload)
+                                f"partial failure during worksheet upload. ErrorCount: {results['ErrorRowCount']}, {self.environment.workbook_import_url}",payload)
         else:
             self._logger.error(response_dict)
             raise RequestsError(response, f"failure during worksheet upload", payload)
@@ -795,7 +845,10 @@ class WorksheetRow(UserList):
         return type(self)(item for item in self if predicate(item))
 
     def for_each(self, func):
-        # calls func() on every item in the underlying list to generate some side effect.
+        """
+        calls func() on every item in the underlying list to generate some side effect.
+        :param func:
+        """
         for item in self:
             func(item)
 
