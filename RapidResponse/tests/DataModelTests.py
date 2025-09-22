@@ -1,7 +1,7 @@
 import unittest
 
+import RapidResponse.DataModel
 import RapidResponse.DataModel as DM
-import RapidResponse.Table as Table
 
 
 class DataModel_init_TestCase(unittest.TestCase):
@@ -12,14 +12,14 @@ class DataModel_init_TestCase(unittest.TestCase):
         data_model._load_table_data_from_file(
             'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
         for i in data_model.tables:
-            self.assertEqual(type(i), type(Table.Table('Part', 'Mfg')))
+            self.assertEqual(type(i), type(RapidResponse.DataModel.Table('Part', 'Mfg')))
 
     def test_local_dm_tab_contains(self):
         data_model = DM.DataModel(
             'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         data_model._load_table_data_from_file(
             'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel\\Tables.tab')
-        self.assertIn(Table.Table('Part', 'Mfg'), data_model.tables, 'screwed')
+        self.assertIn(RapidResponse.DataModel.Table('Part', 'Mfg'), data_model.tables, 'screwed')
 
     def test_local_dm_field(self):
         data_model = DM.DataModel(
@@ -50,9 +50,9 @@ class DataModel_init_TestCase(unittest.TestCase):
         returned = dm.get_field('Mfg::PartCustomer', 'Part.Site.Value')
         # print(returned)
         self.assertEqual(returned,
-                         Table.Column(name='Part.Site.Value', datatype='String', key='Y', referencedTable=None,
-                                      referencedTableNamespace=None, identification_fields=None,
-                                      correspondingField=None, correspondingFieldNamespace=None, fieldNamespace='Mfg'))
+                         RapidResponse.DataModel.Column(name='Part.Site.Value', datatype='String', key='Y', referencedTable=None,
+                                                        referencedTableNamespace=None, identification_fields=None,
+                                                        correspondingField=None, correspondingFieldNamespace=None, fieldNamespace='Mfg'))
 
     def test_get_nested_table_field(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',
@@ -118,18 +118,18 @@ class DataModel_init_TestCase(unittest.TestCase):
 
     def test_from_pkg_rsc(self):
         data_model = DM.DataModel()
-        self.assertIn(Table.Table('Part', 'Mfg'), data_model.tables, 'screwed')
+        self.assertIn(RapidResponse.DataModel.Table('Part', 'Mfg'), data_model.tables, 'screwed')
 
     def test_workbook_dm(self):
         dm = DM.DataModel(None, url='http://localhost/rapidresponse',headers={'Authorization': 'Basic Z3BpbmtuZXlfd3M6MUwwdmVSQHBpZFJlc3BvbnNl', 'Content-Type': 'application/json'})
         tab = dm.get_table('Part', 'Mfg')
-        tab1 = Table.Table(name='Part', namespace='Mfg')
+        tab1 = RapidResponse.DataModel.Table(name='Part', namespace='Mfg')
         self.assertEqual(tab, tab1)
 
     def test_default_dm(self):
         dm = DM.DataModel()
         tab = dm.get_table('Part', 'Mfg')
-        tab1 = Table.Table(name='Part', namespace='Mfg')
+        tab1 = RapidResponse.DataModel.Table(name='Part', namespace='Mfg')
         self.assertEqual(tab, tab1)
 
     def test_default_column_assignment(self):
@@ -194,7 +194,7 @@ class DataModelWBKTestCase(unittest.TestCase):
         data_model = DM.DataModel(
             'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         tab = data_model.get_table('Part', 'Mfg')
-        tab1 = Table.Table(name='Part', namespace='Mfg')
+        tab1 = RapidResponse.DataModel.Table(name='Part', namespace='Mfg')
         self.assertEqual(tab, tab1)
 
     def test_get_field(self):
@@ -202,20 +202,20 @@ class DataModelWBKTestCase(unittest.TestCase):
             'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         col = data_model.get_field('Mfg::IndependentDemand', 'Order.Type.ControlSet.Value')
         # print(col)
-        self.assertEqual(col, Table.Column(name='Order.Type.ControlSet.Value', datatype='String', key='Y',
-                                           referencedTable=None, referencedTableNamespace=None,
-                                           identification_fields=None, correspondingField=None,
-                                           correspondingFieldNamespace=None, fieldNamespace='Mfg'))
+        self.assertEqual(col, RapidResponse.DataModel.Column(name='Order.Type.ControlSet.Value', datatype='String', key='Y',
+                                                             referencedTable=None, referencedTableNamespace=None,
+                                                             identification_fields=None, correspondingField=None,
+                                                             correspondingFieldNamespace=None, fieldNamespace='Mfg'))
 
     def test_get_field_not_nested(self):
         data_model = DM.DataModel(
             'C:\\Users\\gpinkney\\OneDrive - Kinaxis\\PycharmProjects\\RapidResponse\\RapidResponse\\tests\\DataModel')
         col = data_model.get_field('Mfg::IndependentDemand', 'Line')
         # print(col)
-        self.assertEqual(col, Table.Column(name='Line', datatype='String', key='Y', referencedTable=None,
-                                           referencedTableNamespace=None, identification_fields=None,
-                                           correspondingField=None, correspondingFieldNamespace=None,
-                                           fieldNamespace='Mfg'))
+        self.assertEqual(col, RapidResponse.DataModel.Column(name='Line', datatype='String', key='Y', referencedTable=None,
+                                                             referencedTableNamespace=None, identification_fields=None,
+                                                             correspondingField=None, correspondingFieldNamespace=None,
+                                                             fieldNamespace='Mfg'))
 
     def _test_get_field_reference(self):
         data_model = DM.DataModel(None, url='http://localhost/rapidresponse',
@@ -223,10 +223,10 @@ class DataModelWBKTestCase(unittest.TestCase):
                                            'Content-Type': 'application/json'})
         col = data_model.get_field('Mfg::Customer', 'U_Division')
         # print(col)
-        self.assertEqual(col, Table.Column(name='U_Division', datatype='Reference', key='Y', referencedTable=None,
-                                           referencedTableNamespace=None, identification_fields=None,
-                                           correspondingField=None, correspondingFieldNamespace=None,
-                                           fieldNamespace='Mfg'))
+        self.assertEqual(col, RapidResponse.DataModel.Column(name='U_Division', datatype='Reference', key='Y', referencedTable=None,
+                                                             referencedTableNamespace=None, identification_fields=None,
+                                                             correspondingField=None, correspondingFieldNamespace=None,
+                                                             fieldNamespace='Mfg'))
 
     def test_exclude_using_namespace(self):
         data_model = DM.DataModel(None, url='http://localhost/rapidresponse',

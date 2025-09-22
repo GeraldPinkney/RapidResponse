@@ -1,7 +1,7 @@
 import unittest
 
 from RapidResponse.Environment import Environment
-from RapidResponse.Script import Script
+from RapidResponse.Resource import Script
 from samples import sample_configuration, local_sample_bootstrap
 
 

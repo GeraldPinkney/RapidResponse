@@ -1,7 +1,7 @@
 import unittest
 
 from RapidResponse.Environment import Environment
-from RapidResponse.Worksheet import Worksheet, Workbook, WorksheetRow
+from RapidResponse.Resource import Workbook, Worksheet, WorksheetRow
 from samples import sample_configuration, local_sample_bootstrap
 
 

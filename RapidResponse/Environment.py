@@ -8,8 +8,8 @@ import httpx
 import requests
 
 from RapidResponse.DataModel import DataModel
-from RapidResponse.Err import SetupError, RequestsError
-from RapidResponse.Utils import WORKBOOK_URL, BULK_URL, WORKSHEET_URL, SCRIPT_URL, ENTERPRISE_DATA_SCENARIO
+from RapidResponse.Utils import WORKBOOK_URL, BULK_URL, WORKSHEET_URL, SCRIPT_URL, ENTERPRISE_DATA_SCENARIO, SetupError, \
+    RequestsError
 
 
 class AbstractEnvironment:

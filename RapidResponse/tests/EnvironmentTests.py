@@ -5,8 +5,8 @@ from unittest.mock import patch, MagicMock
 
 import RapidResponse
 import RapidResponse.DataModel as DataModel
+import RapidResponse.Utils
 from RapidResponse.Environment import Environment
-from RapidResponse.Err import DataError
 
 
 class TestPackages(unittest.TestCase):
@@ -124,7 +124,7 @@ class TestEnvironment(unittest.TestCase):
     def test_invalid_data_model_directory(self):
         invalid_config = self.valid_config.copy()
         invalid_config['data_model_directory'] = '/invalid/path'
-        with self.assertRaises(RapidResponse.Err.SetupError):
+        with self.assertRaises(RapidResponse.Utils.SetupError):
             Environment(invalid_config)
 
     @patch('os.path.exists', return_value=True)

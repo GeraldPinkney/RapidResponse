@@ -2,9 +2,10 @@ import json
 import time
 import unittest
 
-from RapidResponse.DataTable import DataTable, DataRow, Column
+from RapidResponse.DataModel import Column
+from RapidResponse.DataTable import DataTable, DataRow
 from RapidResponse.Environment import Environment
-from RapidResponse.Err import DataError
+from RapidResponse.Utils import DataError
 # from samples import sample_configuration, local_sample_bootstrap
 from RapidResponse.tests.resources.samples import sample_configuration, local_sample_bootstrap
 

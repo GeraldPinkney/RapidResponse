@@ -1,22 +1,39 @@
-import base64
+import importlib.resources
 import json
 
 import requests
 
 import RapidResponse
+from RapidResponse.DataModel import Column, Table
 from RapidResponse.DataTable import DataTable
 from RapidResponse.Environment import Environment
+from RapidResponse.Resource import Workbook
 from samples import sample_configuration, local_sample_bootstrap
-from RapidResponse.Table import Table, Column
-from RapidResponse.Worksheet import Workbook
 
 
 def new_field_validate():
     env = Environment(local_sample_bootstrap)
     print(env.data_model._get_field_namespace('Mfg::Part', 'Name'))
 
+def _load_from_package_resources():
+    if importlib.resources.files('RapidResponse.data').joinpath('Tables.tab').is_file():
+        print('found')
+    else:
+        print('not found')
+        for entry in importlib.resources.files('RapidResponse.data').iterdir():
+            print(entry.name)
+
+    #ref = importlib.resources.files('RapidResponse.data' )/ 'Tables.tab'
+    #with importlib.resources.as_file(ref) as path:
+    #    print(type(path))
+
+def test_pkg():
+    _load_from_package_resources()
+    pass
+
 if __name__ == '__main__':
-    new_field_validate()
+    _load_from_package_resources()
+    #new_field_validate()
 
 
 def stuff():
@@ -91,7 +108,7 @@ def stuff():
                   VariableValues=variable_values,
                   WorksheetNames=["DataModel_Summary", "DataModel_Fields"]
                   )
-    wb.refresh()
+    wb.RefreshData()
     for x in wb.worksheets:
         print(x)
         xRows = x.RefreshData()

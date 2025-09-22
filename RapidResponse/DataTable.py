@@ -9,9 +9,9 @@ from copy import deepcopy
 import httpx
 import requests
 
+from RapidResponse.DataModel import Column, Table
 from RapidResponse.Environment import Environment
-from RapidResponse.Err import RequestsError, DataError
-from RapidResponse.Table import Table, Column
+from RapidResponse.Utils import RequestsError, DataError
 
 
 class DataTable(Table):
