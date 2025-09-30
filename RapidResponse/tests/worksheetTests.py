@@ -290,6 +290,15 @@ class WorkbookTestCase(unittest.TestCase):
                                     VariableValues={"customer": "ebikes.com"})
         self.assertEqual(OrdersByCustomer.filter, {"Name": "All Parts", "Scope": "Public"})
 
+    def test_wb_getter_setter_siteGroup(self):
+        OrdersByCustomer = Workbook(environment=self.env,
+                                    workbook=self.OrdersByCustomerDict,
+                                    WorksheetNames=["Actual Orders"],
+                                    Filter={"Name": "All Parts", "Scope": "Public"},
+                                    VariableValues={"customer": "ebikes.com"})
+        self.assertEqual(OrdersByCustomer.site_group, 'All Sites')
+        OrdersByCustomer.site_group = 'SOPDC-NorthAmerica'
+        self.assertEqual(OrdersByCustomer.site_group, 'SOPDC-NorthAmerica')
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,4 @@
+import abc
 import asyncio
 import json
 import logging
@@ -13,10 +14,7 @@ from RapidResponse.Environment import Environment
 from RapidResponse.Utils import VALID_SCOPES, SCOPE_PUBLIC, ScriptError, RequestsError, ALL_SITES, ALL_PARTS, DataError
 
 
-# todo create new class Resource, should have environment, name, should initialise logger. handle scope
-# todo create new class WorkbookResource, expect to be inherited onto workbook and worksheet
-
-class Resource:
+class Resource(abc.ABC):
     def __init__(self, environment, name, scope: str = None):
 
         self._validate_parameters(environment, name)
@@ -77,13 +75,11 @@ class Resource:
             raise ValueError("The scope must be either 'Public' or 'Private'.")
         self._scope = new_scope
 
-class WorkbookResource(Resource):
+class WorkbookResource(Resource,abc.ABC):
     def __init__(self, environment, name, scope, Scenario: dict = None, SiteGroup: str = None, Filter: dict = None, VariableValues: dict = None):
         Resource.__init__(self,environment, name, scope)
-        self.fetch_worksheets_from_mx = False
+
         self.fetch_variables_from_mx = False
-        # self.VARIABLESUTILSCRIPT = 'GP.GetWorkbook.Variables'
-        # self.WORKSHEETUTILSCRIPT = 'GP.GetWorkbook.Worksheets'
         self._scenario = dict()
         self._workbook = dict()
         self._site_group = None
@@ -108,28 +104,6 @@ class WorkbookResource(Resource):
         else:
             self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
 
-        if self.environment._variables_script is None:
-            self.fetch_variables_from_mx = False
-        else:
-            self.fetch_variables_from_mx = True
-
-        if VariableValues:
-            self._variable_values = dict(VariableValues)
-        elif self.fetch_variables_from_mx:
-            self._logger.debug(f'Fetching variables from Maestro using {self.environment._variables_script}')
-            self._variable_values = self._fetch_variables(self.environment._variables_script)
-        else:
-            self._logger.debug(f'Variables might be required, who really knows?! Guess we see if it gives error later')
-
-    def _fetch_variables(self, helper_workbook):
-        param = {"SharedWorkbookName": self.name, "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
-        variablesResponse = Script(self.environment, helper_workbook, scope=SCOPE_PUBLIC, parameters=param)
-        variablesResponse.execute()
-        var_list = json.loads('[' + variablesResponse.value + ']')
-        variables_dict = dict()
-        for var in var_list:
-            variables_dict.update({var["name"]: var["defaultValue"]})
-        return variables_dict
 
     @property
     def scenario(self):
@@ -161,8 +135,7 @@ class WorkbookResource(Resource):
     def site_group(self, new_site_group):
         self._site_group = str(new_site_group)
 
-
-class AbstractScript(Resource):
+class AbstractScript(Resource,abc.ABC):
     """
     A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
 
@@ -243,7 +216,6 @@ class AbstractScript(Resource):
 
     def execute(self):
         pass
-
 
 class Script(AbstractScript):
     """
@@ -338,8 +310,7 @@ class Script(AbstractScript):
                 error['ScriptScope'], error['Line'], error['Character']
             )
 
-
-class AbstractWorkBook(WorkbookResource):
+class AbstractWorkBook(WorkbookResource,abc.ABC):
     """
            https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
            :param environment: Required. contains the env details for worksheet.\n
@@ -368,7 +339,6 @@ class AbstractWorkBook(WorkbookResource):
 
         """
         WorkbookResource.__init__(self,environment, workbook['Name'], workbook['Scope'],Scenario, SiteGroup, Filter, VariableValues)
-        self.fetch_worksheets_from_mx = False
 
         self._logger = logging.getLogger('RapidPy.rcs.wb')
         self.worksheets = list()
@@ -420,31 +390,25 @@ class AbstractWorkBook(WorkbookResource):
         msg = f'{cls.__name__!r} object has no attribute {name!r}'
         raise AttributeError(msg)
 
+    @abc.abstractmethod
     def RefreshData(self):
         # populate all child worksheets with data
         pass
 
-
-    @property
-    def scenario(self):
-        return super().scenario
-
-    @scenario.setter
+    @WorkbookResource.scenario.setter
     def scenario(self, new_scenario):
-        self._scenario = super().scenario(new_scenario) #dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
+        #self._scenario = super().scenario(new_scenario) #dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
+        super(__class__, type(self)).scenario.fset(self, new_scenario)
         for ws in self.worksheets:
             ws.scenario = self.scenario
 
-    @property
-    def site_group(self):
-        return super().site_group
 
-    @site_group.setter
+    @WorkbookResource.site_group.setter
     def site_group(self, new_site_group):
-        self._site_group = super().site_group(new_site_group)
+        super(__class__, type(self)).site_group.fset(self, new_site_group)
+        #self._site_group = super().site_group.setter(new_site_group)
         for ws in self.worksheets:
             ws.site_group = self.site_group
-
 
 class Workbook(AbstractWorkBook):
     """
@@ -456,9 +420,7 @@ class Workbook(AbstractWorkBook):
         :param WorksheetNames : Optional, the worksheets you want to retrieve data from ["worksheet name1", "worksheet name2"]
         :param Filter : Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues : Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
-
-
-        """
+    """
 
     def __init__(self, environment, workbook: dict, Scenario: dict = None, SiteGroup: str = None,
                  WorksheetNames: list = None, Filter: dict = None, VariableValues: dict = None, refresh: bool = True):
@@ -475,8 +437,9 @@ class Workbook(AbstractWorkBook):
 
 
         """
-        super().__init__(environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues)
+        AbstractWorkBook.__init__(self, environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues)
         self._refresh = refresh
+
         if WorksheetNames:
             self._set_worksheets(WorksheetNames)
         elif self.fetch_worksheets_from_mx:
@@ -485,6 +448,19 @@ class Workbook(AbstractWorkBook):
             self._set_worksheets(self._fetch_worksheets(self.environment._worksheet_script))
         else:
             raise ValueError('worksheets are required')
+
+        if self.environment._variables_script is None:
+            self.fetch_variables_from_mx = False
+        else:
+            self.fetch_variables_from_mx = True
+
+        if VariableValues:
+            self._variable_values = dict(VariableValues)
+        elif self.fetch_variables_from_mx:
+            self._logger.debug(f'Fetching variables from Maestro using {self.environment._variables_script}')
+            self._variable_values = self._fetch_variables(self.environment._variables_script)
+        else:
+            self._logger.debug(f'Variables might be required, who really knows?! Guess we see if it gives error later')
 
     def RefreshData(self):
         # populate all child worksheets with data
@@ -509,8 +485,17 @@ class Workbook(AbstractWorkBook):
         self._logger.debug(f'{worksheetarray}')
         return worksheetarray
 
+    def _fetch_variables(self, helper_workbook):
+        param = {"SharedWorkbookName": self.name, "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
+        variablesResponse = Script(self.environment, helper_workbook, scope=SCOPE_PUBLIC, parameters=param)
+        variablesResponse.execute()
+        var_list = json.loads('[' + variablesResponse.value + ']')
+        variables_dict = dict()
+        for var in var_list:
+            variables_dict.update({var["name"]: var["defaultValue"]})
+        return variables_dict
 
-class Worksheet:
+class Worksheet(WorkbookResource):
     """
     https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?
 
@@ -540,60 +525,32 @@ class Worksheet:
         :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
         """
-
+        WorkbookResource.__init__(self, environment, workbook['Name'], workbook['Scope'], scenario, SiteGroup, Filter,VariableValues)
         self._logger = logging.getLogger('RapidPy.ws')
-        # validations
-        # environment
-        if not isinstance(environment, Environment):
-            raise TypeError("The parameter environment type must be Environment.")
-        if not environment:
-            raise ValueError("The parameter environment must not be empty.")
-        self.environment = environment
 
-        # worksheet
-        #if not isinstance(worksheet, str):
-        #    raise TypeError("The parameter worksheet type must be str.")
+
         if not worksheet:
             raise ValueError("The parameter worksheet must not be empty.")
+
         self._name = str(worksheet)
 
         # workbook
         self._parent_workbook = dict({"Name": workbook['Name'], "Scope": workbook['Scope']})
-
         self._sync = bool(sync)
         self._refresh = bool(refresh)
+        self._variable_values = VariableValues
+
         self._export_status = None
         self._upload_status = None
+        self.columns = list()
+        self._rows = list()
+        self._queryID = None
+        self.total_row_count = 0
         timeout = httpx.Timeout(10.0, connect=60.0)
         self.client = httpx.AsyncClient(timeout=timeout)
         self.max_connections = 10
 
-        # scenario
-        if scenario:
-            self._scenario = dict({"Name": scenario['Name'], "Scope": scenario['Scope']})
-        else:
-            self._scenario = self.environment.scenarios[0]
-
-        # sitegroup
-        if not SiteGroup:
-            self._site_group = ALL_SITES
-        else:
-            self._site_group = str(SiteGroup)
-
-        if not Filter:
-            self._filter = ALL_PARTS
-        else:
-            self._filter = Filter
-        self._variable_values = VariableValues
-
-        self.columns = list()
-        self._rows = list()
-
-        self._queryID = None
-        self.total_row_count = 0
-
-        if self._refresh:
-            self.RefreshData()
+        if self._refresh: self.RefreshData()
             #self.RefreshData_async()
 
     @property
@@ -610,10 +567,6 @@ class Worksheet:
             return f'Not Run'
 
     @property
-    def name(self):
-        return self._name
-
-    @property
     def parent_workbook(self):
         return self._parent_workbook
 
@@ -625,39 +578,24 @@ class Worksheet:
     def parent_workbook_scope(self):
         return self._parent_workbook['Scope']
 
-    @property
-    def filter(self):
-        return self._filter
-
-    @filter.setter
+    @WorkbookResource.filter.setter
     def filter(self, new_filter):
-        self._filter = dict({"Name": new_filter['Name'], "Scope": new_filter['Scope']})
-        if self._refresh:
-            self.RefreshData()
+        WorkbookResource.filter.fset(self, new_filter)
+        if self._refresh: self.RefreshData()
 
-    @property
-    def scenario(self):
-        return self._scenario
-
-    @scenario.setter
+    @WorkbookResource.scenario.setter
     def scenario(self, new_scenario):
-        self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
-        if self._refresh:
-            self.RefreshData()
+        WorkbookResource.scenario.fset(self, new_scenario)
+        if self._refresh: self.RefreshData()
 
     @property
     def sync(self):
         return self._sync
 
-    @property
-    def site_group(self):
-        return self._site_group
-
-    @site_group.setter
+    @WorkbookResource.site_group.setter
     def site_group(self, new_site_group):
-        self._site_group = str(new_site_group)
-        if self._refresh:
-            self.RefreshData()
+        WorkbookResource.site_group.fset(self, new_site_group)
+        if self._refresh: self.RefreshData()
 
     def __len__(self):
         return len(self._rows)
@@ -1005,7 +943,6 @@ class Worksheet:
         )
         self._logger.info(response_readable)
         return response_readable
-
 
 class WorksheetRow(UserList):
     def __init__(self, iterable, worksheet: Worksheet):

@@ -1,3 +1,4 @@
+import abc
 import asyncio
 import base64
 import json
@@ -12,7 +13,7 @@ from RapidResponse.Utils import WORKBOOK_URL, BULK_URL, WORKSHEET_URL, SCRIPT_UR
     RequestsError
 
 
-class BaseEnvironment:
+class BaseEnvironment(abc.ABC):
     """
         this is the python representation of your environment. It contains authentication details, data model data (tables, fields, etc) and provides the scoping for working with RR.\n
         :param configuration: dictionary containing necessary information for initialising environment
@@ -78,6 +79,7 @@ class BaseEnvironment:
             scenarios.append(s)
         return scenarios
 
+    @abc.abstractmethod
     def refresh_auth(self):
         pass
 
