@@ -13,22 +13,11 @@ from RapidResponse.Environment import Environment
 from RapidResponse.Utils import VALID_SCOPES, SCOPE_PUBLIC, ScriptError, RequestsError, ALL_SITES, ALL_PARTS, DataError
 
 
-class AbstractScript:
-    """
-    A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
+# todo create new class Resource, should have environment, name, should initialise logger. handle scope
+# todo create new class WorkbookResource, expect to be inherited onto workbook and worksheet
 
-    :param environment: RapidResponse environment for which the script is scoped. Mandatory.
-    :param name: string, name of script. Mandatory.
-    :param scope: enumerated, 'Public' or 'Private'. Optional, default is 'Public'
-    :param parameters: dictionary containing the parameters. Optional.
-    :raises ScriptError: If there is an error in the script execution.
-    :raises RequestsError: If there is an error with the HTTP request.
-    :raises ValueError: If the environment or name parameters are invalid.
-    :raises TypeError: If the type of the environment or name parameters are incorrect.
-    """
-
-    def __init__(self, environment: Environment, name: str, scope: str = None, parameters: dict = None):
-        self._logger = logging.getLogger('RapidPy.spt')
+class Resource:
+    def __init__(self, environment, name, scope: str = None):
 
         self._validate_parameters(environment, name)
 
@@ -36,12 +25,12 @@ class AbstractScript:
         self._name = name
         self._sanitized_name = self._sanitize_input(name)
         self._scope = scope if scope in VALID_SCOPES else SCOPE_PUBLIC
-        self._parameters = dict(parameters) if parameters is not None else {}
 
-        self._response = {'console': '', 'value': '', 'error': ''}
-        self._internal_status = 0  # 0=not run, -1=error, 1=success
-
-        self._session = Session()
+        self._logger = logging.getLogger('RapidPy.rcs')
+        self._logger.setLevel(logging.DEBUG)
+        self._logger.debug('Resource')
+        self._logger.debug('environment: %s', self._environment)
+        self._logger.debug('name: %s', self._name)
 
     @staticmethod
     def _validate_parameters(environment, name):
@@ -75,6 +64,10 @@ class AbstractScript:
         self._sanitized_name = self._sanitize_input(new_name)
 
     @property
+    def qualified_name(self):
+        return dict(Name=self.name, Scope=self.scope)
+
+    @property
     def scope(self):
         return self._scope
 
@@ -83,6 +76,116 @@ class AbstractScript:
         if new_scope not in VALID_SCOPES:
             raise ValueError("The scope must be either 'Public' or 'Private'.")
         self._scope = new_scope
+
+class WorkbookResource(Resource):
+    def __init__(self, environment, name, scope, Scenario: dict = None, SiteGroup: str = None, Filter: dict = None, VariableValues: dict = None):
+        Resource.__init__(self,environment, name, scope)
+        self.fetch_worksheets_from_mx = False
+        self.fetch_variables_from_mx = False
+        # self.VARIABLESUTILSCRIPT = 'GP.GetWorkbook.Variables'
+        # self.WORKSHEETUTILSCRIPT = 'GP.GetWorkbook.Worksheets'
+        self._scenario = dict()
+        self._workbook = dict()
+        self._site_group = None
+        self._filter = None
+        self._variable_values = None
+        self._logger = logging.getLogger('RapidPy.rcs.wb')
+
+
+        if Scenario:
+            self._scenario = dict(Name=Scenario['Name'], Scope=Scenario['Scope'])
+        else:
+            self._scenario = self.environment.scenarios[0]
+
+        if not SiteGroup:
+            self._site_group = ALL_SITES
+        else:
+            self._site_group = str(SiteGroup)
+
+        # set Filter
+        if not Filter:
+            self._filter = ALL_PARTS
+        else:
+            self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
+
+        if self.environment._variables_script is None:
+            self.fetch_variables_from_mx = False
+        else:
+            self.fetch_variables_from_mx = True
+
+        if VariableValues:
+            self._variable_values = dict(VariableValues)
+        elif self.fetch_variables_from_mx:
+            self._logger.debug(f'Fetching variables from Maestro using {self.environment._variables_script}')
+            self._variable_values = self._fetch_variables(self.environment._variables_script)
+        else:
+            self._logger.debug(f'Variables might be required, who really knows?! Guess we see if it gives error later')
+
+    def _fetch_variables(self, helper_workbook):
+        param = {"SharedWorkbookName": self.name, "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
+        variablesResponse = Script(self.environment, helper_workbook, scope=SCOPE_PUBLIC, parameters=param)
+        variablesResponse.execute()
+        var_list = json.loads('[' + variablesResponse.value + ']')
+        variables_dict = dict()
+        for var in var_list:
+            variables_dict.update({var["name"]: var["defaultValue"]})
+        return variables_dict
+
+    @property
+    def scenario(self):
+        return self._scenario
+
+    @scenario.setter
+    def scenario(self, new_scenario):
+        if new_scenario['Scope'] in VALID_SCOPES:
+            self._scenario = dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
+        else:
+            raise ValueError(f'Invalid scope: {new_scenario["Scope"]}. Valid scopes are: {VALID_SCOPES}')
+
+    @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, new_filter):
+        if new_filter['Scope'] in VALID_SCOPES:
+            self._filter = dict(Name=new_filter['Name'], Scope=new_filter['Scope'])
+        else:
+            raise ValueError(f'Invalid scope: {new_filter["Scope"]}. Valid scopes are: {VALID_SCOPES}')
+
+    @property
+    def site_group(self):
+        return self._site_group
+
+    @site_group.setter
+    def site_group(self, new_site_group):
+        self._site_group = str(new_site_group)
+
+
+class AbstractScript(Resource):
+    """
+    A class to represent and execute a script within a RapidResponse environment. This loosely follows the Command design pattern (GOF).
+
+    :param environment: RapidResponse environment for which the script is scoped. Mandatory.
+    :param name: string, name of script. Mandatory.
+    :param scope: enumerated, 'Public' or 'Private'. Optional, default is 'Public'
+    :param parameters: dictionary containing the parameters. Optional.
+    :raises ScriptError: If there is an error in the script execution.
+    :raises RequestsError: If there is an error with the HTTP request.
+    :raises ValueError: If the environment or name parameters are invalid.
+    :raises TypeError: If the type of the environment or name parameters are incorrect.
+    """
+
+    def __init__(self, environment: Environment, name: str, scope: str = None, parameters: dict = None):
+        Resource.__init__(self, environment, name, scope)
+        self._logger = logging.getLogger('RapidPy.spt')
+
+        self._parameters = dict(parameters) if parameters is not None else {}
+
+        self._response = {'console': '', 'value': '', 'error': ''}
+        self._internal_status = 0  # 0=not run, -1=error, 1=success
+
+        self._session = Session()
 
     @property
     def console(self) -> str:
@@ -93,7 +196,7 @@ class AbstractScript:
         return self._response['value']
 
     @property
-    def status(self):
+    def status(self) -> str:
         if self._response['error']:
             error = self._response['error']
             return f"Error: Code {error['Code']}\nMessage {error['Message']}\n\nSee log for details"
@@ -119,12 +222,12 @@ class AbstractScript:
                 f"scope={self._scope}, parameters={self._parameters})")
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, AbstractScript):
+        if not issubclass(other, AbstractScript):
             return NotImplemented
-        return (self._environment == other._environment and
-                self._name == other._name and
-                self._scope == other._scope and
-                self._parameters == other._parameters)
+        return (self.environment == other.environment and
+                self._name == other.name and
+                self._scope == other.scope and
+                self._parameters == other.parameters)
 
     def __hash__(self):
         return hash((self._environment, self._name, self._scope, frozenset(self._parameters.items())))
@@ -148,7 +251,7 @@ class Script(AbstractScript):
 
     :param environment: RapidResponse environment for which the script is scoped. Mandatory.
     :param name: string, name of script. Mandatory.
-    :param scope: enumerated, 'Public' or 'Private'. Optional, default is 'Public'
+    :param scope: listed, 'Public' or 'Private'. Optional, default is the 'Public'
     :param parameters: dictionary containing the parameters. Optional.
     :raises ScriptError: If there is an error in the script execution.
     :raises RequestsError: If there is an error with the HTTP request.
@@ -157,7 +260,7 @@ class Script(AbstractScript):
     """
 
     def __init__(self, environment: Environment, name: str, scope: str = None, parameters: dict = None):
-        super().__init__(environment, name, scope, parameters)
+        AbstractScript.__init__(self,environment, name, scope, parameters)
 
         self._session.headers.update(self.environment.global_headers)
 
@@ -236,7 +339,7 @@ class Script(AbstractScript):
             )
 
 
-class AbstractWorkBook:
+class AbstractWorkBook(WorkbookResource):
     """
            https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/retrieve_workbook_rest.htm?\n
            :param environment: Required. contains the env details for worksheet.\n
@@ -249,7 +352,6 @@ class AbstractWorkBook:
 
 
            """
-    # WORKBOOK_URL = "/integration/V1/data/workbook"
 
     def __init__(self, environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues):
         """
@@ -265,19 +367,18 @@ class AbstractWorkBook:
 
 
         """
+        WorkbookResource.__init__(self,environment, workbook['Name'], workbook['Scope'],Scenario, SiteGroup, Filter, VariableValues)
         self.fetch_worksheets_from_mx = False
-        self.fetch_variables_from_mx = False
-        # self.VARIABLESUTILSCRIPT = 'GP.GetWorkbook.Variables'
-        # self.WORKSHEETUTILSCRIPT = 'GP.GetWorkbook.Worksheets'
-        self._logger = logging.getLogger('RapidPy.wb.wb')
-        self.worksheets = list()
-        self._scenario = dict()
-        self._environment = None
-        self._workbook = dict()
-        self._site_group = None
-        self._filter = None
-        self._variable_values = None
 
+        self._logger = logging.getLogger('RapidPy.rcs.wb')
+        self.worksheets = list()
+        self._workbook =  dict(Name=workbook['Name'], Scope=workbook['Scope'])
+
+        # set script params
+        if self.environment._worksheet_script is None:
+            self.fetch_worksheets_from_mx = False
+        else:
+            self.fetch_worksheets_from_mx = True
 
     def __repr__(self):
         return f'Workbook({self.environment!r}, {self.name!r}, {self.scenario!r}, {self.site_group!r}, {self.worksheets!r}, {self.filter!r}, {self._variable_values!r})'
@@ -323,48 +424,24 @@ class AbstractWorkBook:
         # populate all child worksheets with data
         pass
 
-    @property
-    def environment(self):
-        return self._environment
-
-    @property
-    def filter(self):
-        return self._filter
-
-    @filter.setter
-    def filter(self, new_filter):
-        s = new_filter['Scope'] if new_filter['Scope'] in VALID_SCOPES else SCOPE_PUBLIC
-        n = new_filter['Name']
-
-        self._filter = dict(Name=n, Scope=s)
-        for ws in self.worksheets:
-            ws.filter = self.filter
-
-    @property
-    def name(self):
-        return self._workbook['Name']
-
-    @property
-    def workbook_scope(self):
-        return self._workbook['Scope']
 
     @property
     def scenario(self):
-        return self._scenario
+        return super().scenario
 
     @scenario.setter
     def scenario(self, new_scenario):
-        self._scenario = dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
+        self._scenario = super().scenario(new_scenario) #dict(Name=new_scenario['Name'], Scope=new_scenario['Scope'])
         for ws in self.worksheets:
             ws.scenario = self.scenario
 
     @property
     def site_group(self):
-        return self._site_group
+        return super().site_group
 
     @site_group.setter
     def site_group(self, new_site_group):
-        self._site_group = str(new_site_group)
+        self._site_group = super().site_group(new_site_group)
         for ws in self.worksheets:
             ws.site_group = self.site_group
 
@@ -400,52 +477,6 @@ class Workbook(AbstractWorkBook):
         """
         super().__init__(environment, workbook, Scenario, SiteGroup, WorksheetNames, Filter, VariableValues)
         self._refresh = refresh
-        # validations
-
-        if not isinstance(environment, Environment):
-            raise TypeError("The parameter environment type must be Environment.")
-        if not environment:
-            raise ValueError("The parameter environment must not be empty.")
-
-        # assign env
-        self._environment = environment
-
-
-        if Scenario:
-            self._scenario = dict(Name=Scenario['Name'], Scope=Scenario['Scope'])
-        else:
-            self._scenario = self.environment.scenarios[0]
-
-        self._workbook = dict(Name=workbook['Name'], Scope=workbook['Scope'])
-
-        if not SiteGroup:
-            self._site_group = ALL_SITES
-        else:
-            self._site_group = str(SiteGroup)
-        # set Filter
-        if not Filter:
-            self._filter = ALL_PARTS
-        else:
-            self._filter = dict(Name=Filter['Name'], Scope=Filter['Scope'])
-        # set script params
-        if self.environment._worksheet_script is None:
-            self.fetch_worksheets_from_mx = False
-        else:
-            self.fetch_worksheets_from_mx = True
-
-        if self.environment._variables_script is None:
-            self.fetch_variables_from_mx = False
-        else:
-            self.fetch_variables_from_mx = True
-
-        if VariableValues:
-            self._variable_values = dict(VariableValues)
-        elif self.fetch_variables_from_mx:
-            self._logger.debug(f'Fetching variables from Maestro using {self.environment._variables_script}')
-            self._variable_values = self._fetch_variables(self.environment._variables_script)
-        else:
-            self._logger.debug(f'Variables might be required, who really knows?! Guess we see if it gives error later')
-
         if WorksheetNames:
             self._set_worksheets(WorksheetNames)
         elif self.fetch_worksheets_from_mx:
@@ -477,16 +508,6 @@ class Workbook(AbstractWorkBook):
         worksheetarray = worksheets.split(', ')
         self._logger.debug(f'{worksheetarray}')
         return worksheetarray
-
-    def _fetch_variables(self, helper_workbook):
-        param = {"SharedWorkbookName": self.name, "IsIncludeHiddenWorksheet": False, "loggingLevel": "2"}
-        variablesResponse = Script(self.environment, helper_workbook, scope='Public', parameters=param)
-        variablesResponse.execute()
-        var_list = json.loads('[' + variablesResponse.value + ']')
-        variables_dict = dict()
-        for var in var_list:
-            variables_dict.update({var["name"]: var["defaultValue"]})
-        return variables_dict
 
 
 class Worksheet:

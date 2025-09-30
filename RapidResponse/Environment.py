@@ -12,9 +12,9 @@ from RapidResponse.Utils import WORKBOOK_URL, BULK_URL, WORKSHEET_URL, SCRIPT_UR
     RequestsError
 
 
-class AbstractEnvironment:
+class BaseEnvironment:
     """
-        this is the python representation of your enviornment. It contains authentication details, data model data (tables, fields, etc) and provides the scoping for working with RR.\n
+        this is the python representation of your environment. It contains authentication details, data model data (tables, fields, etc) and provides the scoping for working with RR.\n
         :param configuration: dictionary containing necessary information for initialising environment
         :raises SetupError: Data Model directory not valid
         """
@@ -129,7 +129,7 @@ class AbstractEnvironment:
     def max_connections(self):
         return self._maxconnections
 
-class Environment(AbstractEnvironment):
+class Environment(BaseEnvironment):
     def __init__(self, configuration: dict):
         super().__init__(configuration)
         self._session = requests.Session()
