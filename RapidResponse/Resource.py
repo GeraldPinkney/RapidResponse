@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import re
+from abc import abstractmethod
 from collections import UserList
 from datetime import date
 
@@ -74,6 +75,15 @@ class Resource(abc.ABC):
         if new_scope not in VALID_SCOPES:
             raise ValueError("The scope must be either 'Public' or 'Private'.")
         self._scope = new_scope
+
+    @abstractmethod
+    def status(self):
+        """
+        Representation of the load status for the resource
+
+        :return: string containing the status, Success, Unknown, Not Run, or the actual error message.
+        """
+        pass
 
 class WorkbookResource(Resource,abc.ABC):
     def __init__(self, environment, name, scope, Scenario: dict = None, SiteGroup: str = None, Filter: dict = None, VariableValues: dict = None):
@@ -214,6 +224,7 @@ class AbstractScript(Resource,abc.ABC):
     def close(self):
         self._session.close()
 
+    @abstractmethod
     def execute(self):
         pass
 
@@ -409,6 +420,10 @@ class AbstractWorkBook(WorkbookResource,abc.ABC):
         #self._site_group = super().site_group.setter(new_site_group)
         for ws in self.worksheets:
             ws.site_group = self.site_group
+
+    @property
+    def status(self) -> str:
+        return f'{[(ws.name, ws.status,) for ws in self.worksheets]}'
 
 class Workbook(AbstractWorkBook):
     """
