@@ -341,6 +341,16 @@ class DataTable(Table):
         index = self.indexof(rec)
         self.__delitem__(index)
 
+    @property
+    def status(self) -> str:
+        if self._response['error']:
+            error = self._response['error']
+            return f"Error: Code {error['Code']}\nMessage {error['Message']}\n\nSee log for details"
+        elif self._response is not None:
+            return self._response
+        else:
+            return 'Unknown'
+
     def _create_export(self, session=None):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
         if session is None:
@@ -351,14 +361,12 @@ class DataTable(Table):
         else:
             query_filter = ''
         local_query_fields = [f.name for f in self.columns]
-
-        table = {'Namespace': self._table_namespace,
-                 'Name': self._table_name}
+        table = {'Namespace': self._table_namespace, 'Name': self._table_name}
 
         payload = json.dumps({
             "Scenario": self.scenario,
-            "Table": table,
-            "Fields": local_query_fields,
+            "Table": {'Namespace': self._table_namespace, 'Name': self._table_name},
+            "Fields": [f.name for f in self.columns],
             "Filter": query_filter
         })
 
@@ -369,11 +377,13 @@ class DataTable(Table):
         # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
+            self._format_export_response(response_dict)
         else:
             raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
 
-        self._exportID = response_dict["ExportId"]
-        self._total_row_count = response_dict["TotalRows"]
+        #self._exportID = response_dict["ExportId"]
+        #self._total_row_count = response_dict["TotalRows"]
+        #self._logger.debug(response_dict)
 
     def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
         if session is None:
@@ -421,36 +431,35 @@ class DataTable(Table):
 
     async def _create_export_async(self, client, limit: asyncio.Semaphore = None):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
-        url = self.environment.bulk_export_url
 
         if self._filter:
             query_filter = self.filter
         else:
             query_filter = ''
-        local_query_fields = [f.name for f in self.columns]
-
-        table = {'Namespace': self._table_namespace,
-                 'Name': self._table_name}
+        #url = self.environment.bulk_export_url
+        #local_query_fields = [f.name for f in self.columns]
+        #table = {'Namespace': self._table_namespace, 'Name': self._table_name}
 
         payload = json.dumps({
             "Scenario": self.scenario,
-            "Table": table,
-            "Fields": local_query_fields,
+            "Table": {'Namespace': self._table_namespace, 'Name': self._table_name},
+            "Fields": [f.name for f in self.columns],
             "Filter": query_filter
         })
         self._logger.debug(f'Create Export payload sent is: {payload}')
         try:
             async with limit:
-                response = await client.post(url=url, headers=self.environment.global_headers, content=payload)
+                response = await client.post(url=self.environment.bulk_export_url, headers=self.environment.global_headers, content=payload)
         except:
-            raise RequestsError(response, f"error during POST to: {url}", payload)
+            raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
         else:
             if response.status_code == 200:
                 response_dict = json.loads(response.text)
-                self._exportID = response_dict["ExportId"]
-                self._total_row_count = response_dict["TotalRows"]
+                self._format_export_response(response_dict)
+                #self._exportID = response_dict["ExportId"]
+                #self._total_row_count = response_dict["TotalRows"]
             else:
-                raise RequestsError(response, f"error during POST to: {url}", payload)
+                raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
 
     async def _get_export_results_async(self, client, startRow: int = 0, pageSize: int = 5000, limit: asyncio.Semaphore = None):
         url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
@@ -503,7 +512,19 @@ class DataTable(Table):
         asyncio.run(self._main_get_export_results_async(calc_data_range))
         self._exportID = None
 
-    def _format_response(self, response_dict):
+    def _format_export_response(self, response_dict):
+
+        response_readable = (
+            f"status: {response_dict.get('Status', 'N/A')}\n"
+            f"TotalRows: {response_dict.get('TotalRows', 'N/A')}\n"
+        )
+        self._exportID = response_dict["ExportId"]
+        self._total_row_count = response_dict["TotalRows"]
+        self._logger.info(response_readable)
+        self._response = response_dict
+        return response_readable
+
+    def _format_upload_delete_response(self, response_dict):
         """
         Formats a dictionary containing webservice call operation results into a human-readable string.
 
@@ -523,6 +544,7 @@ class DataTable(Table):
             f"UnchangedRowCount: {response_dict.get('UnchangedRowCount', 'N/A')}"
         )
         self._logger.info(response_readable)
+        self._response = response_dict
         return response_readable
 
     def _calc_optimal_pagesize(self, PageSizeSuggested=500_000):
@@ -613,31 +635,29 @@ class DataTable(Table):
             raise RequestsError(response, f"error during POST to: {url}")
 
         results = response_dict['Results']
-        response_readable = self._format_response(results)
+        response_readable = self._format_upload_delete_response(results)
+
         if results['Status'] == 'Failure':
-            raise RequestsError(response,
-                                f"Status is Failure during bulk upload complete. error during POST to: {url}. {response.text}",
-                                None)
+            raise RequestsError(response, f"Status is Failure during bulk upload complete. error during POST to: {url}. {response.text}",None)
         elif results['Status'] == 'Partial Success' and results['ErrorRowCount'] > 10:
-            raise DataError(response.text,
-                            f"Status is Partial Success during bulk upload complete, error count: {str(results['ErrorRowCount'])}")
+            raise DataError(response.text,f"Status is Partial Success during bulk upload complete, error count: {str(results['ErrorRowCount'])}")
         else:
             self._logger.debug(response_readable)
 
     def _create_deletion(self, *args):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
-        table = {'Namespace': self._table_namespace, 'Name': self._table_name}
+        #table = {'Namespace': self._table_namespace, 'Name': self._table_name}
 
         # local_query_fields = [f.name for f in self.columns]
-        local_query_fields = [f.name if self._table_namespace == self.get_field(f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
+        #local_query_fields = [f.name if self._table_namespace == self.get_field(f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
 
-        rows = [{"Values": i.data} for i in args]
+        #rows = [{"Values": i.data} for i in args]
 
         payload = json.dumps({
             'Scenario': self.scenario,
-            'Table': table,
-            'Fields': local_query_fields,
-            'Rows': rows
+            'Table': {'Namespace': self._table_namespace, 'Name': self._table_name},
+            'Fields': [f.name if self._table_namespace == self.get_field(f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns],
+            'Rows': [{"Values": i.data} for i in args]
         })
         self._logger.debug(f'Create Deletion payload: {payload}')
         response = requests.request("POST", self.environment.bulk_remove_url, headers=self.environment.global_headers, data=payload)
@@ -661,7 +681,7 @@ class DataTable(Table):
             raise RequestsError(response, f"Failure during bulk//deletion complete. Error during POST to: {url}", None)
 
         results = response_dict['Results']
-        response_readable = self._format_response(results)
+        response_readable = self._format_upload_delete_response(results)
         if results['Status'] == 'Failure':
             raise RequestsError(response, f"Error during bulk//deletion complete. Error during POST to: {url}", None)
         elif results['Status'] == 'Success':
@@ -678,10 +698,9 @@ class DataTable(Table):
         :return Column:
         """
         try:
-            response = super(self.__class__, self).get_field(field)
+            response = super().get_field(field)
         except DataError:
-            self._logger.debug(
-                'Caught data error when trying to get from Table object, now using data model to get field. using get_field()')
+            self._logger.debug('Caught data error when trying to get from Table object, now using data model to get field. using get_field()')
             if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, field):
                 response = self.environment.data_model.get_field(self.name, field)
             else:
