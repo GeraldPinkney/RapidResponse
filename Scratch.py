@@ -204,3 +204,96 @@ def export_pkg():
 
 bel_bootstrap = {'url': 'https://eu21.kinaxis.net/BELD02_DEV01/', 'data_model_bootstrap': 'KXSHelperREST',
                  'auth_type': 'basic', 'username': 'IntegrationUser', 'password': 'Welcome1!'}
+
+
+class dataTabNonAsync:
+    def _create_export(self, session=None):
+        # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
+        if session is None:
+            session = self._session
+
+        if self._filter:
+            query_filter = self.filter
+        else:
+            query_filter = ''
+
+        payload = json.dumps({
+            "Scenario": self.scenario,
+            "Table": {'Namespace': self._table_namespace, 'Name': self._table_name},
+            "Fields": [f.name for f in self.columns],
+            "Filter": query_filter
+        })
+
+        req = requests.Request("POST", self.environment.bulk_export_url , headers=self.environment.global_headers, data=payload)
+        prepped = req.prepare()
+        response = session.send(prepped)
+
+        # check valid response
+        if response.status_code == 200:
+            response_dict = json.loads(response.text)
+            self._format_export_response(response_dict)
+        else:
+            raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
+
+    def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
+        if session is None:
+            session = self._session
+        # using slicing on the query handle to strip off the #
+        url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
+
+        req = requests.Request("GET", url, headers=self.environment.global_headers)
+        prepped = req.prepare()
+        response = session.send(prepped)
+
+        if response.status_code == 200:
+            response_dict = json.loads(response.text)
+        else:
+            raise RequestsError(response, f"error during POST to: {url}", None)
+
+        # data returned with tab delimiter %09. split results.
+        rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
+        return rows
+
+    def RefreshData(self, data_range: int = 100_000, action_on_page=None):
+        """
+        Function that sequentially reads pages of response data from table read. will apply the action_on_page function to the returned data
+        :param data_range: integer, requested page size. note, this is not the page size you'll get, but is adjusted by pagesizefactor
+        :param action_on_page: function, function passed to RefreshData that is applied to each returned page
+        :return: None
+        """
+
+        s = self._session
+        self.environment.refresh_auth()
+        s.headers=self.environment.global_headers
+
+        self._create_export(s)
+        self._table_data.clear()
+        calc_data_range = self._calc_optimal_pagesize(data_range)
+        for i in range(0, self._total_row_count, calc_data_range):
+            page_response = self._get_export_results(s, i, calc_data_range)
+            self._table_data.extend(page_response)
+            if action_on_page is None:
+                pass
+            else:
+                action_on_page(page_response)
+        self._exportID = None
+        s.close()
+
+    def _test_data_table_refresh_with_funct(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env, 'Mfg::Part', refresh=False)
+        # test
+        self.assertEqual(len(part), 0)
+        part.RefreshData(data_range=1000, action_on_page=print_recs)
+        self.assertNotEqual(len(part), 0)
+
+    def _test_data_table_no_refresh_properties(self):
+        # setup
+        env = Environment(sample_configuration)
+        part = DataTable(env,'Mfg::Part', refresh=False)
+        # test
+        self.assertEqual(len(part), 0)
+        part._create_export()
+        self.assertNotEqual(part._total_row_count, 0)
+        part._session.close()

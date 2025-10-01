@@ -6,7 +6,6 @@ import logging
 from collections import UserList
 from copy import deepcopy
 
-import httpx
 import requests
 
 from RapidResponse.DataModel import Column, Table
@@ -37,23 +36,22 @@ class DataTable(Table):
         self._logger = logging.getLogger('RapidPy.dt')
 
         # validations
-        if not isinstance(environment, Environment):
-            raise TypeError("The parameter environment type must be Environment.")
-        if not environment:
-            raise ValueError("The parameter environment must not be empty.")
-        if not isinstance(tablename, str):
-            raise TypeError("The parameter tablename type must be str.")
-        if not tablename:
-            raise ValueError("The parameter tablename must not be empty.")
-
+        self._validate_params(environment, tablename)
+        self.environment = environment
         tabarray = tablename.split('::')
         try:
-            super().__init__(tabarray[1], tabarray[0])
+            Table.__init__(self,tabarray[1], tabarray[0])
+            # copy data from data model table
+            temp_tab = self.environment.get_table(tabarray[1], tabarray[0])
+            self._identification_fields = deepcopy(temp_tab._identification_fields)
+            self._key_fields = deepcopy(temp_tab._key_fields)
+            self._keyed = deepcopy(temp_tab._keyed)
+            self._table_fields = deepcopy(temp_tab._table_fields)
+            self._table_type = deepcopy(temp_tab._table_type)
         except IndexError:
             raise ValueError('table name parameter must be in format namespace::tablename')
 
         # set values from parameters
-        self.environment = environment
         self._filter = table_filter
         self._sync = bool(sync)
 
@@ -63,15 +61,6 @@ class DataTable(Table):
         self._exportID = None
         self._table_data = list()
         self.columns = list()
-
-
-        # copy data from data model table
-        temp_tab = self.environment.get_table(tabarray[1], tabarray[0])
-        self._identification_fields = deepcopy(temp_tab._identification_fields)
-        self._key_fields = deepcopy(temp_tab._key_fields)
-        self._keyed = deepcopy(temp_tab._keyed)
-        self._table_fields = deepcopy(temp_tab._table_fields)
-        self._table_type = deepcopy(temp_tab._table_type)
 
         if scenario is None:
             self.scenario = self.environment.scenarios[0]
@@ -90,8 +79,8 @@ class DataTable(Table):
                     columns.append(k)
             self.set_columns(columns)
 
-        timeout = httpx.Timeout(10.0, connect=60.0)
-        self.client = httpx.AsyncClient(timeout=timeout)
+        self.client = self.environment.client # httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=60.0))
+        self.limit = self.environment.limit # asyncio.Semaphore(self.max_connections)
 
         self._session = requests.Session()
         self.environment.refresh_auth()
@@ -100,9 +89,18 @@ class DataTable(Table):
         if refresh:
             self.RefreshData_async()
 
+    def _validate_params(self, environment: Environment, tablename: str):
+        if not isinstance(environment, Environment):
+            raise TypeError("The parameter environment type must be Environment.")
+        if not environment:
+            raise ValueError("The parameter environment must not be empty.")
+        if not isinstance(tablename, str):
+            raise TypeError("The parameter tablename type must be str.")
+        if not tablename:
+            raise ValueError("The parameter tablename must not be empty.")
+
     def __bool__(self):
         return len(self._table_data) > 0
-
 
     def __len__(self):
         return len(self._table_data)
@@ -261,10 +259,11 @@ class DataTable(Table):
         self.columns.extend(cols_to_add)
 
     def _assign_cols_from_input(self, columns):
-        if self.sync:  # previously this checked for self.sync
+        if self.sync:
             for k in self._key_fields:
                 if k not in columns:
                     self._logger.debug(f'key column not in column list: {str(k)}')
+
         cols_to_add = list()
         for c in columns:
             col = self.get_field(c)
@@ -288,6 +287,7 @@ class DataTable(Table):
             else:
                 if col not in cols_to_add:
                     cols_to_add.append(col)
+
         self._logger.info(f'cols to add: {[c.name for c in cols_to_add]}')
         self.columns.extend(cols_to_add)
 
@@ -300,11 +300,9 @@ class DataTable(Table):
         :returns None:
         :raises DataError: if keys are missing from table, or column is not valid
         """
-
         if columns is None:
             self._assign_all_cols()
         else:
-            # add all valid fields to DataTable Cols
             self._assign_cols_from_input(columns)
 
     @property
@@ -334,13 +332,6 @@ class DataTable(Table):
         except AttributeError:
             raise ValueError(f"scenario not valid:  {new_scenario}. provide Name, Scope")
 
-    def indexof(self, rec):
-        return self._table_data.index(rec)
-
-    def del_row(self, rec):
-        index = self.indexof(rec)
-        self.__delitem__(index)
-
     @property
     def status(self) -> str:
         if self._response['error']:
@@ -351,83 +342,12 @@ class DataTable(Table):
         else:
             return 'Unknown'
 
-    def _create_export(self, session=None):
-        # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
-        if session is None:
-            session = self._session
+    def indexof(self, rec):
+        return self._table_data.index(rec)
 
-        if self._filter:
-            query_filter = self.filter
-        else:
-            query_filter = ''
-        local_query_fields = [f.name for f in self.columns]
-        table = {'Namespace': self._table_namespace, 'Name': self._table_name}
-
-        payload = json.dumps({
-            "Scenario": self.scenario,
-            "Table": {'Namespace': self._table_namespace, 'Name': self._table_name},
-            "Fields": [f.name for f in self.columns],
-            "Filter": query_filter
-        })
-
-        req = requests.Request("POST", self.environment.bulk_export_url , headers=self.environment.global_headers, data=payload)
-        prepped = req.prepare()
-        response = session.send(prepped)
-
-        # check valid response
-        if response.status_code == 200:
-            response_dict = json.loads(response.text)
-            self._format_export_response(response_dict)
-        else:
-            raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
-
-        #self._exportID = response_dict["ExportId"]
-        #self._total_row_count = response_dict["TotalRows"]
-        #self._logger.debug(response_dict)
-
-    def _get_export_results(self, session, startRow: int = 0, pageSize: int = 5000):
-        if session is None:
-            session = self._session
-        # using slicing on the query handle to strip off the #
-        url = self.environment.bulk_export_url + "/" + self._exportID[1:] + "?startRow=" + str(startRow) + "&pageSize=" + str(pageSize) + "&delimiter=%09" + "&finishExport=false"
-
-        req = requests.Request("GET", url, headers=self.environment.global_headers)
-        prepped = req.prepare()
-        response = session.send(prepped)
-
-        if response.status_code == 200:
-            response_dict = json.loads(response.text)
-        else:
-            raise RequestsError(response, f"error during POST to: {url}", None)
-
-        # data returned with tab delimiter %09. split results.
-        rows = [DataRow(rec.split('\t'), self) for rec in response_dict["Rows"]]
-        return rows
-
-    def RefreshData(self, data_range: int = 100_000, action_on_page=None):
-        """
-        Function that sequentially reads pages of response data from table read. will apply the action_on_page function to the returned data
-        :param data_range: integer, requested page size. note, this is not the page size you'll get, but is adjusted by pagesizefactor
-        :param action_on_page: function, function passed to RefreshData that is applied to each returned page
-        :return: None
-        """
-
-        s = self._session
-        self.environment.refresh_auth()
-        s.headers=self.environment.global_headers
-
-        self._create_export(s)
-        self._table_data.clear()
-        calc_data_range = self._calc_optimal_pagesize(data_range)
-        for i in range(0, self._total_row_count, calc_data_range):
-            page_response = self._get_export_results(s, i, calc_data_range)
-            self._table_data.extend(page_response)
-            if action_on_page is None:
-                pass
-            else:
-                action_on_page(page_response)
-        self._exportID = None
-        s.close()
+    def del_row(self, rec):
+        index = self.indexof(rec)
+        self.__delitem__(index)
 
     async def _create_export_async(self, client, limit: asyncio.Semaphore = None):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/bulkread_rest.htm?
@@ -436,9 +356,6 @@ class DataTable(Table):
             query_filter = self.filter
         else:
             query_filter = ''
-        #url = self.environment.bulk_export_url
-        #local_query_fields = [f.name for f in self.columns]
-        #table = {'Namespace': self._table_namespace, 'Name': self._table_name}
 
         payload = json.dumps({
             "Scenario": self.scenario,
@@ -454,10 +371,7 @@ class DataTable(Table):
             raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
         else:
             if response.status_code == 200:
-                response_dict = json.loads(response.text)
-                self._format_export_response(response_dict)
-                #self._exportID = response_dict["ExportId"]
-                #self._total_row_count = response_dict["TotalRows"]
+                self._format_export_response(json.loads(response.text))
             else:
                 raise RequestsError(response, f"error during POST to: {self.environment.bulk_export_url}", payload)
 
@@ -482,33 +396,25 @@ class DataTable(Table):
         return rows
 
     async def _main_get_export_results_async(self, data_range):
-        tasks = []
-        # temporary fix due to not getting released
-        limit = asyncio.Semaphore(self.max_connections)
+        limit = self.limit
+        client = self.client
 
-        # set exportID and totrowcount
-        await self._create_export_async(self.client, limit)
+        await self._create_export_async(client, limit)
 
-        tasks = [asyncio.Task(self._get_export_results_async(self.client, i, data_range, limit)) for i in range(0, self._total_row_count - data_range, data_range)]
-        #for i in range(0, self._total_row_count - data_range, data_range):
-            # tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
-        #    tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, limit)))
+        tasks = [asyncio.Task(self._get_export_results_async(client, i, data_range, limit)) for i in range(0, self._total_row_count - data_range, data_range)]
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
         remaining_records = self._total_row_count % data_range
         if remaining_records > 0:
-            self._table_data.extend(await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range,limit))
+            self._table_data.extend(await self._get_export_results_async(client, self._total_row_count - remaining_records, data_range,limit))
         # todo can I close client here? No. Need to shift this to environment level for client and limit
         await self.client.aclose()
 
     def RefreshData_async(self, data_range: int = 500_000):
-        # calc or assign the pagesize
         calc_data_range = self._calc_optimal_pagesize(data_range)
-        #prepare for data refresh
         self._table_data.clear()
         self.environment.refresh_auth()
-        # initialise_for_extract query
         asyncio.run(self._main_get_export_results_async(calc_data_range))
         self._exportID = None
 
@@ -628,7 +534,6 @@ class DataTable(Table):
         url = f'{self.environment.bulk_upload_url}/{self._uploadId[1:]}/complete'
         response = requests.request("POST", url, headers=self.environment.global_headers)
 
-        # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
@@ -645,13 +550,6 @@ class DataTable(Table):
             self._logger.debug(response_readable)
 
     def _create_deletion(self, *args):
-        # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
-        #table = {'Namespace': self._table_namespace, 'Name': self._table_name}
-
-        # local_query_fields = [f.name for f in self.columns]
-        #local_query_fields = [f.name if self._table_namespace == self.get_field(f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
-
-        #rows = [{"Values": i.data} for i in args]
 
         payload = json.dumps({
             'Scenario': self.scenario,
@@ -670,11 +568,9 @@ class DataTable(Table):
         self._uploadId = response_dict["RemovalId"]
 
     def _complete_deletion(self):
-
         url = self.environment.bulk_remove_url + "/" + self._uploadId[1:] + '/complete'
         response = requests.request("POST", url, headers=self.environment.global_headers)
 
-        # check valid response
         if response.status_code == 200:
             response_dict = json.loads(response.text)
         else:
@@ -698,7 +594,7 @@ class DataTable(Table):
         :return Column:
         """
         try:
-            response = super().get_field(field)
+            response = Table.get_field(self, field)
         except DataError:
             self._logger.debug('Caught data error when trying to get from Table object, now using data model to get field. using get_field()')
             if self.environment.data_model._validate_fully_qualified_field_name(self._table_name, field):

@@ -148,24 +148,7 @@ class DataTableTestCase(unittest.TestCase):
         # test
         self.assertNotEqual(len(part), 0)
 
-    def test_data_table_refresh_with_funct(self):
-        # setup
-        env = Environment(sample_configuration)
-        part = DataTable(env, 'Mfg::Part', refresh=False)
-        # test
-        self.assertEqual(len(part), 0)
-        part.RefreshData(data_range=1000, action_on_page=print_recs)
-        self.assertNotEqual(len(part), 0)
 
-    def test_data_table_no_refresh_properties(self):
-        # setup
-        env = Environment(sample_configuration)
-        part = DataTable(env,'Mfg::Part', refresh=False)
-        # test
-        self.assertEqual(len(part), 0)
-        part._create_export()
-        self.assertNotEqual(part._total_row_count, 0)
-        part._session.close()
 
     def test_table_with_custom_cols_namespace_attr(self):
         env = Environment(local_sample_bootstrap)

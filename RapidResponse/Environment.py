@@ -62,6 +62,7 @@ class BaseEnvironment(abc.ABC):
 
     def close(self):
         self._session.close()
+        self.client.aclose()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
