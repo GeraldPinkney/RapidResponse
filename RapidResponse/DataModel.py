@@ -1,10 +1,10 @@
 # DataModel.py
-
 import csv
 import importlib.resources
 import json
 import logging
 import os
+from abc import ABC, abstractmethod
 from typing import NamedTuple, Union, Dict, Literal
 
 import requests
@@ -12,7 +12,7 @@ import requests
 from RapidResponse.Utils import DirectoryError, SetupError, RequestsError, DataError
 
 
-class AbstractDataModel:
+class AbstractDataModel(ABC):
     """
         This is the data model for the environment. It includes information about the tables, columns, etc.
         """
@@ -39,18 +39,23 @@ class AbstractDataModel:
         self._data_model_dir = data_model_directory
         self.Refresh()
 
+    @abstractmethod
     def Refresh(self):
         pass
 
+    @abstractmethod
     def _load_from_workbook(self):
         pass
 
+    @abstractmethod
     def _load_from_directory(self):
         pass
 
+    @abstractmethod
     def _load_from_package_resources(self):
         pass
 
+    @abstractmethod
     def _add_fields_to_tables(self):
         pass
 
@@ -329,7 +334,7 @@ class DataModel(AbstractDataModel):
         :raises DirectoryError: directory not valid or file not valid
         """
 
-        super().__init__(data_model_directory, url, headers, workbook)
+        AbstractDataModel.__init__(self, data_model_directory, url, headers, workbook)
 
     def Refresh(self):
         # if we get a helper workbook, use that
@@ -675,7 +680,7 @@ class Column(NamedTuple):
 class Table:
     TABLE_TYPE = Literal['Input', 'Calculated']
 
-    def __init__(self, name: str, namespace: str, table_type: TABLE_TYPE = 'Input', keyed: str = None,identification_fields: str = None):
+    def __init__(self, name: str, namespace: str, table_type: str = 'Input', keyed: str = None,identification_fields: str = None):
         self._logger = logging.getLogger('RapidPy.dm.tab')
         self._table_fields = []
         self._key_fields = []
