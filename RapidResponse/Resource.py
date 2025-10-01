@@ -525,12 +525,8 @@ class Worksheet(WorkbookResource):
         :param Filter: Optional,the filter to apply to the workbook, defined as an object that contains the filter name and scope {"Name": "All Parts", "Scope": "Public"}
         :param VariableValues: Required if WS has them. keyvalue pairs {"DataModel_IsHidden": "No", "DataModel_IsReadOnly": "All"}
         """
-        WorkbookResource.__init__(self, environment, workbook['Name'], workbook['Scope'], scenario, SiteGroup, Filter,VariableValues)
+        WorkbookResource.__init__(self, environment, worksheet, workbook['Scope'], scenario, SiteGroup, Filter, VariableValues)
         self._logger = logging.getLogger('RapidPy.ws')
-
-
-        if not worksheet:
-            raise ValueError("The parameter worksheet must not be empty.")
 
         self._name = str(worksheet)
 

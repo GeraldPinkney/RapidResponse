@@ -34,7 +34,6 @@ class DataTable(Table):
     def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None,
                  sync: bool = True, refresh: bool = True, scenario=None):
 
-        # logging.basicConfig(filename='logging.log', filemode='w',format='%(name)s - %(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
         self._logger = logging.getLogger('RapidPy.dt')
 
         # validations
@@ -481,26 +480,22 @@ class DataTable(Table):
         # set exportID and totrowcount
         await self._create_export_async(self.client, limit)
 
-        for i in range(0, self._total_row_count - data_range, data_range):
+        tasks = [asyncio.Task(self._get_export_results_async(self.client, i, data_range, limit)) for i in range(0, self._total_row_count - data_range, data_range)]
+        #for i in range(0, self._total_row_count - data_range, data_range):
             # tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, self.environment.limit)))
-            tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, limit)))
+        #    tasks.append(asyncio.Task(self._get_export_results_async(self.client, i, data_range, limit)))
         for coroutine in asyncio.as_completed(tasks):
             self._table_data.extend(await coroutine)
 
         remaining_records = self._total_row_count % data_range
         if remaining_records > 0:
-            self._table_data.extend(
-                await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range,
-                                                     limit))
-        # can I close client here? No. Need to shift this to environment level for client and limit
+            self._table_data.extend(await self._get_export_results_async(self.client, self._total_row_count - remaining_records, data_range,limit))
+        # todo can I close client here? No. Need to shift this to environment level for client and limit
         await self.client.aclose()
 
-    def RefreshData_async(self, data_range: int = None):
+    def RefreshData_async(self, data_range: int = 500_000):
         # calc or assign the pagesize
-        if data_range is None:
-            calc_data_range = self._calc_optimal_pagesize(500_000)
-        else:
-            calc_data_range = self._calc_optimal_pagesize(data_range)
+        calc_data_range = self._calc_optimal_pagesize(data_range)
         #prepare for data refresh
         self._table_data.clear()
         self.environment.refresh_auth()
@@ -616,6 +611,7 @@ class DataTable(Table):
             response_dict = json.loads(response.text)
         else:
             raise RequestsError(response, f"error during POST to: {url}")
+
         results = response_dict['Results']
         response_readable = self._format_response(results)
         if results['Status'] == 'Failure':
@@ -630,12 +626,10 @@ class DataTable(Table):
 
     def _create_deletion(self, *args):
         # https://help.kinaxis.com/20162/webservice/default.htm#rr_webservice/external/update_rest.htm?
-        table = {'Namespace': self._table_namespace,
-                 'Name': self._table_name}
+        table = {'Namespace': self._table_namespace, 'Name': self._table_name}
 
         # local_query_fields = [f.name for f in self.columns]
-        local_query_fields = [f.name if self._table_namespace == self.get_field(
-            f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
+        local_query_fields = [f.name if self._table_namespace == self.get_field(f.name).fieldNamespace else f.fieldNamespace + '::' + f.name for f in self.columns]
 
         rows = [{"Values": i.data} for i in args]
 
