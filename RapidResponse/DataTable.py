@@ -1,11 +1,12 @@
 # DataTable.py
-
+import abc
 import asyncio
 import json
 import logging
 from collections import UserList
 from copy import deepcopy
 
+import httpx
 import requests
 
 from RapidResponse.DataModel import Column, Table
@@ -13,7 +14,126 @@ from RapidResponse.Environment import Environment
 from RapidResponse.Utils import RequestsError, DataError
 
 
-class DataTable(Table):
+class AbstractDataTable(abc.ABC):
+    def __init__(self, environment: Environment, tablename: str, columns: list = None, table_filter: str = None,
+                 sync: bool = True, refresh: bool = True, scenario=None):
+
+        self._logger = logging.getLogger('RapidPy.dt')
+        # validations
+        self._validate_params(environment, tablename)
+        self.environment = environment
+
+        # set values from parameters
+        self._filter = table_filter
+        self._sync = bool(sync)
+
+        self._total_row_count = 0  # _total_row_count used during export data gathering
+        # initialise internal variables to be used later
+        self._uploadId = None
+        self._exportID = None
+        self._table_data = list()
+        self.columns = list()
+        self._scenario = None
+        self._response = None
+
+
+    def _validate_params(self, environment: Environment, tablename: str):
+        if not isinstance(environment, Environment):
+            raise TypeError("The parameter environment type must be Environment.")
+        if not environment:
+            raise ValueError("The parameter environment must not be empty.")
+        if not isinstance(tablename, str):
+            raise TypeError("The parameter tablename type must be str.")
+        if not tablename:
+            raise ValueError("The parameter tablename must not be empty.")
+
+    def __bool__(self):
+        return len(self._table_data) > 0
+
+    def __len__(self):
+        return len(self._table_data)
+
+    def __getitem__(self, position):
+        return self._table_data[position]
+        # todo change this so a slice will return an instance of DataRow
+
+    def __contains__(self, item):
+        # get key fields for table. then check if that value is present
+        if item in self._table_data:
+            return True
+        else:
+            return False
+
+    def __str__(self):
+        # return self and first 5 rows
+        response = self.__repr__() + '\n'
+        if self._total_row_count > 5:
+            for i in range(0, 5):
+                response = response + 'rownum: ' + str(i) + ' ' + str(self._table_data[i]) + '\n'
+            response = response + '...'
+        return response
+
+    def map(self, action):
+        """
+        yields new items that result from applying an action() callable to each item in the underlying list
+        :param action:
+        :return:
+        """
+        #
+        return type(self)(action(item) for item in self._table_data)
+
+    def for_each(self, func):
+        """
+        calls func() on every item in the underlying list to generate some side effect.
+        :param func: who knows...
+        """
+        #
+        for item in self._table_data:
+            func(item)
+
+
+    @property
+    def sync(self):
+        return self._sync
+
+    @property
+    def max_connections(self):
+        return self.environment.max_connections
+
+    @property
+    def filter(self):
+        return self._filter
+
+    @filter.setter
+    def filter(self, new_filter):
+        self._filter = str(new_filter)
+
+    @property
+    def scenario(self):
+        return self._scenario
+
+    @scenario.setter
+    def scenario(self, new_scenario):
+        try:
+            self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
+        except AttributeError:
+            raise ValueError(f"scenario not valid:  {new_scenario}. provide Name, Scope")
+
+    @property
+    def status(self) -> str:
+        if self._response['error']:
+            error = self._response['error']
+            return f"Error: Code {error['Code']}\nMessage {error['Message']}\n\nSee log for details"
+        elif self._response is not None:
+            return self._response
+        else:
+            return 'Unknown'
+
+
+
+
+
+class DataTable(Table, AbstractDataTable):
     """
     subclass of Table that contains row data & can be used to push updates to RR\n
 
@@ -36,11 +156,10 @@ class DataTable(Table):
         self._logger = logging.getLogger('RapidPy.dt')
 
         # validations
-        self._validate_params(environment, tablename)
-        self.environment = environment
+        AbstractDataTable.__init__(self, environment, tablename, columns, table_filter, sync, refresh, scenario)
         tabarray = tablename.split('::')
         try:
-            Table.__init__(self,tabarray[1], tabarray[0])
+            Table.__init__(self, tabarray[1], tabarray[0])
             # copy data from data model table
             temp_tab = self.environment.get_table(tabarray[1], tabarray[0])
             self._identification_fields = deepcopy(temp_tab._identification_fields)
@@ -50,17 +169,6 @@ class DataTable(Table):
             self._table_type = deepcopy(temp_tab._table_type)
         except IndexError:
             raise ValueError('table name parameter must be in format namespace::tablename')
-
-        # set values from parameters
-        self._filter = table_filter
-        self._sync = bool(sync)
-
-        self._total_row_count = 0 # _total_row_count used during export data gathering
-        # initialise internal variables to be used later
-        self._uploadId = None
-        self._exportID = None
-        self._table_data = list()
-        self.columns = list()
 
         if scenario is None:
             self.scenario = self.environment.scenarios[0]
@@ -79,8 +187,8 @@ class DataTable(Table):
                     columns.append(k)
             self.set_columns(columns)
 
-        self.client = self.environment.client # httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=60.0))
-        self.limit = self.environment.limit # asyncio.Semaphore(self.max_connections)
+        self.client =  httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=60.0)) # self.environment.client #
+        self.limit =  asyncio.Semaphore(self.max_connections) # self.environment.limit #
 
         self._session = requests.Session()
         self.environment.refresh_auth()
@@ -89,35 +197,8 @@ class DataTable(Table):
         if refresh:
             self.RefreshData_async()
 
-    def _validate_params(self, environment: Environment, tablename: str):
-        if not isinstance(environment, Environment):
-            raise TypeError("The parameter environment type must be Environment.")
-        if not environment:
-            raise ValueError("The parameter environment must not be empty.")
-        if not isinstance(tablename, str):
-            raise TypeError("The parameter tablename type must be str.")
-        if not tablename:
-            raise ValueError("The parameter tablename must not be empty.")
-
-    def __bool__(self):
-        return len(self._table_data) > 0
-
-    def __len__(self):
-        return len(self._table_data)
-
     def __eq__(self, other):
-        return super().__eq__(other)
-
-    def __getitem__(self, position):
-        return self._table_data[position]
-        # todo change this so a slice will return an instance of DataRow
-
-    def __contains__(self, item):
-        # get key fields for table. then check if that value is present
-        if item in self._table_data:
-            return True
-        else:
-            return False
+        return Table.__eq__(self, other)
 
     def __repr__(self):
 
@@ -154,24 +235,6 @@ class DataTable(Table):
 
         del self._table_data[key]
         self._total_row_count -= 1
-
-    def map(self, action):
-        """
-        yields new items that result from applying an action() callable to each item in the underlying list
-        :param action:
-        :return:
-        """
-        #
-        return type(self)(action(item) for item in self._table_data)
-
-    def for_each(self, func):
-        """
-        calls func() on every item in the underlying list to generate some side effect.
-        :param func: who knows...
-        """
-        #
-        for item in self._table_data:
-            func(item)
 
     def append(self, values):
         """
@@ -304,43 +367,6 @@ class DataTable(Table):
             self._assign_all_cols()
         else:
             self._assign_cols_from_input(columns)
-
-    @property
-    def sync(self):
-        return self._sync
-
-    @property
-    def max_connections(self):
-        return self.environment.max_connections
-
-    @property
-    def filter(self):
-        return self._filter
-
-    @filter.setter
-    def filter(self, new_filter):
-        self._filter = str(new_filter)
-
-    @property
-    def scenario(self):
-        return self._scenario
-
-    @scenario.setter
-    def scenario(self, new_scenario):
-        try:
-            self._scenario = dict({"Name": new_scenario['Name'], "Scope": new_scenario['Scope']})
-        except AttributeError:
-            raise ValueError(f"scenario not valid:  {new_scenario}. provide Name, Scope")
-
-    @property
-    def status(self) -> str:
-        if self._response['error']:
-            error = self._response['error']
-            return f"Error: Code {error['Code']}\nMessage {error['Message']}\n\nSee log for details"
-        elif self._response is not None:
-            return self._response
-        else:
-            return 'Unknown'
 
     def indexof(self, rec):
         return self._table_data.index(rec)
